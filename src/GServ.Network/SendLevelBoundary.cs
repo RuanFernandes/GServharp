@@ -14,6 +14,26 @@ public sealed record LevelRuntimeContinuationPayload(
     bool IsSingleplayer,
     uint NewWorldTime,
     byte[] NpcsPacket);
+public sealed record NearbyLevelPlayerSnapshot(
+    ushort PlayerId,
+    bool IsClient,
+    bool IsOnSameLevel,
+    string? MapKey,
+    string? Group,
+    int MapX,
+    int MapY,
+    byte[] OtherPlayerPropsPacket);
+public sealed record LevelEntryPlayerSyncPayload(
+    bool IsSingleplayer,
+    bool HasMapContext,
+    bool IsGroupMap,
+    string? MapKey,
+    string? PlayerGroup,
+    int PlayerMapX,
+    int PlayerMapY,
+    byte[] SelfPropsPacket,
+    IReadOnlyList<NearbyLevelPlayerSnapshot> NearbyPlayers);
+public sealed record LevelEntryBroadcast(ushort PlayerId, byte[] Packet);
 
 public sealed record ModernLevelPayload(
     string LevelName,
@@ -26,7 +46,8 @@ public sealed record ModernLevelPayload(
     IReadOnlyList<LevelChestPayload>? Chests = null,
     IReadOnlyList<LevelHorsePayload>? Horses = null,
     IReadOnlyList<LevelBaddyPayload>? Baddies = null,
-    LevelRuntimeContinuationPayload? RuntimeContinuation = null);
+    LevelRuntimeContinuationPayload? RuntimeContinuation = null,
+    LevelEntryPlayerSyncPayload? PlayerSync = null);
 
 public sealed record SendLevelRequest(
     long RequestedModTime,
@@ -37,12 +58,14 @@ public enum SendLevelStopPoint
 {
     BeforeDynamicLevelRuntime,
     BeforeGmapCorrection,
-    BeforeNearbyPlayerProps
+    BeforeNearbyPlayerProps,
+    BeforeRuntimeSimulation
 }
 
 public sealed record SendLevelBoundaryResult(
     bool Accepted,
-    SendLevelStopPoint StopPoint);
+    SendLevelStopPoint StopPoint,
+    IReadOnlyList<LevelEntryBroadcast>? Broadcasts = null);
 
 public static class SendLevelBoundary
 {
@@ -117,7 +140,12 @@ public static class SendLevelBoundary
         }
 
         session.MarkLevelRuntimePacketsSent();
-        return new SendLevelBoundaryResult(true, SendLevelStopPoint.BeforeNearbyPlayerProps);
+        if (level.PlayerSync is not { } playerSync)
+            return new SendLevelBoundaryResult(true, SendLevelStopPoint.BeforeNearbyPlayerProps);
+
+        var broadcasts = SynchronizeNearbyPlayerProps(session, playerSync);
+        session.MarkLevelEntryPlayerPropsSynchronized();
+        return new SendLevelBoundaryResult(true, SendLevelStopPoint.BeforeRuntimeSimulation, broadcasts);
     }
 
     private static byte[] RawDataHeader(int length)
@@ -233,6 +261,58 @@ public static class SendLevelBoundary
         writer.WriteGChar((byte)ServerToPlayerPacketId.SetActiveLevel);
         writer.WriteBytes(System.Text.Encoding.ASCII.GetBytes(levelName));
         return writer.ToArray();
+    }
+
+    private static IReadOnlyList<LevelEntryBroadcast> SynchronizeNearbyPlayerProps(
+        ClientSessionSkeleton session,
+        LevelEntryPlayerSyncPayload sync)
+    {
+        if (sync.IsSingleplayer)
+            return Array.Empty<LevelEntryBroadcast>();
+
+        var broadcasts = new List<LevelEntryBroadcast>();
+        foreach (var other in sync.NearbyPlayers)
+        {
+            if (other.PlayerId == session.Id)
+                continue;
+
+            if (ShouldBroadcastSelfProps(sync, other))
+                broadcasts.Add(new LevelEntryBroadcast(other.PlayerId, AppendNewline(sync.SelfPropsPacket)));
+
+            if (ShouldSendOtherPropsToJoiningPlayer(sync, other))
+                QueuePacket(session, other.OtherPlayerPropsPacket);
+        }
+
+        return broadcasts;
+    }
+
+    private static bool ShouldBroadcastSelfProps(LevelEntryPlayerSyncPayload sync, NearbyLevelPlayerSnapshot other)
+    {
+        if (!other.IsClient)
+            return false;
+
+        return sync.HasMapContext
+            ? IsNearbyOnSameMap(sync, other)
+            : other.IsOnSameLevel;
+    }
+
+    private static bool ShouldSendOtherPropsToJoiningPlayer(LevelEntryPlayerSyncPayload sync, NearbyLevelPlayerSnapshot other)
+    {
+        return sync.HasMapContext
+            ? other.IsClient && IsNearbyOnSameMap(sync, other)
+            : other.IsOnSameLevel;
+    }
+
+    private static bool IsNearbyOnSameMap(LevelEntryPlayerSyncPayload sync, NearbyLevelPlayerSnapshot other)
+    {
+        if (!string.Equals(other.MapKey, sync.MapKey, StringComparison.Ordinal))
+            return false;
+
+        if (sync.IsGroupMap && !string.Equals(sync.PlayerGroup, other.Group, StringComparison.Ordinal))
+            return false;
+
+        return Math.Abs(other.MapX - sync.PlayerMapX) < 2 &&
+            Math.Abs(other.MapY - sync.PlayerMapY) < 2;
     }
 
     private static void QueuePacket(ClientSessionSkeleton session, byte[] packet)

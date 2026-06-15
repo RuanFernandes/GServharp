@@ -297,6 +297,120 @@ public sealed class SendLevelBoundaryTests
     }
 
     [Fact]
+    public void BeginModernQueuesNearbySameLevelPropsAndReturnsSelfPropBroadcastsWithoutMap()
+    {
+        var session = ReadyForLevelRuntimeSession();
+        var level = new ModernLevelPayload(
+            LevelName: "start.nw",
+            LevelModTime: 1,
+            BoardPacket: EmptyBoardPacket(),
+            Layers: [],
+            LinksPacket: [],
+            SignsPacket: [],
+            RuntimeContinuation: RuntimeContinuation(),
+            PlayerSync: new LevelEntryPlayerSyncPayload(
+                IsSingleplayer: false,
+                HasMapContext: false,
+                IsGroupMap: false,
+                MapKey: null,
+                PlayerGroup: null,
+                PlayerMapX: 0,
+                PlayerMapY: 0,
+                SelfPropsPacket: [1],
+                NearbyPlayers:
+                [
+                    new NearbyLevelPlayerSnapshot(7, true, true, null, null, 0, 0, [99]),
+                    new NearbyLevelPlayerSnapshot(8, true, true, null, null, 0, 0, [65]),
+                    new NearbyLevelPlayerSnapshot(9, false, true, null, null, 0, 0, [66]),
+                    new NearbyLevelPlayerSnapshot(10, true, false, null, null, 0, 0, [67])
+                ]));
+
+        var result = SendLevelBoundary.BeginModern(
+            session,
+            level,
+            new SendLevelRequest(RequestedModTime: 0, CachedLevelModTime: 1, FromAdjacent: false));
+
+        Assert.Equal(SendLevelStopPoint.BeforeRuntimeSimulation, result.StopPoint);
+        Assert.Equal(SessionLifecycle.LevelEntryPlayerPropsSynchronized, session.Lifecycle);
+        var broadcast = Assert.Single(result.Broadcasts!);
+        Assert.Equal(8, broadcast.PlayerId);
+        Assert.Equal(new byte[] { 1, 10 }, broadcast.Packet);
+        AssertEndsWith(new byte[] { 65, 10, 66, 10 }, session.TakeOutboundBytes());
+    }
+
+    [Fact]
+    public void BeginModernFiltersNearbyPropsByGmapAreaAndGroup()
+    {
+        var session = ReadyForLevelRuntimeSession();
+        var level = new ModernLevelPayload(
+            LevelName: "inside.nw",
+            LevelModTime: 1,
+            BoardPacket: EmptyBoardPacket(),
+            Layers: [],
+            LinksPacket: [],
+            SignsPacket: [],
+            RuntimeContinuation: RuntimeContinuation("world.gmap"),
+            PlayerSync: new LevelEntryPlayerSyncPayload(
+                IsSingleplayer: false,
+                HasMapContext: true,
+                IsGroupMap: true,
+                MapKey: "world.gmap",
+                PlayerGroup: "red",
+                PlayerMapX: 4,
+                PlayerMapY: 4,
+                SelfPropsPacket: [1],
+                NearbyPlayers:
+                [
+                    new NearbyLevelPlayerSnapshot(8, true, false, "world.gmap", "red", 5, 4, [65]),
+                    new NearbyLevelPlayerSnapshot(9, true, false, "world.gmap", "blue", 5, 4, [66]),
+                    new NearbyLevelPlayerSnapshot(10, true, false, "world.gmap", "red", 6, 4, [67]),
+                    new NearbyLevelPlayerSnapshot(11, true, false, "other.gmap", "red", 4, 4, [68])
+                ]));
+
+        var result = SendLevelBoundary.BeginModern(
+            session,
+            level,
+            new SendLevelRequest(RequestedModTime: 0, CachedLevelModTime: 1, FromAdjacent: false));
+
+        var broadcast = Assert.Single(result.Broadcasts!);
+        Assert.Equal(8, broadcast.PlayerId);
+        Assert.Equal(new byte[] { 1, 10 }, broadcast.Packet);
+        AssertEndsWith(new byte[] { 65, 10 }, session.TakeOutboundBytes());
+    }
+
+    [Fact]
+    public void BeginModernSkipsNearbyPropsForSingleplayerLevel()
+    {
+        var session = ReadyForLevelRuntimeSession();
+        var level = new ModernLevelPayload(
+            LevelName: "start.nw",
+            LevelModTime: 1,
+            BoardPacket: EmptyBoardPacket(),
+            Layers: [],
+            LinksPacket: [],
+            SignsPacket: [],
+            RuntimeContinuation: RuntimeContinuation(),
+            PlayerSync: new LevelEntryPlayerSyncPayload(
+                IsSingleplayer: true,
+                HasMapContext: false,
+                IsGroupMap: false,
+                MapKey: null,
+                PlayerGroup: null,
+                PlayerMapX: 0,
+                PlayerMapY: 0,
+                SelfPropsPacket: [1],
+                NearbyPlayers: [new NearbyLevelPlayerSnapshot(8, true, true, null, null, 0, 0, [65])]));
+
+        var result = SendLevelBoundary.BeginModern(
+            session,
+            level,
+            new SendLevelRequest(RequestedModTime: 0, CachedLevelModTime: 1, FromAdjacent: false));
+
+        Assert.Empty(result.Broadcasts!);
+        Assert.DoesNotContain((byte)65, session.TakeOutboundBytes());
+    }
+
+    [Fact]
     public void BeginModernSkipsStaticLevelPayloadWhenCachedModTimeIsKnown()
     {
         var session = ReadyForLevelRuntimeSession();
@@ -361,6 +475,15 @@ public sealed class SendLevelBoundaryTests
         return board;
     }
 
+    private static LevelRuntimeContinuationPayload RuntimeContinuation(string? gmapName = null) =>
+        new(
+            GmapName: gmapName,
+            HasMapContext: gmapName is not null,
+            IsLevelLeader: false,
+            IsSingleplayer: false,
+            NewWorldTime: 1,
+            NpcsPacket: []);
+
     private static byte[] BoardChangePayload(byte x, byte y, byte width, byte height, byte[] tiles)
     {
         var writer = new GraalBinaryWriter();
@@ -370,6 +493,12 @@ public sealed class SendLevelBoundaryTests
         writer.WriteGChar(height);
         writer.WriteBytes(tiles);
         return writer.ToArray();
+    }
+
+    private static void AssertEndsWith(byte[] expectedSuffix, byte[] actual)
+    {
+        Assert.True(actual.Length >= expectedSuffix.Length);
+        Assert.Equal(expectedSuffix, actual[^expectedSuffix.Length..]);
     }
 
     private static PostLoginPlayerSnapshot BaseSnapshot()

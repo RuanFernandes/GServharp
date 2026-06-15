@@ -64,10 +64,45 @@ on account/player state. Values may be empty/default depending on loaded account
 data, but the property IDs above are still emitted by `sendProps` for matching
 client-version windows.
 
+## __getLogin
+
+`__getLogin` is an 83-entry boolean table in `Player.cpp`. It is used by
+`Player::getProps` during level-entry player visibility sync.
+
+Confirmed true property IDs:
+
+```txt
+0,8,9,10,11,12,13,15,16,17,18,19,20,21,24,30,31,32,34,35,36,
+37,38,39,40,41,43,44,45,46,47,48,49,50,53,54,55,56,57,58,59,
+60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,78,79,80,82
+```
+
+`Player::getProps` wraps the payload as:
+
+```txt
+GCHAR PLO_OTHERPLPROPS
+GSHORT playerId
+```
+
+Then, when `PLPROP_JOINLEAVELVL` is enabled for clients, it injects:
+
+```txt
+GCHAR PLPROP_JOINLEAVELVL
+GCHAR 1
+```
+
+before iterating the table. The normal ascending loop skips
+`PLPROP_JOINLEAVELVL`.
+
+The C# `GetLoginPropertySet.All` locks this exact order, and
+`PlayerPropertySerializer.BuildOtherPlayerPropsPacket` emits the confirmed
+`PLO_OTHERPLPROPS` wrapper.
+
 ## Confirmed Serializer Subset
 
 The C# `PlayerPropertySerializer` implements source-confirmed encodings for the
-`__sendLogin` set and other previously confirmed supporting properties.
+`__sendLogin` and `__getLogin` sets and other previously confirmed supporting
+properties.
 
 Examples:
 
@@ -77,7 +112,12 @@ Examples:
 - `PLPROP_SWORDPOWER`: `GCHAR (swordPower + 30)`, `GCHAR swordImage.length`, raw sword image bytes
 - `PLPROP_CURLEVEL`: `GCHAR levelName.length`, raw level name bytes for the non-GMAP/non-singleplayer fixture path
 - `PLPROP_IPADDR`: `GINT5 accountIp`
+- `PLPROP_UDPPORT`: `GINT udpPort`
 - `PLPROP_ACCOUNTNAME`: `GCHAR accountName.length`, raw account name bytes
+- `PLPROP_GMAPLEVELX/Y`: `GCHAR level gmap coordinate`
+- `PLPROP_Z`: clamped `GCHAR ((z / 8) + 50)` with C++ range limits
+- `PLPROP_X2/Y2/Z2`: signed Graal short coordinate encoding from C++ `writeGShort`
+- `PLPROP_PCONNECTED` and `PLPROP_UNKNOWN81`: property id only, no value bytes
 
 The serializer takes explicit property IDs and sorts them ascending to match `sendProps`.
 
@@ -89,7 +129,6 @@ The serializer takes explicit property IDs and sorts them ascending to match `se
 
 ## Current Pass Status
 
-No new player property IDs or encodings were added in the `sendLevel`
-static-payload pass. Player property forwarding occurs later in `sendLevel`
-after active-level/NPC packets, when nearby player props are sent. That remains
-blocked on level runtime/player-list behavior.
+The C# port now supports the `__getLogin` table and `PLO_OTHERPLPROPS` packet
+builder needed by the modern `sendLevel` tail. Live player-list ownership and
+actual multi-session forwarding are still modeled through explicit snapshots.

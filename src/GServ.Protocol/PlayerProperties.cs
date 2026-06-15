@@ -35,6 +35,7 @@ public enum PlayerPropertyId : byte
     DeathsCount = 28,
     OnlineSeconds = 29,
     IpAddress = 30,
+    UdpPort = 31,
     Alignment = 32,
     AdditionalFlags = 33,
     AccountName = 34,
@@ -45,10 +46,18 @@ public enum PlayerPropertyId : byte
     GAttrib3 = 39,
     GAttrib4 = 40,
     GAttrib5 = 41,
+    AttachNpc = 42,
+    GmapLevelX = 43,
+    GmapLevelY = 44,
+    Z = 45,
     GAttrib6 = 46,
     GAttrib7 = 47,
     GAttrib8 = 48,
     GAttrib9 = 49,
+    JoinLeaveLevel = 50,
+    PlayerConnected = 51,
+    PlayerLanguage = 52,
+    PlayerStatusMessage = 53,
     GAttrib10 = 54,
     GAttrib11 = 55,
     GAttrib12 = 56,
@@ -72,6 +81,10 @@ public enum PlayerPropertyId : byte
     GAttrib30 = 74,
     OsType = 75,
     TextCodePage = 76,
+    X2 = 78,
+    Y2 = 79,
+    Z2 = 80,
+    Unknown81 = 81,
     CommunityName = 82
 }
 
@@ -116,7 +129,13 @@ public sealed record PlayerPropertySource(
     IReadOnlyDictionary<int, string> GaniAttributes,
     string Os,
     uint TextCodePage,
-    string CommunityName);
+    string CommunityName,
+    short Z = 0,
+    uint UdpPort = 0,
+    byte GmapLevelX = 0,
+    byte GmapLevelY = 0,
+    byte StatusMessage = 0,
+    string Language = "English");
 
 public static class SendLoginPropertySet
 {
@@ -184,6 +203,79 @@ public static class SendLoginPropertySet
         preClient21 ? PreClient21 : All;
 }
 
+public static class GetLoginPropertySet
+{
+    public static readonly IReadOnlyList<PlayerPropertyId> All =
+    [
+        PlayerPropertyId.Nickname,
+        PlayerPropertyId.SwordPower,
+        PlayerPropertyId.ShieldPower,
+        PlayerPropertyId.Gani,
+        PlayerPropertyId.HeadGif,
+        PlayerPropertyId.CurrentChat,
+        PlayerPropertyId.Colors,
+        PlayerPropertyId.X,
+        PlayerPropertyId.Y,
+        PlayerPropertyId.Sprite,
+        PlayerPropertyId.Status,
+        PlayerPropertyId.CarrySprite,
+        PlayerPropertyId.CurrentLevel,
+        PlayerPropertyId.HorseGif,
+        PlayerPropertyId.CarryNpc,
+        PlayerPropertyId.IpAddress,
+        PlayerPropertyId.UdpPort,
+        PlayerPropertyId.Alignment,
+        PlayerPropertyId.AccountName,
+        PlayerPropertyId.BodyImage,
+        PlayerPropertyId.Rating,
+        PlayerPropertyId.GAttrib1,
+        PlayerPropertyId.GAttrib2,
+        PlayerPropertyId.GAttrib3,
+        PlayerPropertyId.GAttrib4,
+        PlayerPropertyId.GAttrib5,
+        PlayerPropertyId.GmapLevelX,
+        PlayerPropertyId.GmapLevelY,
+        PlayerPropertyId.Z,
+        PlayerPropertyId.GAttrib6,
+        PlayerPropertyId.GAttrib7,
+        PlayerPropertyId.GAttrib8,
+        PlayerPropertyId.GAttrib9,
+        PlayerPropertyId.JoinLeaveLevel,
+        PlayerPropertyId.PlayerStatusMessage,
+        PlayerPropertyId.GAttrib10,
+        PlayerPropertyId.GAttrib11,
+        PlayerPropertyId.GAttrib12,
+        PlayerPropertyId.GAttrib13,
+        PlayerPropertyId.GAttrib14,
+        PlayerPropertyId.GAttrib15,
+        PlayerPropertyId.GAttrib16,
+        PlayerPropertyId.GAttrib17,
+        PlayerPropertyId.GAttrib18,
+        PlayerPropertyId.GAttrib19,
+        PlayerPropertyId.GAttrib20,
+        PlayerPropertyId.GAttrib21,
+        PlayerPropertyId.GAttrib22,
+        PlayerPropertyId.GAttrib23,
+        PlayerPropertyId.GAttrib24,
+        PlayerPropertyId.GAttrib25,
+        PlayerPropertyId.GAttrib26,
+        PlayerPropertyId.GAttrib27,
+        PlayerPropertyId.GAttrib28,
+        PlayerPropertyId.GAttrib29,
+        PlayerPropertyId.GAttrib30,
+        PlayerPropertyId.X2,
+        PlayerPropertyId.Y2,
+        PlayerPropertyId.Z2,
+        PlayerPropertyId.CommunityName
+    ];
+
+    private static readonly IReadOnlyList<PlayerPropertyId> PreClient21 =
+        All.Where(id => (byte)id < 37).ToArray();
+
+    public static IReadOnlyList<PlayerPropertyId> ForClient(bool preClient21) =>
+        preClient21 ? PreClient21 : All;
+}
+
 public static class PlayerPropertySerializer
 {
     private static readonly int[] AttributePropertyIds =
@@ -207,10 +299,49 @@ public static class PlayerPropertySerializer
         return writer.ToArray();
     }
 
+    public static byte[] SerializeOtherPlayerPropsPayload(
+        PlayerPropertySource source,
+        IEnumerable<PlayerPropertyId> propertyIds)
+    {
+        var ordered = propertyIds.Distinct().OrderBy(id => (byte)id).ToArray();
+        var writer = new GraalBinaryWriter();
+
+        if (ordered.Contains(PlayerPropertyId.JoinLeaveLevel))
+        {
+            writer.WriteGChar((byte)PlayerPropertyId.JoinLeaveLevel);
+            writer.WriteGChar(1);
+        }
+
+        foreach (var propertyId in ordered)
+        {
+            if (propertyId == PlayerPropertyId.JoinLeaveLevel)
+                continue;
+
+            writer.WriteGChar((byte)propertyId);
+            WritePropertyValue(writer, source, propertyId);
+        }
+
+        return writer.ToArray();
+    }
+
     public static byte[] BuildPlayerPropsPacket(ReadOnlySpan<byte> propertyPayload, bool appendNewline = false)
     {
         var writer = new GraalBinaryWriter();
         writer.WriteGChar((byte)ServerToPlayerPacketId.PlayerProps);
+        writer.WriteBytes(propertyPayload);
+        if (appendNewline)
+            writer.WriteByte((byte)'\n');
+        return writer.ToArray();
+    }
+
+    public static byte[] BuildOtherPlayerPropsPacket(
+        ushort playerId,
+        ReadOnlySpan<byte> propertyPayload,
+        bool appendNewline = false)
+    {
+        var writer = new GraalBinaryWriter();
+        writer.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        writer.WriteGShort(playerId);
         writer.WriteBytes(propertyPayload);
         if (appendNewline)
             writer.WriteByte((byte)'\n');
@@ -315,6 +446,9 @@ public static class PlayerPropertySerializer
             case PlayerPropertyId.IpAddress:
                 writer.WriteGInt5(source.AccountIp);
                 return;
+            case PlayerPropertyId.UdpPort:
+                writer.WriteGInt(source.UdpPort);
+                return;
             case PlayerPropertyId.Alignment:
                 writer.WriteGChar(source.Alignment);
                 return;
@@ -330,11 +464,47 @@ public static class PlayerPropertySerializer
             case PlayerPropertyId.Rating:
                 writer.WriteGInt((uint)(((source.EloRating & 0xFFF) << 9) | (source.EloDeviation & 0x1FF)));
                 return;
+            case PlayerPropertyId.AttachNpc:
+                writer.WriteGChar(0);
+                writer.WriteGInt((uint)source.CarryNpcId);
+                return;
+            case PlayerPropertyId.GmapLevelX:
+                writer.WriteGChar(source.GmapLevelX);
+                return;
+            case PlayerPropertyId.GmapLevelY:
+                writer.WriteGChar(source.GmapLevelY);
+                return;
+            case PlayerPropertyId.Z:
+                writer.WriteGChar((byte)(Math.Min(85 * 2, Math.Max(-25 * 2, source.Z / 8)) + 50));
+                return;
+            case PlayerPropertyId.JoinLeaveLevel:
+                writer.WriteGChar(1);
+                return;
+            case PlayerPropertyId.PlayerConnected:
+                return;
+            case PlayerPropertyId.PlayerLanguage:
+                WriteGCharString(writer, source.Language);
+                return;
+            case PlayerPropertyId.PlayerStatusMessage:
+                writer.WriteGChar(source.StatusMessage);
+                return;
             case PlayerPropertyId.OsType:
                 WriteGCharString(writer, source.Os);
                 return;
             case PlayerPropertyId.TextCodePage:
                 writer.WriteGInt(source.TextCodePage);
+                return;
+            case PlayerPropertyId.X2:
+                WriteSignedRawCoordinate(writer, source.X);
+                return;
+            case PlayerPropertyId.Y2:
+                WriteSignedRawCoordinate(writer, source.Y);
+                return;
+            case PlayerPropertyId.Z2:
+                var z = Math.Min(85 * 16, Math.Max(-25 * 16, (int)source.Z));
+                WriteSignedRawCoordinate(writer, z);
+                return;
+            case PlayerPropertyId.Unknown81:
                 return;
             case PlayerPropertyId.CommunityName:
                 WriteGCharString(writer, source.CommunityName);
@@ -363,5 +533,13 @@ public static class PlayerPropertySerializer
     {
         writer.WriteGChar((byte)value.Length);
         writer.WriteBytes(Encoding.ASCII.GetBytes(value));
+    }
+
+    private static void WriteSignedRawCoordinate(GraalBinaryWriter writer, int value)
+    {
+        var output = (ushort)(Math.Abs(value) << 1);
+        if (value < 0)
+            output |= 0x0001;
+        writer.WriteGShort(output);
     }
 }

@@ -12,6 +12,7 @@ public enum SessionLifecycle
     LevelPayloadSent,
     DynamicLevelPayloadSent,
     LevelRuntimePacketsSent,
+    LevelEntryPlayerPropsSynchronized,
     Authenticated,
     Rejected,
     Disconnecting,

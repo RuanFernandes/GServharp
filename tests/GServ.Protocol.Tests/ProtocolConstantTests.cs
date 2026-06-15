@@ -16,6 +16,7 @@ public sealed class ProtocolConstantTests
         Assert.Equal(4, (int)ServerToPlayerPacketId.LevelChest);
         Assert.Equal(6, (int)ServerToPlayerPacketId.LevelName);
         Assert.Equal(7, (int)ServerToPlayerPacketId.BoardModify);
+        Assert.Equal(8, (int)ServerToPlayerPacketId.OtherPlayerProps);
         Assert.Equal(9, (int)ServerToPlayerPacketId.PlayerProps);
         Assert.Equal(10, (int)ServerToPlayerPacketId.IsLeader);
         Assert.Equal(17, (int)ServerToPlayerPacketId.HorseAdd);

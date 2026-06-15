@@ -20,107 +20,113 @@ Current status:
 * Login/session boundary exists.
 * Account loading boundary exists.
 * ReadyForLevelRuntime exists.
-* SendLevelBoundary exists for the modern static sendLevel slice.
-* Implemented safe modern sendLevel packets include:
+* SendLevelBoundary exists.
+* Modern static sendLevel slice exists.
+* Dynamic sendLevel boundary packets exist:
 
-  * PLO_LEVELNAME
-  * raw board/layers with PLO_RAWDATA
-  * PLO_LEVELMODTIME
-  * links/signs as already serialized payloads
-* Current stop point is before dynamic level runtime data:
+  * PLO_LEVELBOARD
+  * PLO_LEVELCHEST
+  * PLO_HORSEADD
+  * PLO_BADDYPROPS
+  * GMAP correction with PLO_LEVELNAME
+  * PLO_GHOSTICON
+  * PLO_ISLEADER
+  * PLO_NEWWORLDTIME
+  * PLO_SETACTIVELEVEL
+  * NPC payload as already serialized packet data
+* Session states exist:
 
-  * board changes
-  * chests
-  * horses
-  * baddies
-  * GMAP correction
-  * ghost icon
-  * world time
-  * active level
-  * NPC packets
-  * player props/forwarding
+  * DynamicLevelPayloadSent
+  * LevelRuntimePacketsSent
+* Tests are green.
 
 Now continue through these next safe milestones:
 
-# 1. Dynamic level packet builders
+# 1. Trace the remaining tail of sendLevel/level entry
 
-Trace and implement source-confirmed builders/DTOs for the next sendLevel dynamic packets.
+Trace what happens immediately after `PLO_SETACTIVELEVEL` and NPC payload forwarding.
 
 Focus on:
 
-* `Level::getBoardChangesPacket`
-* `Level::getChestPacket`
-* `Level::getHorsePacket`
-* `Level::getBaddyPacket`
-* Any packet IDs/opcodes involved
-* Exact field order
-* Exact encoding
-* Empty-list behavior
-* Packet ordering inside sendLevel
-* Version/client-type branches
-* Whether each packet is always sent or conditional
+* remaining player props sent around level entry
+* `sendProps(__getLogin)` or equivalent in this context
+* forwarding of nearby player props
+* GMAP/group-map filtering
+* player visibility/filtering rules
+* player list synchronization
+* any packet order after NPC payloads
+* any transition into true runtime/gameplay
+* exact stop point before full simulation
 
 Allowed:
 
-* Add isolated DTOs/snapshots for board changes, chests, horses, and baddies.
-* Add packet builders with exact byte tests.
-* Integrate into SendLevelBoundary only when packet order and branch conditions are confirmed.
-* Add golden fixtures for empty and small non-empty cases where source-confirmed.
+* Add source-confirmed packet builders.
+* Add DTOs/snapshots for nearby player/player-list data.
+* Add tests/golden fixtures for exact bytes and ordering.
+* Add new session state only when the source boundary is clear.
 
 Not allowed:
 
-* Do not implement runtime behavior of board changes, chest opening, horse movement, or baddy AI.
-* Do not implement NPC logic.
-* Do not execute scripts.
-* Do not invent default values.
-* Do not approximate field encoding.
+* Do not implement actual player movement/runtime.
+* Do not implement combat/inventory/NPC AI/scripts.
+* Do not invent nearby player defaults.
+* Do not approximate filtering rules.
+* Do not send packet bytes unless confirmed.
 
-# 2. Continue sendLevel packet order after dynamic data
+# 2. Player props for level-entry context
 
-Trace the next confirmed packets after board changes/chests/horses/baddies.
+Trace and implement only the player properties required by the level-entry tail.
 
 Focus on:
 
-* GMAP correction
-* PLO_GHOSTICON
-* PLO_NEWWORLDTIME
-* PLO_SETACTIVELEVEL
-* any player props resent around level entry
-* any file/resource transfer packets
-* exact ordering relative to dynamic packets
+* `sendProps(__getLogin)` or related prop tables
+* property set/order
+* getProp formatting for required fields
+* current level
+* x/y
+* direction
+* nickname/account
+* animation/gani
+* body/head/sword/shield/colors
+* AP, status, guild/nick fields if sent here
+* version-specific behavior
 
 Allowed:
 
-* Implement only confirmed packet builders/ordering.
-* Add session state if a new safe boundary is reached.
-* Add tests for exact packet order.
+* Add confirmed prop sets/tables.
+* Expand `PlayerPropertySerializer` only for confirmed fields.
+* Add golden byte fixtures.
+* Keep unknown props blocked.
 
-# 3. Level/resource transfer and CFileQueue integration
+# 3. Nearby player forwarding/list sync
 
-If sendLevel uses file queue/resource transfer in this slice, expand `GraalFileQueue` only where byte-exact behavior is source-confirmed.
+Trace nearby player forwarding during level entry.
 
 Focus on:
 
-* rawdata/file queue packets
-* PLO_FILE
-* PLO_RAWDATA
-* compression flags
-* bundle behavior
-* encryption during flush
-* queue thresholds
+* which players are sent to the logging-in player
+* which props are sent for other players
+* which packet IDs are used
+* GMAP vs single-level filtering
+* hidden/invisible/staff conditions
+* version/client branches
+* order of players/properties
 
-Do not approximate compression/encryption/socket behavior.
+Allowed:
+
+* Add snapshot models and packet builders.
+* Add tests with deterministic small fixtures.
+* Stop before live runtime updates.
 
 # 4. Docs and tests
 
 Create/update docs:
 
 ```txt
-docs/spec/SENDLEVEL_DYNAMIC_PACKETS_SPEC.md
+docs/spec/SENDLEVEL_TAIL_SPEC.md
+docs/spec/PLAYER_PROPS_SPEC.md
+docs/spec/PLAYER_VISIBILITY_SYNC_SPEC.md
 docs/spec/SENDLEVEL_SPEC.md
-docs/spec/LEVEL_FILE_FORMAT_SPEC.md
-docs/spec/LEVEL_RESOURCE_SPEC.md
-docs/spec/CFILEQUEUE_FLUSH_SPEC.md
 docs/spec/GOLDEN_FIXTURES.md
 docs/spec/KNOWN_BLOCKERS.md
 ```

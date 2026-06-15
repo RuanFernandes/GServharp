@@ -19,6 +19,7 @@ public enum ServerToPlayerPacketId : byte
     LevelChest = 4,
     LevelName = 6,
     BoardModify = 7,
+    OtherPlayerProps = 8,
     PlayerProps = 9,
     IsLeader = 10,
     PlayerWarp = 14,

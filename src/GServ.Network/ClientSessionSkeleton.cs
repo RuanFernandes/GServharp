@@ -112,4 +112,9 @@ public sealed class ClientSessionSkeleton
     {
         Lifecycle = SessionLifecycle.LevelRuntimePacketsSent;
     }
+
+    internal void MarkLevelEntryPlayerPropsSynchronized()
+    {
+        Lifecycle = SessionLifecycle.LevelEntryPlayerPropsSynchronized;
+    }
 }

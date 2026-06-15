@@ -26,6 +26,7 @@ Confirmed packet IDs used in the C# foundation:
 | `PLO_LEVELCHEST` | server to client | 4 |
 | `PLO_LEVELNAME` | server to client | 6 |
 | `PLO_BOARDMODIFY` | server to client | 7 |
+| `PLO_OTHERPLPROPS` | server to client | 8 |
 | `PLO_PLAYERPROPS` | server to client | 9 |
 | `PLO_ISLEADER` | server to client | 10 |
 | `PLO_PLAYERWARP` | server to client | 14 |

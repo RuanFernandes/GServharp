@@ -20,8 +20,8 @@ else
 ```
 
 The current C# milestone implements the modern `sendLevel` path for
-`CLVER_2_1+` through the first post-dynamic runtime packets, then stops before
-nearby player prop forwarding.
+`CLVER_2_1+` through nearby player property synchronization, then stops before
+live runtime simulation.
 
 ## Modern sendLevel Order
 
@@ -90,11 +90,15 @@ Implemented:
 - `LevelHorsePayload`
 - `LevelBaddyPayload`
 - `LevelRuntimeContinuationPayload`
+- `LevelEntryPlayerSyncPayload`
+- `NearbyLevelPlayerSnapshot`
+- `LevelEntryBroadcast`
 - `SendLevelRequest`
 - `SendLevelBoundary.BeginModern`
 - `SessionLifecycle.LevelPayloadSent`
 - `SessionLifecycle.DynamicLevelPayloadSent`
 - `SessionLifecycle.LevelRuntimePacketsSent`
+- `SessionLifecycle.LevelEntryPlayerPropsSynchronized`
 
 The C# boundary queues:
 
@@ -113,10 +117,11 @@ The C# boundary queues:
 - `PLO_NEWWORLDTIME + GINT4(server.getNWTime())`
 - conditional `PLO_SETACTIVELEVEL`
 - optional pre-serialized NPC packet bytes
+- nearby player visibility sync using pre-serialized `PLO_OTHERPLPROPS` packets
 
-The boundary stops before nearby player prop forwarding. Runtime data that C#
-cannot yet compute safely is accepted only as already serialized/snapshotted
-input.
+The boundary stops after nearby player prop synchronization and before live
+movement/gameplay simulation. Runtime data that C# cannot yet compute safely is
+accepted only as already serialized/snapshotted input.
 
 Not implemented:
 
@@ -127,4 +132,4 @@ Not implemented:
 - links/signs builders from parsed level state
 - production horse and baddy runtime state
 - production NPC packet construction
-- nearby player prop forwarding
+- production multi-session socket forwarding

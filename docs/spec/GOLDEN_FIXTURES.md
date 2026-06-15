@@ -565,6 +565,71 @@ PLO_SETACTIVELEVEL "world.gmap"
     188, 119, 111, 114, 108, 100, 46, 103, 109, 97, 112, 10]
 ```
 
+## Level-Entry Player Props
+
+`PLO_OTHERPLPROPS` wrapper for `playerId=7` and a minimal payload containing
+`PLPROP_JOINLEAVELVL`, `PLPROP_NICKNAME`, and `PLPROP_X`:
+
+```txt
+PLO_OTHERPLPROPS
+GSHORT 7
+PLPROP_JOINLEAVELVL GCHAR(1)
+PLPROP_NICKNAME GCHAR(4) "Ruan"
+PLPROP_X GCHAR(70)
+"\n"
+
+=> [40, 32, 39,
+    82, 33,
+    32, 36, 82, 117, 97, 110,
+    47, 102,
+    10]
+```
+
+Modern `sendLevel` no-map visibility tail fixture:
+
+```txt
+joining player id: 7
+self props packet: [1]
+same-level client 8 props: [65]
+same-level non-client 9 props: [66]
+outside-level client 10 props: [67]
+```
+
+Confirmed effects:
+
+```txt
+broadcasts to existing clients:
+  player 8 receives [1,10]
+
+joining player's outbound suffix:
+  [65,10,66,10]
+```
+
+The non-client appears in the joining player's no-map received list because the
+C++ no-map receive branch iterates `level->getPlayers()` and does not repeat the
+`isClient()` check there. Broadcast direction still uses
+`Server::sendPacketToLevelArea`, which checks `isClient()`.
+
+Modern GMAP/group-map visibility tail fixture:
+
+```txt
+joining player id: 7, map "world.gmap", group "red", map pos (4,4)
+player 8: same map, group "red", pos (5,4), props [65]
+player 9: same map, group "blue", pos (5,4), props [66]
+player 10: same map, group "red", pos (6,4), props [67]
+player 11: other map, group "red", pos (4,4), props [68]
+```
+
+Confirmed effects:
+
+```txt
+broadcasts:
+  player 8 receives [1,10]
+
+joining player's outbound suffix:
+  [65,10]
+```
+
 ## Server-List Auth
 
 ### SVO_VERIACC2
