@@ -118,6 +118,72 @@ public sealed record PlayerPropertySource(
     uint TextCodePage,
     string CommunityName);
 
+public static class SendLoginPropertySet
+{
+    public static readonly IReadOnlyList<PlayerPropertyId> All =
+    [
+        PlayerPropertyId.MaxPower,
+        PlayerPropertyId.CurrentPower,
+        PlayerPropertyId.RupeesCount,
+        PlayerPropertyId.ArrowsCount,
+        PlayerPropertyId.BombsCount,
+        PlayerPropertyId.GlovePower,
+        PlayerPropertyId.SwordPower,
+        PlayerPropertyId.ShieldPower,
+        PlayerPropertyId.Gani,
+        PlayerPropertyId.HeadGif,
+        PlayerPropertyId.Colors,
+        PlayerPropertyId.Sprite,
+        PlayerPropertyId.Status,
+        PlayerPropertyId.HorseGif,
+        PlayerPropertyId.HorseBushes,
+        PlayerPropertyId.EffectColors,
+        PlayerPropertyId.ApCounter,
+        PlayerPropertyId.MagicPoints,
+        PlayerPropertyId.Alignment,
+        PlayerPropertyId.AccountName,
+        PlayerPropertyId.BodyImage,
+        PlayerPropertyId.Rating,
+        PlayerPropertyId.GAttrib1,
+        PlayerPropertyId.GAttrib2,
+        PlayerPropertyId.GAttrib3,
+        PlayerPropertyId.GAttrib4,
+        PlayerPropertyId.GAttrib5,
+        PlayerPropertyId.GAttrib6,
+        PlayerPropertyId.GAttrib7,
+        PlayerPropertyId.GAttrib8,
+        PlayerPropertyId.GAttrib9,
+        PlayerPropertyId.GAttrib10,
+        PlayerPropertyId.GAttrib11,
+        PlayerPropertyId.GAttrib12,
+        PlayerPropertyId.GAttrib13,
+        PlayerPropertyId.GAttrib14,
+        PlayerPropertyId.GAttrib15,
+        PlayerPropertyId.GAttrib16,
+        PlayerPropertyId.GAttrib17,
+        PlayerPropertyId.GAttrib18,
+        PlayerPropertyId.GAttrib19,
+        PlayerPropertyId.GAttrib20,
+        PlayerPropertyId.GAttrib21,
+        PlayerPropertyId.GAttrib22,
+        PlayerPropertyId.GAttrib23,
+        PlayerPropertyId.GAttrib24,
+        PlayerPropertyId.GAttrib25,
+        PlayerPropertyId.GAttrib26,
+        PlayerPropertyId.GAttrib27,
+        PlayerPropertyId.GAttrib28,
+        PlayerPropertyId.GAttrib29,
+        PlayerPropertyId.GAttrib30,
+        PlayerPropertyId.CommunityName
+    ];
+
+    private static readonly IReadOnlyList<PlayerPropertyId> PreClient21 =
+        All.Where(id => (byte)id < 37).ToArray();
+
+    public static IReadOnlyList<PlayerPropertyId> ForClient(bool preClient21) =>
+        preClient21 ? PreClient21 : All;
+}
+
 public static class PlayerPropertySerializer
 {
     private static readonly int[] AttributePropertyIds =

@@ -6,6 +6,49 @@ namespace GServ.Protocol.Tests;
 public sealed class PlayerPropertySerializationTests
 {
     [Fact]
+    public void SendLoginPropertySetMatchesCppSendLoginTable()
+    {
+        Assert.Equal(
+            new byte[]
+            {
+                1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 17, 18, 21, 22, 23,
+                25, 26, 32, 34, 35, 36, 37, 38, 39, 40, 41, 46, 47, 48,
+                49, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66,
+                67, 68, 69, 70, 71, 72, 73, 74, 82
+            },
+            SendLoginPropertySet.All.Select(id => (byte)id).ToArray());
+    }
+
+    [Fact]
+    public void SendLoginPropertySetForPreClient21StopsBeforeProperty37()
+    {
+        Assert.Equal(
+            new byte[]
+            {
+                1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 17, 18, 21, 22, 23,
+                25, 26, 32, 34, 35, 36
+            },
+            SendLoginPropertySet.ForClient(preClient21: true).Select(id => (byte)id).ToArray());
+    }
+
+    [Fact]
+    public void SendLoginPropertySetForModernClientUsesAllCppLoginProperties()
+    {
+        Assert.Same(SendLoginPropertySet.All, SendLoginPropertySet.ForClient(preClient21: false));
+    }
+
+    [Fact]
+    public void CompleteSendLoginPropertySetSerializesFromExplicitSourceData()
+    {
+        var bytes = PlayerPropertySerializer.SerializeConfirmedLoginSubset(BaseSource(), SendLoginPropertySet.All);
+
+        Assert.Equal(new byte[] { 33, 35, 34, 40, 35, 32, 41, 114 }, bytes.Take(8).ToArray());
+        Assert.Equal(
+            new byte[] { 114, 36, (byte)'R', (byte)'u', (byte)'a', (byte)'n' },
+            bytes.Skip(bytes.Length - 6).ToArray());
+    }
+
+    [Fact]
     public void ConfirmedLoginSubsetUsesAscendingPropertyOrder()
     {
         var source = BaseSource();

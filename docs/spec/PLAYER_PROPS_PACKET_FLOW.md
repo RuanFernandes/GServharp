@@ -49,8 +49,17 @@ Wrapped packet with newline:
 
 `41` is `GCHAR PLO_PLAYERPROPS`.
 
+## `__sendLogin` Integration
+
+`SendLoginPropertySet.All` now represents the exact C++ `__sendLogin` true
+entries in emitted order. `SendLoginPropertySet.ForClient(preClient21: true)`
+matches `Player::sendProps` with `pCount = 37`.
+
+The serializer supports the confirmed `__sendLogin` IDs. Production use still
+requires real account/player values rather than invented defaults.
+
 ## Pre-Warp Login Integration
 
 The pre-warp login boundary now calls `PlayerPropertySerializer.SerializeConfirmedLoginSubset` instead of accepting arbitrary login prop bytes for the tested path.
 
-Full `__sendLogin` serialization remains blocked until all required property fields and version-specific branches are implemented.
+Full production `__sendLogin` emission remains blocked until account/default-account loading and version-specific branches are implemented.

@@ -43,41 +43,31 @@ This is important: many player properties use Graal-packed integers, not raw big
 
 `__sendLogin` is an 83-entry boolean table in `Player.cpp`. True entries are sent in ascending property ID order.
 
-Confirmed first entries:
+Confirmed true property IDs:
 
 ```txt
-0 false
-1 true
-2 true
-3 true
-4 true
-5 true
-6 true
-7 false
-8 true
-9 true
-10 true
-11 true
-12 false
-13 true
-14 false
-15 false
-16 false
-17 true
-18 true
-19 false
-20 false
-21 true
-22 true
-23 true
-...
+1,2,3,4,5,6,8,9,10,11,13,17,18,21,22,23,25,26,32,34,35,36,
+37,38,39,40,41,46,47,48,49,54,55,56,57,58,59,60,61,62,63,64,
+65,66,67,68,69,70,71,72,73,74,82
 ```
 
-The full table is documented from C++ but not yet fully implemented in C# because many fields depend on account/default loading, level/map state, client version, or gameplay state.
+The C# `SendLoginPropertySet.All` locks this exact order. For clients older than
+`CLVER_2_1`, `Player::sendProps` forces `pCount = 37`, so the emitted login set
+is the same true table filtered to property IDs `< 37`:
+
+```txt
+1,2,3,4,5,6,8,9,10,11,13,17,18,21,22,23,25,26,32,34,35,36
+```
+
+The `__sendLogin` table does not dynamically skip individual true entries based
+on account/player state. Values may be empty/default depending on loaded account
+data, but the property IDs above are still emitted by `sendProps` for matching
+client-version windows.
 
 ## Confirmed Serializer Subset
 
-The C# `PlayerPropertySerializer` implements source-confirmed encodings for a safe subset of `getProp`.
+The C# `PlayerPropertySerializer` implements source-confirmed encodings for the
+`__sendLogin` set and other previously confirmed supporting properties.
 
 Examples:
 

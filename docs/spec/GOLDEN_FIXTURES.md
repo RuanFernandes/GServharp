@@ -146,6 +146,31 @@ Notes:
 
 ## Player Property Serialization
 
+### `__sendLogin` Property ID Table
+
+C++ source:
+
+```txt
+ai_resources/GServer-CPP-ORIGINAL/server/src/player/Player.cpp::__sendLogin
+ai_resources/GServer-CPP-ORIGINAL/server/src/player/PlayerProps.cpp::sendProps
+```
+
+The true property IDs emitted by `sendProps(__sendLogin)` are:
+
+```txt
+[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 17, 18, 21, 22, 23,
+ 25, 26, 32, 34, 35, 36, 37, 38, 39, 40, 41, 46, 47, 48,
+ 49, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66,
+ 67, 68, 69, 70, 71, 72, 73, 74, 82]
+```
+
+For clients older than `CLVER_2_1`, `sendProps` forces `pCount = 37`, yielding:
+
+```txt
+[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 13, 17, 18, 21, 22, 23,
+ 25, 26, 32, 34, 35, 36]
+```
+
 ### Confirmed Login Subset Payload
 
 Input:
