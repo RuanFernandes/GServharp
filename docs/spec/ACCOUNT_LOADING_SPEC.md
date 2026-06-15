@@ -78,9 +78,13 @@ fields.
 
 ## C# Boundary
 
-The C# implementation now includes a pure `AccountFileParser` for confirmed
-`GRACC001` content. It intentionally does not resolve account paths, fall back
-to `defaultaccount.txt`, save newly created accounts, or perform guest RNG.
+The C# implementation now includes:
+
+- a pure `AccountFileParser` for confirmed `GRACC001` content
+- an `AccountLoadService` boundary that mirrors the confirmed first part of
+  `Account::loadAccount`
+- `IAccountFileSystem` and `IAccountLoadSettings` abstractions so production
+  path lookup/settings can be added without inventing account persistence
 
 Confirmed parser behavior:
 
@@ -97,10 +101,36 @@ Confirmed parser behavior:
 - Set non-guest `COMMUNITYNAME` to the account name after parsing, matching the
   C++ override near the end of `loadAccount`.
 
+Confirmed resolver behavior:
+
+- Look up `pAccount + ".txt"` through a case-insensitive account filesystem
+  method matching `FileSystem::findi`.
+- If lookup fails, read `<serverPath>/accounts/defaultaccount.txt` and mark the
+  result as loaded from default.
+- Reject missing/unreadable/malformed resolved content with no save/add
+  side-effect request.
+- When loaded from default, apply `startlevel`, `startx`, and `starty` settings
+  only when each key exists, matching the guarded C++ checks.
+- Convert `startx`/`starty` to internal pixel coordinates through the same
+  `float * 16` truncation boundary used by `setX`/`setY`.
+- When loaded from default and the parsed account is not `LOADONLY`, return a
+  source-confirmed request to save the newly created account and add
+  `accounts/<pAccount>.txt` to the account filesystem.
+- Do not perform the real disk write yet. The exact `saveAccount` output/order is
+  traced, but production persistence writes are still a separate milestone.
+- For `guest`, force `IsLoadOnly = true` and mark guest identity generation as
+  required. The random `pc:` name selection itself remains blocked on the
+  connected-player repository and C++ RNG timing behavior.
+
 ## Blockers
 
-- Exact `FileSystem::findi`, path canonicalization, and account filesystem
-  refresh behavior still need a dedicated persistence pass.
-- Guest account randomization uses `srand(time(0))` and connected-player checks.
-- Production account loading still needs default-account fallback and
-  save-on-first-load side effects.
+- Exact production filesystem scan/resync behavior is still not implemented.
+  The C# boundary models only the confirmed `findi` contract needed by account
+  loading.
+- Guest account randomization uses `srand(time(0))`, `(rand() * rand()) %
+  9999999`, six-character truncation, and connected-player uniqueness checks.
+  C# must not invent this until the player repository and RNG compatibility
+  boundary are designed.
+- Production account loading now exposes the default-account save/add side
+  effect request, but real `saveAccount` disk output is not wired to production
+  storage yet.

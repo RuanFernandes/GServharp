@@ -13,131 +13,134 @@ Do not modify anything inside `ai_resources/`.
 
 Do not invent behavior.
 
-Do not implement gameplay unless it is required for a source-confirmed boundary and can be isolated safely behind interfaces/tests.
-
 If something is unclear, document it as unknown and continue with the next safe task.
 
-Work autonomously through the next safest milestones, in this priority order:
+Current status:
 
-# 1. Account loading and player defaults
+* AccountFileParser exists for source-confirmed GRACC001 parsing.
+* GraalFileQueue exists for confirmed passthrough behavior.
+* WarpPackets exists for confirmed warp packet builders.
+* ReadyForLevelWarp boundary exists.
+* Tests are green.
 
-Trace and implement only source-confirmed account/player loading behavior needed before world entry.
+Now continue through these next safe milestones:
+
+# 1. Production account file resolution
+
+Trace and implement the production account file resolution boundary only where source-confirmed.
 
 Focus on:
 
-* Account.cpp / Account.h
-* FileSystem or database/file access used by account loading
-* defaultaccount behavior
+* `FileSystem::findi`
+* account path lookup
+* account filename normalization
+* fallback to `defaultaccount.txt`
+* startlevel/startx/starty overrides
+* guest account behavior if source-confirmed
 * missing account behavior
 * malformed account behavior
-* member default values
-* account fields used by login props
-* player ID, account name, nickname
-* power/maxpower
-* level name
-* x/y position
-* rights/admin/RC/NC flags
-* banned status
-* staff-only/admin-IP behavior
-* save/load side effects
+* side effect of saving/adding account when loaded from default
+* exact behavior when account exists but fields are missing
+* exact behavior when account is banned/staff/admin/RC/NC
 
 Allowed:
 
-* Implement production account parsing only if exact file format and behavior are fully confirmed.
-* Otherwise create interfaces/DTOs and test-only fakes.
-* Add tests for confirmed defaults and parsing behavior.
-* Document blockers clearly.
+* Add filesystem abstraction/interfaces.
+* Add a source-confirmed account resolver service.
+* Add test-only in-memory filesystem.
+* Add tests for exact lookup/fallback behavior.
+* Add docs and golden fixtures where relevant.
+* Implement production parsing only if exact behavior is confirmed.
 
-# 2. Complete player property serialization
+Not allowed:
 
-Continue expanding `PlayerPropertySerializer` using only confirmed `PlayerProps.cpp` behavior.
+* Do not invent filesystem paths or defaults.
+* Do not invent guest RNG behavior.
+* Do not implement real persistence writes unless exact C++ behavior is traced.
+* Do not fake production auth behavior.
 
-Focus on:
+# 2. Complete CFileQueue behavior in source-confirmed layers
 
-* remaining `__sendLogin` properties
-* getProp formatting
-* property-specific encoding
-* version-specific behavior
-* empty/default behavior
-* account/player fields required by each prop
-
-Allowed:
-
-* Add confirmed properties in small groups.
-* Add golden byte fixtures.
-* Add tests for property order and exact bytes.
-* Keep blocked properties explicitly documented.
-
-# 3. CFileQueue/socket flush byte compatibility
-
-Implement source-confirmed send queue behavior needed to turn queued packets into socket bytes.
+Expand GraalFileQueue only where exact C++/gs2lib behavior is confirmed.
 
 Focus on:
 
-* CFileQueue.cpp / CFileQueue.h
-* CSocket.cpp / CSocket.h
-* packet queue order
-* bundle behavior
-* newline behavior
-* compression thresholds
+* queue thresholds
+* compression trigger behavior
 * compression flags
 * encryption during flush
-* partial socket writes
+* socket write partial behavior
 * websocket behavior if present
+* raw-data/file-transfer queue behavior
+* board/file routing
+* exact byte output for confirmed cases
 
 Allowed:
 
-* Implement uncompressed confirmed flush behavior first.
-* Add compression/encryption only with byte-exact confirmed tests.
-* Add golden fixtures for exact byte output.
+* Add tests for uncompressed and confirmed compressed cases.
+* Add golden fixtures.
+* Keep unsupported compression/encryption/websocket cases documented as blocked if not byte-confirmed.
 
-# 4. Warp/world-entry boundary
+Do not approximate compression or socket flushing.
 
-Trace `warp(...)`, `setLevel(...)`, and first world-entry packets.
+# 3. Warp/setLevel boundary and level resource packets
+
+Trace `warp(...)`, `setLevel(...)`, `sendLevel`, and related file/resource packet builders.
 
 Stop before full gameplay simulation.
 
 Focus on:
 
-* first packets sent during warp
-* level file/resource transfer
-* player position serialization
-* level name behavior
-* map/single-level differences
-* when NPC/script/runtime behavior begins
-* which packet builders are needed before runtime
+* first packet sequence after warp
+* level name handling
+* coordinate handling
+* map vs single-level behavior
+* level file lookup
+* level data transfer packets
+* file/resource transfer packets
+* PLO_LEVELNAME, PLO_PLAYERWARP, PLO_PLAYERWARP2, PLO_WARPFAILED usage
+* where NPC/script/runtime behavior starts
 
 Allowed:
 
-* Implement packet builders if byte structure is confirmed.
-* Add interfaces/stubs for level/resource providers.
-* Add golden fixtures.
-* Do not implement full level runtime yet.
+* Implement confirmed level/resource packet builders.
+* Add interfaces/stubs for level/resource provider.
+* Add tests for exact packet bytes.
+* Add docs for the boundary.
 
-# 5. Scripting system research
+Not allowed:
 
-If scripting becomes required by world-entry behavior, analyze it before implementing.
+* Do not implement full level runtime.
+* Do not implement NPC logic.
+* Do not execute scripts.
+* Do not invent level file format behavior.
+
+# 4. Continue player property expansion only where safe
+
+Expand player properties only when backed by Account.cpp / PlayerProps.cpp / confirmed defaults.
 
 Focus on:
 
-* script manager
-* script loading
-* exposed APIs
-* player/NPC/level hooks
-* login/warp-related hooks
-* side effects during login/world entry
+* properties required before/around warp
+* nickname/account/level/position properties
+* movement-relevant props
+* version-specific props
+* blocked props list
 
-Do not implement a full scripting runtime unless a compatibility strategy is documented and approved.
+Add tests for exact bytes.
 
-# 6. Tests and docs
+# 5. Docs, tests, report
 
-For every confirmed behavior:
+Update docs:
 
-* Add or update docs under `docs/spec/`
-* Add golden fixtures where possible
-* Add unit tests
-* Keep blockers updated
-* Keep unknowns explicit
+```txt
+docs/spec/ACCOUNT_LOADING_SPEC.md
+docs/spec/CFILEQUEUE_FLUSH_SPEC.md
+docs/spec/WARP_WORLD_ENTRY_SPEC.md
+docs/spec/PLAYER_PROPS_SPEC.md
+docs/spec/GOLDEN_FIXTURES.md
+docs/spec/KNOWN_BLOCKERS.md
+```
 
 Run:
 

@@ -97,3 +97,9 @@ builders:
 Golden bytes for the isolated packet bodies are documented in
 `docs/spec/GOLDEN_FIXTURES.md`. Runtime ordering and level data bytes remain
 deferred until level packet fixtures are introduced.
+
+## Current Pass Status
+
+No new warp/setLevel runtime behavior was implemented in the account-loading
+pass. The C# server still stops at `ReadyForLevelWarp` before entering
+`warp(m_levelName, getX(), getY())`.

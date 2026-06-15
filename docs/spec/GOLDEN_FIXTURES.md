@@ -291,6 +291,54 @@ first send max 3 => ASCII("abc")
 next send => ASCII("def\n")
 ```
 
+## Account Loading Fixtures
+
+These fixtures assert state transitions and persistence side-effect requests,
+not network bytes.
+
+Existing account lookup:
+
+```txt
+input account: "pc-ruan"
+account fs findi: "pc-ruan.txt" => "C:\gserver\accounts\PC-Ruan.TXT"
+file header: GRACC001
+result: LoadedFromDefault=false, SourcePath="C:\gserver\accounts\PC-Ruan.TXT"
+result: ShouldSaveCreatedAccount=false
+```
+
+Missing account fallback:
+
+```txt
+input account: "NewAccount"
+account fs findi: "NewAccount.txt" => empty
+fallback path: "C:\gserver\accounts\defaultaccount.txt"
+settings: startlevel=onlinestartlocal.nw, startx=30, starty=30.5
+result: LoadedFromDefault=true
+result level: onlinestartlocal.nw
+result pixel x/y: 480, 488
+result: ShouldSaveCreatedAccount=true
+result: AccountFileToAdd="accounts/NewAccount.txt"
+```
+
+Load-only fallback:
+
+```txt
+fallback account contains: LOADONLY 1
+result: ShouldSaveCreatedAccount=false
+result: AccountFileToAdd=null
+```
+
+Guest account boundary:
+
+```txt
+input account: "guest"
+result: IsLoadOnly=true
+result: RequiresGuestIdentityGeneration=true
+```
+
+The exact random `pc:` guest identity is not a golden fixture yet because it
+depends on `srand(time(0))`, C `rand()`, and connected-player uniqueness checks.
+
 ## Warp Packet Bodies
 
 These are packet bodies before `Player::sendPacket` newline append and before

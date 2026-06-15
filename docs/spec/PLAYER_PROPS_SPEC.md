@@ -86,3 +86,10 @@ The serializer takes explicit property IDs and sorts them ascending to match `se
 `getProp` itself is serialization only for the confirmed subset. Side effects are outside this milestone.
 
 `setProps` can mutate gameplay/account state and forward packets; it was traced only to understand serialization conventions and is not implemented.
+
+## Current Pass Status
+
+No new player property IDs or encodings were added in the account-loading pass.
+The new `AccountLoadService` provides source-confirmed account/default-account
+data needed by existing property serialization, but property expansion remains
+limited to the confirmed subset above.

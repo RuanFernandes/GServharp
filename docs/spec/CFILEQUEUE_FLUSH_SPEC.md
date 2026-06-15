@@ -85,3 +85,9 @@ flush path for `ENCRYPT_GEN_1`/`ENCRYPT_GEN_6`:
 
 Production compressed/encrypted flush behavior remains blocked until
 zlib/bzip2/encryption/websocket fixtures are byte-exact.
+
+## Current Pass Status
+
+No new `CFileQueue` production behavior was implemented in the account-loading
+pass. Queue thresholds, compression/encryption generations, websocket wrapping,
+and partial socket semantics remain as documented above.
