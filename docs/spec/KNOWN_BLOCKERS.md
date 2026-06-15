@@ -9,7 +9,7 @@
 - The login-server-name branch is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`. Do not assume they are equivalent without source proof.
 - Exact `CString::guntokenize()` behavior for ban reasons remains blocked; current C# tests cover plain reasons and the confirmed newline-to-carriage-return replacement path only.
 - Real account/password validation must not be invented. The C++ server delegates password/auth verification to the list server through `SVO_VERIACC2`/`SVI_VERIACC2`.
-- Account persistence behavior from `Account.cpp` is traced for the login-loading boundary, but production account services remain blocked on exact filesystem/default-account save behavior and member defaults.
-- `CFileQueue` queue selection, compression generation rules, and socket partial-send semantics are documented. Production C# flush behavior remains blocked on byte-level compression/encryption/websocket fixtures.
-- `warp(m_levelName, getX(), getY())` is traced through the first `setLevel`/`sendLevel` boundary. C# still stops before world-entry runtime.
+- Account file parsing for confirmed `GRACC001` fields/defaults is implemented as a pure parser. Production account services remain blocked on exact filesystem/default-account save behavior and guest RNG.
+- `CFileQueue` queue selection and uncompressed passthrough flush are implemented. Production compressed/encrypted/websocket flush behavior remains blocked on byte-level fixtures.
+- First isolated warp packet builders are implemented. `warp(m_levelName, getX(), getY())` itself remains blocked because it immediately enters level/map/NPC/resource runtime.
 - Server-list connection lifecycle, reconnect backoff, registration, and text/listserver side channels need a dedicated milestone.

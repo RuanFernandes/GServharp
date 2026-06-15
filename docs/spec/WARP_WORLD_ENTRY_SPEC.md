@@ -71,10 +71,18 @@ loading, cached mod times, maps, NPCs, and player lists.
 
 ## C# Boundary
 
-No C# warp implementation is added in this milestone. The safe next state after
-the current login boundary remains `ReadyForLevelWarp`. The next implementation
-task should first recover level packet builders and only then advance into
-`setLevel`/`sendLevel`.
+The C# protocol project now includes isolated builders for the first confirmed
+warp packet bodies:
+
+- `PLO_WARPFAILED + levelName`
+- `PLO_PLAYERWARP + GCHAR(x*2) + GCHAR(y*2) + levelName`
+- `PLO_PLAYERWARP2 + GCHAR(x*2) + GCHAR(y*2) + GCHAR(z*2+50) + GCHAR(mapX) + GCHAR(mapY) + mapName`
+- `PLO_LEVELNAME + levelName`
+
+No C# `warp`, `setLevel`, or `sendLevel` runtime implementation is added. The
+safe next state after the current login boundary remains `ReadyForLevelWarp`.
+The next implementation task should recover level packet builders and level
+file/resource providers before advancing into `setLevel`/`sendLevel`.
 
 ## Confirmed First Packet Candidates
 
@@ -86,5 +94,6 @@ builders:
 - GMAP warp notification: `PLO_PLAYERWARP2 + GCHAR(x*2) + GCHAR(y*2) + GCHAR(z*2+50) + GCHAR(mapX) + GCHAR(mapY) + mapName`
 - Level send begins with `PLO_LEVELNAME + levelName`
 
-Exact golden bytes require confirmed packet IDs from `IEnums.h` plus fixture
-level/player data and are deferred until level packet fixtures are introduced.
+Golden bytes for the isolated packet bodies are documented in
+`docs/spec/GOLDEN_FIXTURES.md`. Runtime ordering and level data bytes remain
+deferred until level packet fixtures are introduced.

@@ -265,6 +265,62 @@ With client/newer-RC raw newline stripping enabled, raw payload becomes:
 "abc"
 ```
 
+## CFileQueue Passthrough Flush
+
+For `ENCRYPT_GEN_1`/`ENCRYPT_GEN_6`, `CFileQueue::sendCompress` appends queued
+bytes directly to `oBuffer` before `CSocket::sendData`.
+
+Normal queued bytes:
+
+```txt
+ASCII("abc\nxyz\n") => [97, 98, 99, 10, 120, 121, 122, 10]
+```
+
+Raw-data board payload stays in the normal queue:
+
+```txt
+PLO_RAWDATA GINT(2) "\n" PLO_BOARDPACKET "x"
+=> [132, 32, 32, 34, 10, 133, 120]
+```
+
+Partial socket send fixture:
+
+```txt
+queued ASCII("abcdef\n")
+first send max 3 => ASCII("abc")
+next send => ASCII("def\n")
+```
+
+## Warp Packet Bodies
+
+These are packet bodies before `Player::sendPacket` newline append and before
+`CFileQueue` flush.
+
+`PLO_WARPFAILED + "missing.nw"`:
+
+```txt
+[47, 109, 105, 115, 115, 105, 110, 103, 46, 110, 119]
+```
+
+`PLO_PLAYERWARP`, `x=30.5`, `y=31.25`, `level="start.nw"`:
+
+```txt
+[46, 93, 94, 115, 116, 97, 114, 116, 46, 110, 119]
+```
+
+`PLO_PLAYERWARP2`, `x=30.5`, `y=31.25`, `z=1.5`, `mapX=4`, `mapY=5`,
+`map="world.gmap"`:
+
+```txt
+[81, 93, 94, 85, 36, 37, 119, 111, 114, 108, 100, 46, 103, 109, 97, 112]
+```
+
+`PLO_LEVELNAME + "start.nw"`:
+
+```txt
+[38, 115, 116, 97, 114, 116, 46, 110, 119]
+```
+
 ## Server-List Auth
 
 ### SVO_VERIACC2

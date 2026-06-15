@@ -22,10 +22,17 @@ Confirmed packet IDs used in the C# foundation:
 | `PLI_SET_ENC_KEY` | client to server | 252 |
 | `PLI_BUNDLE` | client to server | 253 |
 | `PLO_PLAYERPROPS` | server to client | 9 |
+| `PLO_LEVELNAME` | server to client | 6 |
+| `PLO_PLAYERWARP` | server to client | 14 |
+| `PLO_WARPFAILED` | server to client | 15 |
 | `PLO_DISCMESSAGE` | server to client | 16 |
 | `PLO_SIGNATURE` | server to client | 25 |
 | `PLO_FLAGSET` | server to client | 28 |
 | `PLO_NPCWEAPONDEL` | server to client | 34 |
+| `PLO_PLAYERWARP2` | server to client | 49 |
+| `PLO_LARGEFILESTART` | server to client | 68 |
+| `PLO_LARGEFILEEND` | server to client | 69 |
+| `PLO_LARGEFILESIZE` | server to client | 84 |
 | `PLO_RAWDATA` | server to client | 100 |
 | `PLO_BOARDPACKET` | server to client | 101 |
 | `PLO_FILE` | server to client | 102 |

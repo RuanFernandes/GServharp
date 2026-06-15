@@ -14,12 +14,19 @@ public enum PlayerToServerPacketId : byte
 
 public enum ServerToPlayerPacketId : byte
 {
+    LevelName = 6,
     PlayerProps = 9,
+    PlayerWarp = 14,
+    WarpFailed = 15,
     DisconnectMessage = 16,
     Signature = 25,
     FlagSet = 28,
     NpcWeaponDelete = 34,
     StaffGuilds = 47,
+    PlayerWarp2 = 49,
+    LargeFileStart = 68,
+    LargeFileEnd = 69,
+    LargeFileSize = 84,
     RawData = 100,
     BoardPacket = 101,
     File = 102,

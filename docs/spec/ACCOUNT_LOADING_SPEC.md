@@ -78,15 +78,29 @@ fields.
 
 ## C# Boundary
 
-The current C# implementation uses explicit DTO values for login property
-serialization. It does not yet implement production account loading because
-faithful behavior requires the original filesystem lookup, default-account
-creation, load-only checks, guest randomization, and save ordering.
+The C# implementation now includes a pure `AccountFileParser` for confirmed
+`GRACC001` content. It intentionally does not resolve account paths, fall back
+to `defaultaccount.txt`, save newly created accounts, or perform guest RNG.
+
+Confirmed parser behavior:
+
+- Reject empty files or files whose first trimmed line is not `GRACC001`.
+- Preserve C++ member defaults from `Character.h` and `Account.h`.
+- Trim each line before splitting the section from the value at the first space.
+- Preserve case-sensitive section matching.
+- Apply `NICK` 223-char truncation unless `ignoreNickname` is true.
+- Apply image/gani truncation: head 123, body/sword/shield/gani 223.
+- Store X/Y/Z as pixel coordinates by `floatValue * 16` truncated to `int16`.
+- Clip `MAXHP`, `SHIELDP`, and `SWORDP` using confirmed settings defaults.
+- Parse `FLAG name=value`; when `cropflags=true`, crop value to
+  `223 - 1 - name.length`.
+- Set non-guest `COMMUNITYNAME` to the account name after parsing, matching the
+  C++ override near the end of `loadAccount`.
 
 ## Blockers
 
 - Exact `FileSystem::findi`, path canonicalization, and account filesystem
   refresh behavior still need a dedicated persistence pass.
-- Existing C++ member default values before `loadAccount` must be traced from
-  constructors/headers before a production parser can be safe.
 - Guest account randomization uses `srand(time(0))` and connected-player checks.
+- Production account loading still needs default-account fallback and
+  save-on-first-load side effects.

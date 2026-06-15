@@ -73,7 +73,15 @@ from `*dsize`; `CFileQueue` removes exactly the returned sent byte count from
 
 ## C# Boundary
 
-The C# network layer should model `CFileQueue` separately from packet builders.
-Only uncompressed/newline packet fixtures are implemented so far. Production
-flush behavior remains blocked until zlib/bzip2/encryption/websocket framing are
-covered by byte-level compatibility tests.
+The C# `GraalFileQueue` currently implements the source-confirmed passthrough
+flush path for `ENCRYPT_GEN_1`/`ENCRYPT_GEN_6`:
+
+- normal newline packet splitting
+- `PLO_RAWDATA` length transition
+- `PLO_BOARDPACKET` raw-data routing to the normal queue
+- file-buffer routing for non-board raw data and large-file packets
+- queue selection thresholds used before compression
+- output buffering across partial sends
+
+Production compressed/encrypted flush behavior remains blocked until
+zlib/bzip2/encryption/websocket fixtures are byte-exact.
