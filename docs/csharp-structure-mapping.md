@@ -32,9 +32,11 @@ Rust/Python references were not needed for this implementation step.
 
 ## Compatibility Notes
 
-Packet numeric enums are intentionally not implemented yet. The current C++ checkout references `IEnums.h`, but that authoritative dependency is missing. The port keeps `PacketId` as a raw byte wrapper and exposes `PacketIdSourceStatus.NumericPacketIdsRecovered = false` until those definitions are recovered.
+Packet numeric IDs are now source-confirmed from recovered `external/gs2lib/include/IEnums.h`. The port exposes `PacketIdSourceStatus.NumericPacketIdsRecovered = true` and has started with protocol-critical packet IDs only; add the rest module by module or generate a complete enum mirror directly from `IEnums.h`.
 
-`GraalBinaryReader` and `GraalBinaryWriter` include the primitive behavior currently evidenced by C++ call sites and the generated spec. `GChar` offset behavior is directly evidenced by C++ subtracting 32 from packet bytes. Other integer helpers are covered by tests but must still be rechecked against the original `CString.h` when it is available.
+`GraalBinaryReader` and `GraalBinaryWriter` now map to recovered `external/gs2lib/src/CString.cpp` behavior for GChar, GShort, GInt, GInt4, GUInt5, and raw byte-preserving strings.
+
+`GraalEncryption` maps to recovered `external/gs2lib/src/CEncryption.cpp` behavior for generation constants, iterator reset/update, gen 3 insertion/removal, and gen 4/5 XOR limits. It is intentionally not wired into login/session flow yet.
 
 `PacketFramer.FrameForSend` preserves the C++ `Player::sendPacket` newline rule: empty packets are not sent, packets get a newline unless disabled, and existing newlines are not duplicated.
 
@@ -42,7 +44,7 @@ Packet numeric enums are intentionally not implemented yet. The current C++ chec
 
 ## Next Mapping Targets
 
-1. Recover `IEnums.h`, `CString.h`, `CEncryption.h`, and `CFileQueue.h`.
-2. Replace provisional protocol primitive assumptions with direct C++-sourced fixtures.
-3. Implement startup directory discovery from `main.cpp`.
-4. Implement login packet parsing from `PlayerLogin` and `PlayerClient::handleLogin`.
+1. Capture or generate golden C++ bytes for login and file-queue flows.
+2. Implement startup directory discovery from `main.cpp`.
+3. Implement login packet parsing from `PlayerLogin` and `PlayerClient::handleLogin`.
+4. Port `CFileQueue` compression/send behavior behind fixtures.

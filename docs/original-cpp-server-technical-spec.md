@@ -470,7 +470,7 @@ Rust:
 
 - Splits the project into crates for accounts, config, core, game, levels, network, protocol, resources, scripting, server, and storage.
 - Good structural hint for C# project boundaries.
-- Protocol code claims exact compatibility, but it is not authoritative and depends on assumptions not verified against the missing C++ headers.
+- Protocol code in outdated supporting ports is not authoritative. The missing C++ `gs2lib` headers have since been recovered, so future protocol work should follow recovered `external/gs2lib/` plus the original C++ server, not Rust/Python assumptions.
 - Server loop and listserver integration are simplified compared to C++.
 
 Python:
@@ -501,4 +501,3 @@ Risk areas:
 - Flat-file account defaults and omitted fields.
 - Randomness differences for drops, guest IDs, and death item placement.
 - Bugs intentionally preserved by comments, such as clientside zlib fix and Bomb/Bow capitalization cleanup.
-

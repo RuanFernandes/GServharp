@@ -41,21 +41,23 @@ This map records where protocol behavior is defined in the original C++ checkout
 - `ai_resources/GServer-CPP-ORIGINAL/server/src/ServerList.cpp`
   - Server-list packet parsing, registration, login verification forwarding, and server-list file-transfer handling.
 
-## Authoritative Files Referenced But Missing
+## Recovered External Authoritative Files
 
-- `IEnums.h`
+- `external/gs2lib/include/IEnums.h`
   - Required for numeric values of `PLI_*`, `PLO_*`, `PLTYPE_*`, `SVI_*`, `SVO_*`, `CLVER_*`, `RCVER_*`, `NCVER_*`, compression constants, permission/status/flag constants, and other protocol enums.
-- `CString.h`
+- `external/gs2lib/include/CString.h`
   - Required for exact implementation of `readShort`, `readG*`, `writeG*`, `readString`, tokenization, raw byte writing, compression helpers, CRC helpers, and string encoding.
-- `CEncryption.h`
+- `external/gs2lib/include/CEncryption.h`
   - Required for exact encryption generation algorithms, key reset behavior, and compression/encryption limit behavior.
-- `CFileQueue.h`
+- `external/gs2lib/include/CFileQueue.h`
   - Required for outbound queue ordering, compression, bundle length prefix serialization, send flushing, and codec selection.
-- `CSocket.h`
+- `external/gs2lib/include/CSocket.h`
   - Required for socket buffering, websocket flags, and actual send/receive semantics.
+
+The matching implementation files are under `external/gs2lib/src/`.
 
 ## Compatibility Impact
 
-Packet names and handler membership are confirmed from C++ call sites. Numeric opcode values are not confirmed because the enum header is not present. The C# port must not assign numeric packet IDs from Rust/Python or from name guesses.
+Packet names, handler membership, and numeric opcode values are confirmed from C++ call sites plus recovered `IEnums.h`. The C# port must not assign numeric packet IDs from Rust/Python or from name guesses.
 
-The C# implementation may safely encode documented primitive helpers only when they are directly evidenced by C++ call sites or tests. Anything depending on missing `CString.h`, `CEncryption.h`, or `CFileQueue.h` remains an open protocol risk.
+The C# implementation may safely encode documented primitive helpers when they are directly evidenced by recovered `CString.cpp`, `CEncryption.cpp`, and `CFileQueue.cpp`. Integration behavior still needs packet fixtures before wiring production login.

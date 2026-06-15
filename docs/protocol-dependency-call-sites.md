@@ -1,6 +1,6 @@
 # Protocol Dependency Call Sites
 
-This file records where the missing external protocol dependencies are used by the original C++ server. The lists below are C++ source-of-truth call-site inventories for the current checkout.
+This file records where the external `gs2lib` protocol dependencies are used by the original C++ server. The dependency has been recovered under `external/gs2lib/`; the lists below remain the C++ source-of-truth call-site inventories for the original checkout.
 
 ## `IEnums.h`
 

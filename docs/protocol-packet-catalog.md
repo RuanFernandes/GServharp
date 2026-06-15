@@ -1,13 +1,44 @@
 # Protocol Packet Catalog
 
-This catalog lists packet symbols confirmed in the C++ source. It intentionally does not assign numeric opcodes because `IEnums.h` is missing from the checkout.
+This catalog lists packet symbols confirmed in the C++ source. Numeric opcodes are now confirmed from recovered `gs2lib`.
 
 ## Source Status
 
-- Packet symbol names: confirmed from C++ handler tables, packet construction call sites, and packet logging macros.
-- Packet numeric values: unknown.
+- Packet symbol names: confirmed from C++ handler tables, packet construction call sites, packet logging macros, and `external/gs2lib/include/IEnums.h`.
+- Packet numeric values: confirmed from `external/gs2lib/include/IEnums.h` at commit `63b1ae96491c188905b50c6b61c8532c601a2122`.
 - Packet field layouts: partially confirmed from individual `msgPLI_*` handlers and `sendPacket(CString() >> ...)` constructions.
 - Rust/Python packet IDs: not used as authoritative data.
+
+## Confirmed Numeric Opcode Sources
+
+Authoritative source:
+
+- `external/gs2lib/include/IEnums.h`
+
+Recovered from:
+
+- `https://xtjoeytx@bitbucket.org/xtjoeytx/gs2lib.git`
+- commit `63b1ae96491c188905b50c6b61c8532c601a2122`
+
+Important protocol-critical IDs confirmed for the next implementation phase:
+
+| Symbol | Value | Notes |
+| --- | ---: | --- |
+| `PLI_BOMBDEL` | 5 | `IEnums.h` notes this also appears associated with v6+ login packets. |
+| `PLI_PACKETCOUNT` | 31 | Packet count/update flow. |
+| `PLI_RAWDATA` | 50 | Client-to-server raw-data marker. |
+| `PLI_SET_ENC_KEY` | 252 | AES/RC4 key packet symbol; do not implement behavior until C++ usage is traced. |
+| `PLI_BUNDLE` | 253 | Bundled client packets. |
+| `PLO_DISCMESSAGE` | 16 | Disconnect/error message. |
+| `PLO_SIGNATURE` | 25 | Login/startup signature packet. |
+| `PLO_LARGEFILESTART` | 68 | Routed through `CFileQueue` file buffer. |
+| `PLO_LARGEFILEEND` | 69 | Routed through `CFileQueue` file buffer. |
+| `PLO_LARGEFILESIZE` | 84 | Routed through `CFileQueue` file buffer. |
+| `PLO_RAWDATA` | 100 | Server-to-client raw-data marker. |
+| `PLO_BOARDPACKET` | 101 | `CFileQueue` keeps raw board packets in normal queue. |
+| `PLO_FILE` | 102 | File payload packet. |
+| `PLO_SET_ENC_KEY` | 252 | AES/RC4 key packet symbol; do not implement behavior until C++ usage is traced. |
+| `PLO_BUNDLE` | 253 | Bundled server packets. |
 
 ## Client-to-Server Packet Families
 
@@ -20,6 +51,8 @@ Confirmed common/client symbols include:
 - Items/files/weapons: `PLI_ITEMADD`, `PLI_ITEMDEL`, `PLI_ITEMTAKE`, `PLI_OPENCHEST`, `PLI_WEAPONADD`, `PLI_NPCWEAPONDEL`, `PLI_WANTFILE`, `PLI_UPDATEFILE`, `PLI_VERIFYWANTSEND`, `PLI_UPDATEGANI`, `PLI_UPDATESCRIPT`, `PLI_UPDATECLASS`, `PLI_UPDATEPACKAGEREQUESTFILE`.
 - Misc/client integrity: `PLI_SERVERWARP`, `PLI_PROCESSLIST`, `PLI_TAMPERCHECK`, `PLI_RAWDATA`, `PLI_SET_ENC_KEY`, `PLI_BUNDLE`.
 
+Numeric highlights from `IEnums.h`: `PLI_LEVELWARP = 0`, `PLI_PLAYERPROPS = 2`, `PLI_BOMBDEL = 5`, `PLI_TOALL = 6`, `PLI_PRIVATEMESSAGE = 28`, `PLI_PACKETCOUNT = 31`, `PLI_TRIGGERACTION = 38`, `PLI_SERVERWARP = 41`, `PLI_ENTERLEVEL = 46`, `PLI_VERIFYWANTSEND = 47`, `PLI_RAWDATA = 50`, `PLI_REQUESTUPDATEBOARD = 130`, `PLI_REQUESTTEXT = 152`, `PLI_SENDTEXT = 154`, `PLI_UPDATECLASS = 161`, `PLI_SET_ENC_KEY = 252`, and `PLI_BUNDLE = 253`.
+
 Confirmed RC symbols include:
 
 - `PLI_RC_SERVEROPTIONSGET`, `PLI_RC_SERVEROPTIONSSET`, `PLI_RC_FOLDERCONFIGGET`, `PLI_RC_FOLDERCONFIGSET`, `PLI_RC_RESPAWNSET`, `PLI_RC_HORSELIFESET`, `PLI_RC_APINCREMENTSET`, `PLI_RC_BADDYRESPAWNSET`.
@@ -29,12 +62,16 @@ Confirmed RC symbols include:
 - `PLI_RC_PLAYERRIGHTSGET`, `PLI_RC_PLAYERRIGHTSSET`, `PLI_RC_PLAYERCOMMENTSGET`, `PLI_RC_PLAYERCOMMENTSSET`, `PLI_RC_PLAYERBANGET`, `PLI_RC_PLAYERBANSET`, `PLI_RC_APPLYREASON`.
 - `PLI_RC_FILEBROWSER_START`, `PLI_RC_FILEBROWSER_CD`, `PLI_RC_FILEBROWSER_END`, `PLI_RC_FILEBROWSER_DOWN`, `PLI_RC_FILEBROWSER_UP`, `PLI_RC_FILEBROWSER_MOVE`, `PLI_RC_FILEBROWSER_DELETE`, `PLI_RC_FILEBROWSER_RENAME`, `PLI_RC_LARGEFILESTART`, `PLI_RC_LARGEFILEEND`, `PLI_RC_FOLDERDELETE`, `PLI_RC_UNKNOWN162`.
 
+Numeric RC range highlights: `PLI_RC_SERVEROPTIONSGET = 51` through `PLI_RC_FILEBROWSER_UP = 93`, `PLI_RC_FILEBROWSER_MOVE = 96`, `PLI_RC_FILEBROWSER_DELETE = 97`, `PLI_RC_FILEBROWSER_RENAME = 98`, `PLI_RC_LARGEFILESTART = 155`, `PLI_RC_LARGEFILEEND = 156`, `PLI_RC_FOLDERDELETE = 160`, and `PLI_RC_UNKNOWN162 = 162`.
+
 Confirmed NC symbols include:
 
 - `PLI_NC_NPCGET`, `PLI_NC_NPCDELETE`, `PLI_NC_NPCRESET`, `PLI_NC_NPCSCRIPTGET`, `PLI_NC_NPCWARP`, `PLI_NC_NPCFLAGSGET`, `PLI_NC_NPCSCRIPTSET`, `PLI_NC_NPCFLAGSSET`, `PLI_NC_NPCADD`.
 - `PLI_NC_CLASSEDIT`, `PLI_NC_CLASSADD`, `PLI_NC_CLASSDELETE`, `PLI_NC_LOCALNPCSGET`, `PLI_NC_LEVELLISTGET`, `PLI_NC_LEVELLISTSET`.
 - `PLI_NC_WEAPONLISTGET`, `PLI_NC_WEAPONGET`, `PLI_NC_WEAPONADD`, `PLI_NC_WEAPONDELETE`.
 - `PLI_NPCSERVERQUERY` is used by RC handling and listed in input packet names.
+
+Numeric NC range highlights: `PLI_NPCSERVERQUERY = 94`, `PLI_NC_NPCGET = 103` through `PLI_NC_CLASSDELETE = 119`, `PLI_NC_LEVELLISTGET = 150`, and `PLI_NC_LEVELLISTSET = 151`.
 
 ## Server-to-Client Packet Families
 
@@ -48,11 +85,13 @@ Confirmed symbols include:
 - Social/text: `PLO_TOALL`, `PLO_PRIVATEMESSAGE`, `PLO_PROFILE`, `PLO_SERVERTEXT`, `PLO_STARTMESSAGE`, `PLO_RPGWINDOW`, `PLO_SAY2`, `PLO_STAFFGUILDS`, `PLO_STATUSLIST`.
 - RC/NC: `PLO_RC_CHAT`, `PLO_RC_ADMINMESSAGE`, `PLO_RC_ACCOUNTADD`, `PLO_RC_ACCOUNTSTATUS`, `PLO_RC_ACCOUNTNAME`, `PLO_RC_ACCOUNTDEL`, `PLO_RC_ACCOUNTPROPS`, `PLO_RC_ACCOUNTPROPSGET`, `PLO_RC_ACCOUNTCHANGE`, `PLO_RC_PLAYERPROPSCHANGE`, `PLO_RC_SERVERFLAGSGET`, `PLO_RC_PLAYERRIGHTSGET`, `PLO_RC_PLAYERCOMMENTSGET`, `PLO_RC_PLAYERBANGET`, `PLO_RC_FILEBROWSER_DIRLIST`, `PLO_RC_FILEBROWSER_DIR`, `PLO_RC_FILEBROWSER_MESSAGE`, `PLO_RC_ACCOUNTLISTGET`, `PLO_RC_PLAYERPROPS`, `PLO_RC_PLAYERPROPSGET`, `PLO_RC_ACCOUNTGET`, `PLO_RC_SERVEROPTIONSGET`, `PLO_RC_FOLDERCONFIGGET`, `PLO_RC_MAXUPLOADFILESIZE`, `PLO_NC_CONTROL`, `PLO_NPCSERVERADDR`, `PLO_NC_LEVELLIST`, `PLO_NC_NPCATTRIBUTES`, `PLO_NC_NPCADD`, `PLO_NC_NPCDELETE`, `PLO_NC_NPCSCRIPT`, `PLO_NC_NPCFLAGS`, `PLO_NC_CLASSGET`, `PLO_NC_CLASSADD`, `PLO_NC_CLASSDELETE`, `PLO_NC_LEVELDUMP`, `PLO_NC_WEAPONLISTGET`, `PLO_NC_WEAPONGET`.
 
+Numeric server-to-client highlights from `IEnums.h`: `PLO_LEVELBOARD = 0`, `PLO_PLAYERPROPS = 9`, `PLO_DISCMESSAGE = 16`, `PLO_SIGNATURE = 25`, `PLO_TRIGGERACTION = 48`, `PLO_LARGEFILESTART = 68`, `PLO_LARGEFILEEND = 69`, `PLO_LARGEFILESIZE = 84`, `PLO_RAWDATA = 100`, `PLO_BOARDPACKET = 101`, `PLO_FILE = 102`, `PLO_NPCBYTECODE = 131`, `PLO_NPCWEAPONSCRIPT = 140`, `PLO_DISABLECLASSICMODE = 176`, `PLO_SERVERLISTCONNECTED = 190`, `PLO_LOADSCRIPT = 197`, `PLO_SERVEROPTIONS = 198`, `PLO_SET_ENC_KEY = 252`, and `PLO_BUNDLE = 253`.
+
 ## Server-List Packet Families
 
-Confirmed inbound server-list symbols: `SVI_VERIACC`, `SVI_VERIGUILD`, `SVI_FILESTART`, `SVI_FILEDATA`, `SVI_FILEEND`, `SVI_VERSIONOLD`, `SVI_VERSIONCURRENT`, `SVI_PROFILE`, `SVI_ERRMSG`, `SVI_VERIACC2`, `SVI_FILESTART2`, `SVI_FILEDATA2`, `SVI_FILEEND2`, `SVI_PING`, `SVI_RAWDATA`, `SVI_FILESTART3`, `SVI_FILEDATA3`, `SVI_FILEEND3`, `SVI_SERVERINFO`, `SVI_REQUESTTEXT`, `SVI_SENDTEXT`, `SVI_PMPLAYER`, `SVI_ASSIGNPCID`.
+Confirmed inbound server-list symbols: `SVI_VERIACC = 0`, `SVI_VERIGUILD = 1`, `SVI_FILESTART = 2`, `SVI_FILEEND = 3`, `SVI_FILEDATA = 4`, `SVI_VERSIONOLD = 5`, `SVI_VERSIONCURRENT = 6`, `SVI_PROFILE = 7`, `SVI_ERRMSG = 8`, `SVI_VERIACC2 = 11`, `SVI_FILESTART2 = 12`, `SVI_FILEDATA2 = 13`, `SVI_FILEEND2 = 14`, `SVI_FILESTART3 = 15`, `SVI_FILEDATA3 = 16`, `SVI_FILEEND3 = 17`, `SVI_SERVERINFO = 18`, `SVI_REQUESTTEXT = 19`, `SVI_SENDTEXT = 20`, `SVI_PMPLAYER = 29`, `SVI_ASSIGNPCID = 30`, `SVI_PING = 99`, `SVI_RAWDATA = 100`, and `SVI_PACKETCOUNT = 101`.
 
-Confirmed outbound server-list symbols: `SVO_REGISTERV3`, `SVO_SERVERHQPASS`, `SVO_NEWSERVER`, `SVO_SERVERHQLEVEL`, `SVO_PLYRADD`, `SVO_PLYRREM`, `SVO_SETPLYR`, `SVO_SENDTEXT`, `SVO_REQUESTLIST`, `SVO_VERIACC2`, `SVO_VERIGUILD`, `SVO_REQUESTSVRINFO`, `SVO_SERVERINFO`, `SVO_PMPLAYER`, `SVO_PING`, `SVO_GETPROF`, `SVO_SETPROF`, `SVO_GETFILE3`.
+Confirmed outbound server-list symbols: `SVO_SETNAME = 0`, `SVO_SETDESC = 1`, `SVO_SETLANG = 2`, `SVO_SETVERS = 3`, `SVO_SETURL = 4`, `SVO_SETIP = 5`, `SVO_SETPORT = 6`, `SVO_SETPLYR = 7`, `SVO_VERIACC = 8`, `SVO_VERIGUILD = 9`, `SVO_GETFILE = 10`, `SVO_NICKNAME = 11`, `SVO_GETPROF = 12`, `SVO_SETPROF = 13`, `SVO_PLYRADD = 14`, `SVO_PLYRREM = 15`, `SVO_PING = 16`, `SVO_VERIACC2 = 17`, `SVO_SETLOCALIP = 18`, `SVO_GETFILE2 = 19`, `SVO_UPDATEFILE = 20`, `SVO_GETFILE3 = 21`, `SVO_NEWSERVER = 22`, `SVO_SERVERHQPASS = 23`, `SVO_SERVERHQLEVEL = 24`, `SVO_SERVERINFO = 25`, `SVO_REQUESTLIST = 26`, `SVO_REQUESTSVRINFO = 27`, `SVO_REQUESTBUDDIES = 28`, `SVO_PMPLAYER = 29`, `SVO_REGISTERV3 = 30`, `SVO_SENDTEXT = 31`, and `SVO_PACKETCOUNT = 32`.
 
 Confirmed server-list file type values from `server/include/ServerList.h`:
 
@@ -62,6 +101,6 @@ Confirmed server-list file type values from `server/include/ServerList.h`:
 - `SVF_SHIELD = 3`
 - `SVF_FILE = 4`
 
-## Do Not Implement Yet
+## Implementation Guidance
 
-Do not add C# numeric packet enums until the missing authoritative enum source is recovered. Handler table names are useful for organization and tests, but not enough for byte-compatible networking.
+Numeric packet IDs may now be added to C# directly from `external/gs2lib/include/IEnums.h`. Add them module by module unless a generated complete enum mirror is intentionally introduced. Do not use Rust/Python packet IDs as canonical values.

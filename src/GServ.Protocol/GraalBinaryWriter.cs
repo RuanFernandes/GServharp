@@ -5,8 +5,7 @@ namespace GServ.Protocol;
 
 /// <summary>
 /// Writes Graal protocol primitive values.
-/// Source mapping: C++ CString writeG* calls. Exact non-GChar behavior must be reverified
-/// when CString.h is recovered.
+/// Source mapping: gs2lib CString::writeG* at commit 63b1ae96491c188905b50c6b61c8532c601a2122.
 /// </summary>
 public sealed class GraalBinaryWriter
 {
@@ -27,7 +26,20 @@ public sealed class GraalBinaryWriter
 
     public void WriteGChar(int value)
     {
-        _buffer.Add(unchecked((byte)(value + CompatibilityConstants.GraalAsciiOffset)));
+        var unsigned = unchecked((byte)value);
+        var clamped = Math.Min((int)unsigned, 223);
+        _buffer.Add(unchecked((byte)(clamped + CompatibilityConstants.GraalAsciiOffset)));
+    }
+
+    public void WriteGCharUnsafe(int value)
+    {
+        var unsigned = unchecked((byte)value);
+        if (unsigned == 233)
+        {
+            throw new ArgumentOutOfRangeException(nameof(value), "CString::writeGCharUnsafe rejects byte value 233 because it evaluates to a newline.");
+        }
+
+        _buffer.Add(unchecked((byte)(unsigned + CompatibilityConstants.GraalAsciiOffset)));
     }
 
     public void WriteGShort(int value)
@@ -42,7 +54,7 @@ public sealed class GraalBinaryWriter
 
     public void WriteGInt(int value)
     {
-        var clamped = Math.Clamp(value, 0, 3_682_303);
+        var clamped = Math.Clamp(value, 0, 3_682_399);
         var b0 = Math.Min(clamped >> 14, 223);
         clamped -= b0 << 14;
         var b1 = Math.Min(clamped >> 7, 223);
@@ -90,9 +102,9 @@ public sealed class GraalBinaryWriter
     public void WriteLengthPrefixedString(string value)
     {
         var bytes = WireEncoding.GetBytes(value);
-        if (bytes.Length > 191)
+        if (bytes.Length > 223)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), "GChar length-prefixed strings cannot exceed 191 bytes.");
+            throw new ArgumentOutOfRangeException(nameof(value), "GChar length-prefixed strings cannot exceed 223 bytes.");
         }
 
         WriteGChar(bytes.Length);

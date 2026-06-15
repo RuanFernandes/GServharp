@@ -1,10 +1,12 @@
-# C++ Missing Dependencies
+# C++ Dependency Recovery Inventory
+
+Update: the external `gs2lib` dependency has now been recovered under `external/gs2lib/` at commit `63b1ae96491c188905b50c6b61c8532c601a2122`. This document preserves the original missing-dependency investigation and call-site inventory. See `docs/gs2lib-recovery.md` for the successful recovery result.
 
 This recovery pass searched the full workspace for the protocol-critical C++ headers/classes that block a faithful C# implementation.
 
 ## Result
 
-None of the following files exist in this workspace:
+At the time of the recovery pass, none of the following files existed in the original server checkout under `ai_resources/GServer-CPP-ORIGINAL/`:
 
 - `IEnums.h`
 - `CString.h`
@@ -22,7 +24,7 @@ The original C++ CMake configuration identifies the likely source:
 - It fetches `https://xtjoeytx@bitbucket.org/xtjoeytx/gs2lib.git` at commit `63b1ae96491c188905b50c6b61c8532c601a2122`.
 - It links `gs2lib` and adds `target_include_directories(... "${gs2lib_SOURCE_DIR}/include")`.
 
-Therefore the missing headers are almost certainly part of the private/external `gs2lib` dependency, not the server source tree itself.
+Therefore the missing headers were part of the external `gs2lib` dependency, not the server source tree itself.
 
 The top-level CMake also sets:
 
@@ -36,11 +38,11 @@ The dependency source would normally be fetched or cached under `dependencies/fc
 
 | Dependency | Found? | Expected source | Compatibility impact |
 | --- | --- | --- | --- |
-| `IEnums.h` | No | `gs2lib/include` | Blocks numeric packet IDs, player type masks, version IDs, permissions/status/flags, compression constants, and many protocol enums. |
-| `CString.h` | No | `gs2lib/include` | Blocks exact string storage, integer codecs, raw bundle length byte order, tokenization, compression helper semantics, CRC/hash helpers, and byte/string conversion details. |
-| `CEncryption.h` | No | `gs2lib/include` | Blocks encryption algorithm, generation constants, key reset behavior, and compression-type-dependent decrypt limits. |
-| `CFileQueue.h` | No | `gs2lib/include` | Blocks outbound bundle construction, queue flushing, compression selection, codec application, and socket send details. |
-| `CSocket.h` | No | `gs2lib/include` | Blocks exact socket state enum values, socket manager semantics, buffering behavior, websocket field behavior, and platform socket lifecycle. |
+| `IEnums.h` | Yes, recovered in `external/gs2lib/include` | `gs2lib/include` | Unblocks numeric packet IDs, player type masks, status flags, and protocol enums found in `IEnums.h`. |
+| `CString.h` | Yes, recovered in `external/gs2lib/include` | `gs2lib/include` | Unblocks exact string storage, integer codecs, raw bundle length byte order, tokenization, compression helper semantics, CRC/hash helpers, and byte/string conversion details. |
+| `CEncryption.h` | Yes, recovered in `external/gs2lib/include` | `gs2lib/include` | Unblocks encryption algorithm, generation constants, key reset behavior, and compression-type-dependent decrypt limits. |
+| `CFileQueue.h` | Yes, recovered in `external/gs2lib/include` | `gs2lib/include` | Unblocks outbound bundle construction, queue flushing, compression selection, codec application, and socket send details. |
+| `CSocket.h` | Yes, recovered in `external/gs2lib/include` | `gs2lib/include` | Unblocks exact socket state enum values, socket manager semantics, buffering behavior, websocket field behavior, and platform socket lifecycle. |
 
 ## Build Metadata Reviewed
 

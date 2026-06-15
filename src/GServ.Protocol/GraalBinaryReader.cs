@@ -5,8 +5,7 @@ namespace GServ.Protocol;
 
 /// <summary>
 /// Reads Graal protocol primitive values.
-/// Source mapping: C++ CString readG* calls. Exact non-GChar behavior must be reverified
-/// when CString.h is recovered.
+/// Source mapping: gs2lib CString::readG* at commit 63b1ae96491c188905b50c6b61c8532c601a2122.
 /// </summary>
 public sealed class GraalBinaryReader
 {

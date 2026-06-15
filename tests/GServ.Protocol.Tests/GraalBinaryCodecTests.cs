@@ -11,26 +11,36 @@ public sealed class GraalBinaryCodecTests
 
         writer.WriteGChar(0);
         writer.WriteGChar(73);
-        writer.WriteGChar(-32);
+        writer.WriteGChar(223);
+        writer.WriteGChar(224);
 
-        Assert.Equal([32, 105, 0], writer.ToArray());
+        Assert.Equal([32, 105, 255, 255], writer.ToArray());
+    }
+
+    [Fact]
+    public void GCharUnsafeWrapsButRejectsNewlineAlias()
+    {
+        var writer = new GraalBinaryWriter();
+
+        writer.WriteGCharUnsafe(224);
+
+        Assert.Equal([0], writer.ToArray());
+        Assert.Throws<ArgumentOutOfRangeException>(() => writer.WriteGCharUnsafe(233));
     }
 
     [Fact]
     public void GCharRoundTripsSignedValues()
     {
         var writer = new GraalBinaryWriter();
-        writer.WriteGChar(-32);
-        writer.WriteGChar(-1);
         writer.WriteGChar(0);
         writer.WriteGChar(95);
+        writer.WriteGChar(223);
 
         var reader = new GraalBinaryReader(writer.ToArray());
 
-        Assert.Equal(-32, reader.ReadGChar());
-        Assert.Equal(-1, reader.ReadGChar());
         Assert.Equal(0, reader.ReadGChar());
         Assert.Equal(95, reader.ReadGChar());
+        Assert.Equal(-33, reader.ReadGChar());
         Assert.True(reader.IsEmpty);
     }
 
@@ -72,7 +82,7 @@ public sealed class GraalBinaryCodecTests
     [Theory]
     [InlineData(0)]
     [InlineData(10_000)]
-    [InlineData(3_682_303)]
+    [InlineData(3_682_399)]
     public void GIntRoundTripsSupportedRange(int value)
     {
         var writer = new GraalBinaryWriter();
