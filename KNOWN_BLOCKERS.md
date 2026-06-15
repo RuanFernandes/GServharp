@@ -7,6 +7,10 @@
 - Old-version map-file workaround, `flaghack_ip`, weapons, protected weapons, classes, and zlib-fix NPC weapon branches in `sendLoginClient` are traced but not implemented.
 - The login-server-name branch in `Player::sendLogin` is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`.
 - `CFileQueue` uncompressed passthrough queue/flush is implemented; compression, encryption, and websocket wrapping remain blocked.
+- A dev-only TCP/session shell exists for a one-frame diagnostic login ->
+  filesystem `.nw` -> `sendLevel` boundary. It is not production-compatible and
+  must remain opt-in because it uses fake local auth, uncompressed outbound
+  queue bytes, and closes before continuous movement/runtime simulation.
 - Production account loading has a pure `GRACC001` parser, but full service behavior is blocked on exact filesystem/default-account save behavior and guest RNG.
 - Isolated warp packet builders are implemented. A source-confirmed
   `setLevel` pre-runtime boundary now handles missing levels, `PLO_PLAYERWARP`,

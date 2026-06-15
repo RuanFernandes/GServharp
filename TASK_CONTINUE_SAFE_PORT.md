@@ -25,196 +25,166 @@ Current status:
 * sendLevel static/dynamic/tail boundaries exist.
 * Player visibility sync exists.
 * Pure `.nw` parser exists.
-* `.nw` board/layer packet builders exist.
-* `.nw` links/signs/chests packets exist.
+* `.nw` board/layer/link/sign/chest packets exist.
 * LevelItem catalog exists.
-* Parsed `.nw` snapshot integrates into sendLevel up to board/layers/links/signs/chests.
+* Filesystem-backed `.nw` loading boundary exists.
+* LoadedNwLevel can be converted into ModernLevelPayload and passed into SendLevelBoundary.
 * Tests are green.
+* Manual client connection is still blocked by:
+
+  1. TCP/session pipeline real until ClientSessionSkeleton.
+  2. Dev-only auth/server-list provider clearly separated from production.
+  3. Login/world-entry handoff to loaded `.nw` without inventing NPC/file-transfer/movement behavior.
 
 Goal of this run:
 
-Push the project toward a manually testable local server with a simple `.nw` level, while still keeping production behavior source-confirmed and clearly separating dev-only fakes from real compatibility code.
+Create the first dev-only local server shell that can exercise the confirmed login -> account -> level loading -> sendLevel boundary as far as safely possible.
 
-Continue through these milestones as far as safely possible.
+This server shell must be clearly marked as development-only and must not pretend to be production-compatible.
 
 ---
 
-# Milestone 1: Filesystem-backed level/resource loading boundary
+# Milestone 1: TCP/session pipeline shell
 
-Trace and implement source-confirmed level/resource lookup behavior needed to load real `.nw` files from disk.
+Implement or improve a minimal TCP listener pipeline that reaches existing source-confirmed session boundaries.
 
 Focus on:
 
-* FileSystem usage for levels/resources
-* case-insensitive lookup behavior
-* level path normalization
-* extension behavior
-* nofoldersconfig behavior if source-confirmed
-* modTime behavior
-* missing level behavior
-* malformed level behavior
-* level cache behavior if source-confirmed
-* resource/file lookup used during sendLevel
+* accepting TCP connections
+* reading client frames using existing packet framing rules
+* passing packets into ClientSessionSkeleton/session pipeline
+* writing queued outbound bytes using existing GraalFileQueue/packet builders where confirmed
+* connection lifecycle
+* disconnect behavior where confirmed
+* logging useful debug output
 
 Allowed:
 
-* Add filesystem abstractions.
-* Add production-safe read-only level loading service if behavior is confirmed.
-* Add tests using temporary files or in-memory fake filesystem.
-* Add docs for unresolved filesystem quirks.
+* Add minimal TCP server shell.
+* Add interfaces for transport/read/write.
+* Add tests using in-memory streams or fake transports.
+* Keep behavior source-confirmed where protocol-visible.
 
 Not allowed:
 
-* Do not invent search paths.
-* Do not implement writes unless source-confirmed.
-* Do not approximate cache/modTime behavior.
+* Do not invent protocol behavior.
+* Do not bypass packet framing.
+* Do not implement unconfirmed socket quirks.
+* Do not modify reference sources.
 
 ---
 
-# Milestone 2: Integrate filesystem-loaded `.nw` into sendLevel
+# Milestone 2: Dev-only auth/server-list provider
 
-Create a source-confirmed path:
+Create a clearly separated dev-only auth provider that allows local manual testing.
+
+Focus on:
+
+* using the existing pre-world auth boundary
+* providing a test account result
+* clearly marking this as not production behavior
+* ensuring production auth remains blocked unless source-confirmed
+* keeping server-list/list-server behavior documented separately
+
+Allowed:
+
+* Add namespace/class names that clearly include `DevOnly` or `LocalTest`.
+* Add config flag requiring explicit opt-in.
+* Add docs warning that this is not authentic production behavior.
+* Add tests proving dev-only provider is not default production behavior.
+
+Not allowed:
+
+* Do not pretend fake auth is real.
+* Do not remove production blockers.
+* Do not mix dev-only provider into compatibility core.
+
+---
+
+# Milestone 3: Dev-only level handoff
+
+Wire the dev-only local path:
 
 ```txt
-level filename -> filesystem lookup -> .nw parse -> level snapshot -> sendLevel packet sequence
+login accepted by dev-only auth
+-> account loaded or dev account snapshot
+-> ReadyForLevelWarp
+-> filesystem-loaded .nw level
+-> SendLevelBoundary
+-> stop before unimplemented runtime behavior
 ```
 
 Focus on:
 
-* level name
-* modTime
-* board/layers
-* links
-* signs
-* chests
-* baddies if already supported
-* NPC payload passthrough if already supported
-* packet order
-* missing/malformed level failure behavior
+* using AccountLoadService where possible
+* using NwLevelFileLoader
+* using RuntimeServer/RuntimeLevel ownership where safe
+* using SendLevelBoundary for packet generation
+* stopping before movement/NPC/script/file-transfer behavior
+* explicit logs/state when stopped at a known boundary
 
 Allowed:
 
-* Add integration tests with a small temporary `.nw` fixture.
-* Add golden fixtures for complete packet sequence.
-* Add adapters between level loading and existing SendLevelBoundary.
-* Keep runtime simulation out of scope.
-
----
-
-# Milestone 3: Dev-only local server shell
-
-If enough source-confirmed pieces exist, create or improve a local development server shell that can be manually tested with a simple client connection.
-
-Focus on:
-
-* TCP listener skeleton
-* session pipeline using existing protocol/session code
-* dev-only account provider
-* dev-only level provider using real `.nw` file loading
-* clear configuration for local test world
-* clear warning that fake/dev auth is not production-compatible
-* ability to reach login -> account -> level entry path using a simple `.nw` fixture if safe
-
-Allowed:
-
-* Add dev-only bootstrap/configuration.
-* Add in-memory/dev fake auth clearly marked.
-* Add docs explaining how to run locally.
+* Add a dev-only bootstrap level file path.
+* Add sample minimal `.nw` fixture under a clearly dev/test folder if acceptable.
+* Add docs on how to run and what is expected.
 * Add integration tests where possible.
 
 Not allowed:
 
-* Do not pretend dev fake auth is real production auth.
-* Do not bypass source-confirmed packet behavior.
-* Do not implement unknown behavior just to make the client connect.
-* Do not hide blockers.
+* Do not invent NPC behavior.
+* Do not execute scripts.
+* Do not implement fake movement as production.
+* Do not hide that file/resource transfer and movement are incomplete.
 
 ---
 
-# Milestone 4: Movement/player props receive boundary
+# Milestone 4: Movement/player props boundary research
 
-If the local level-loading path is stable, begin tracing incoming movement/player props packets.
+If the dev server shell is safe enough, continue research/implementation of incoming movement/player props.
 
 Focus on:
 
-* Player::parsePacket
-* PLI player prop/movement handlers
-* Player::setProps
-* Player::setProp
-* x/y/z if present
+* `Player::parsePacket`
+* `PLI_PLAYERPROPS` or equivalent incoming player property packets
+* `Player::setProps`
+* `Player::setProp`
+* position updates
+* level changes
 * direction
-* current level
-* animation/gani
-* prop forwarding to other players
-* clipping/validation
-* link traversal trigger
-* disconnect/rejection behavior for invalid updates, if any
+* gani/animation
+* forwarding to other players
+* validation/clipping if source-confirmed
 
 Allowed:
 
-* Add parsers for confirmed incoming player prop packets.
-* Add DTOs for source-confirmed movement/property updates.
-* Add state mutation only for confirmed safe fields.
-* Add forwarding builders only if exact bytes are confirmed.
-* Add tests/golden fixtures.
+* Add parsers and DTOs only for confirmed incoming property packets.
+* Add unit tests/golden fixtures.
+* Add docs.
 
 Not allowed:
 
-* Do not implement combat.
-* Do not implement weapons/items.
-* Do not implement NPC AI.
-* Do not execute scripts.
-* Do not invent anti-cheat or validation behavior.
-* Do not implement link traversal unless fully traced.
+* Do not implement live movement in dev server unless source-confirmed enough.
+* Do not invent validation.
+* Do not implement combat/items/NPC/scripts.
 
 ---
 
-# Milestone 5: Minimal live player sync runtime
-
-If movement/player prop behavior is confirmed enough, integrate it with runtime ownership.
-
-Focus on:
-
-* player joining level
-* player leaving level
-* nearby player visibility
-* forwarding property updates
-* same-level and GMAP filtering
-* deterministic ordering
-* duplicate/disconnect cleanup
-
-Allowed:
-
-* Add tests with two or three players.
-* Keep this strictly to sync/visibility.
-* No gameplay systems.
-
----
-
-# Milestone 6: Docs and tests
+# Milestone 5: Docs and tests
 
 Create/update docs:
 
 ```txt
-docs/spec/LEVEL_FILESYSTEM_LOADING_SPEC.md
-docs/spec/LEVEL_RESOURCE_SPEC.md
-docs/spec/SENDLEVEL_SPEC.md
 docs/spec/RUN_LOCAL_DEV_SERVER.md
+docs/spec/LOCAL_DEV_AUTH_WARNING.md
+docs/spec/TCP_SESSION_PIPELINE_SPEC.md
 docs/spec/MOVEMENT_PLAYER_PROPS_SPEC.md
-docs/spec/PLAYER_VISIBILITY_SYNC_SPEC.md
-docs/spec/CFILEQUEUE_FLUSH_SPEC.md
+docs/spec/LEVEL_FILESYSTEM_LOADING_SPEC.md
+docs/spec/SENDLEVEL_SPEC.md
 docs/spec/GOLDEN_FIXTURES.md
 docs/spec/KNOWN_BLOCKERS.md
 KNOWN_BLOCKERS.md
 ```
-
-For every implemented behavior:
-
-* cite C++/gs2lib source files
-* document exact behavior
-* add tests
-* add golden fixtures where possible
-* keep unknowns explicit
 
 Run:
 
@@ -231,13 +201,11 @@ At the end, report:
 * Which C++/gs2lib files were used
 * Which C# files/tests were added or modified
 * Which docs were updated
-* Which golden fixtures were added
-* Which behavior is now source-confirmed
-* Which behavior remains blocked
 * Whether `ai_resources/` stayed untouched
 * Build/test results
 * Whether a manual client connection test is now possible
-* If not possible, list the exact 3 smallest blockers
+* If yes, give exact run instructions and expected limitations
+* If no, list the exact 3 smallest blockers
 * Safest next step
 
 Continue as far as safely possible. Do not stop after one small task if another safe task can be done safely.

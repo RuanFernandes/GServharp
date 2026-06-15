@@ -2,32 +2,38 @@
 
 ## Current Status
 
-A runnable local development server shell is not implemented yet.
+A minimal diagnostic local development server shell now exists. It is
+explicitly dev-only and is not production-compatible.
 
 The current C# codebase has protocol/session/account/level-boundary components,
 and now has read-only filesystem-backed `.nw` loading into the static
-`sendLevel` boundary. Production-authentic login, server-list behavior, live
-socket orchestration, and runtime world ownership are still incomplete.
+`sendLevel` boundary. The shell can accept one length-prefixed login frame, run
+the confirmed login/account/world-entry boundaries with dev-only auth, load a
+`.nw` file, send the confirmed static level packets, and stop before runtime
+world simulation.
 
-## Safe Future Direction
+## Run Command
 
-When enough source-confirmed pieces exist, a dev-only server may be added with:
+Prepare a root folder with `world/start.nw`, then run:
 
-- explicit in-memory test account provider
-- explicit dev-only auth provider, clearly marked as non-production
-- explicit `.nw` level directory configuration using `IndexedServerFileSystem`
-- clear warnings that fake auth/account data is not production behavior
-- TCP accept loop wired through existing session skeletons
-- no invented gameplay behavior
+```bash
+dotnet run --project src/GServ/GServ.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
+```
 
-The dev server must not pretend fake account validation or fake filesystem
-behavior is production-compatible.
+The shell logs a warning on startup. Without `--dev-only-local`, it does not
+enable the fake auth path.
 
-Smallest remaining blockers before a meaningful manual closed-client test:
+Expected limitations:
 
-1. TCP/session pipeline from real socket bytes into `ClientSessionSkeleton`.
-2. Dev-only auth/server-list substitute that cannot be mistaken for production
-   auth.
-3. Source-confirmed handoff from login/world-entry boundaries into the
-   filesystem-loaded `.nw` `sendLevel` payload without inventing runtime NPC,
-   file-transfer, or movement behavior.
+- accepts one client/login frame at a time
+- uses dev-only local auth, not the production list server
+- writes uncompressed queued bytes only
+- stops before movement, NPCs, scripts, file transfer, and live world runtime
+- closes after the diagnostic login/level boundary
+
+## Manual Closed-Client Status
+
+A synthetic/manual TCP diagnostic is possible. A meaningful closed-source game
+client session is still not expected to work because outbound gen2+ compression
+and encryption framing, continuous session streaming, and runtime movement are
+not implemented.

@@ -16,6 +16,10 @@
   full filesystem resync behavior, and guest random `pc:` identity generation
   remain blocked.
 - `CFileQueue` queue selection and uncompressed passthrough flush are implemented. Production compressed/encrypted/websocket flush behavior remains blocked on byte-level fixtures.
+- A dev-only TCP/session shell exists for one length-prefixed login frame and a
+  filesystem-backed `.nw` `sendLevel` boundary. It is not production-compatible:
+  it uses explicit fake auth, uncompressed outbound queue bytes, one-frame
+  processing, and closes before movement/runtime simulation.
 - First isolated warp packet builders are implemented. The C# port now has a
   source-confirmed `setLevel` pre-runtime boundary for missing levels,
   `PLO_PLAYERWARP`, `PLO_PLAYERWARP2`, and modern non-zero-modtime no-warp

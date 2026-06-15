@@ -843,6 +843,45 @@ PLO_LEVELCHEST unopened redrupee at 10,11 sign 3
 The exact five bytes after `PLO_LEVELMODTIME` vary with the file mtime and are
 encoded through the existing source-confirmed `GINT5` writer.
 
+## Dev-Only Local Pipeline
+
+Input frame:
+
+```txt
+raw big-endian length prefix
+Client3 login packet body:
+GCHAR 5
+GCHAR 42
+"G3D0311C"
+GCHAR 4 "Ruan"
+GCHAR 2 "pw"
+"win"
+```
+
+With `EnableDevOnlyAuth=true` and a filesystem-loaded `start.nw`, the diagnostic
+pipeline reaches:
+
+```txt
+SessionLifecycle.DynamicLevelPayloadSent
+DevOnlyLocalStopPoint.BeforeRuntimeWorldSimulation
+```
+
+The outbound byte stream includes:
+
+```txt
+PLO_SIGNATURE
+PLO_UNKNOWN168
+sendLoginClient pre-warp packets
+PLO_PLAYERWARP for modTime 0
+PLO_LEVELNAME "start.nw"
+PLO_RAWDATA + parsed board packet
+PLO_LEVELMODTIME
+links/signs/chests packets
+```
+
+These bytes are uncompressed diagnostic queue bytes, not production gen5 socket
+frames.
+
 ## Server-List Auth
 
 ### SVO_VERIACC2
