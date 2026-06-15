@@ -23,6 +23,11 @@ The current C# milestone implements the modern `sendLevel` path for
 `CLVER_2_1+` through nearby player property synchronization, then stops before
 live runtime simulation.
 
+Minimal runtime ownership is now available in `GServ.Game` to feed the
+visibility-selection portion of this boundary. It does not replace the explicit
+packet DTOs used by `SendLevelBoundary`; those DTOs remain the safe way to queue
+only already-confirmed bytes.
+
 ## Modern sendLevel Order
 
 `Player::sendLevel(pLevel, modTime, fromAdjacent)`:
@@ -133,3 +138,4 @@ Not implemented:
 - production horse and baddy runtime state
 - production NPC packet construction
 - production multi-session socket forwarding
+- production parsed level snapshots feeding board/layer/link/sign packets

@@ -25,7 +25,9 @@ When the level has no map, C++ uses the level player list:
 - joining-player direction iterates level player ids and sends each other
   player's props
 
-The C# boundary models this with `IsOnSameLevel` snapshots.
+The packet-only C# boundary models this with `IsOnSameLevel` snapshots. The
+minimal runtime selector now models the same branch with `RuntimeLevel`
+membership and `RuntimeLevel.PlayerIds` order.
 
 ## Map Filtering
 
@@ -38,8 +40,9 @@ When the player has a map:
 - `abs(otherX - selfX) < 2`
 - `abs(otherY - selfY) < 2`
 
-The C# boundary models the map object identity with `MapKey` because production
-map ownership is not implemented yet.
+The packet-only C# boundary models the map object identity with `MapKey`. The
+minimal runtime selector now models the same branch with `RuntimeMap` object
+identity, group names, map coordinates, and `RuntimePlayerKind.Client`.
 
 ## Ordering
 
@@ -48,7 +51,10 @@ For the joining player's received props:
 - map branch uses server player-list iteration order
 - no-map branch uses level player-list order
 
-The C# boundary preserves the caller-provided snapshot order.
+The packet-only C# boundary preserves the caller-provided snapshot order. The
+minimal runtime selector preserves `RuntimeLevel.PlayerIds` order for no-map
+levels. Server-wide map iteration order remains a compatibility risk until
+production player-list ownership is fully matched.
 
 ## Current Stop Point
 
@@ -56,3 +62,12 @@ After this sync, C++ `sendLevel` returns `true`. The C# session state
 `LevelEntryPlayerPropsSynchronized` maps to this point and stops before live
 runtime simulation, movement updates, combat, item interactions, NPC AI, and
 scripting callbacks.
+
+## Tests
+
+`tests/GServ.Game.Tests/LevelEntryVisibilitySelectionTests.cs` covers:
+
+- no-map same-level selection using level player-list order
+- singleplayer levels skipping visibility sync
+- GMAP/group-map filtering by client type, same map object, group, and
+  `abs(delta) < 2`

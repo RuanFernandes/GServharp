@@ -20,111 +20,131 @@ Current status:
 * Login/session boundary exists.
 * Account loading boundary exists.
 * ReadyForLevelRuntime exists.
-* SendLevelBoundary exists.
-* Modern static sendLevel slice exists.
-* Dynamic sendLevel boundary packets exist:
-
-  * PLO_LEVELBOARD
-  * PLO_LEVELCHEST
-  * PLO_HORSEADD
-  * PLO_BADDYPROPS
-  * GMAP correction with PLO_LEVELNAME
-  * PLO_GHOSTICON
-  * PLO_ISLEADER
-  * PLO_NEWWORLDTIME
-  * PLO_SETACTIVELEVEL
-  * NPC payload as already serialized packet data
-* Session states exist:
-
-  * DynamicLevelPayloadSent
-  * LevelRuntimePacketsSent
+* sendLevel static packets exist.
+* sendLevel dynamic packets exist.
+* sendLevel tail/player visibility sync exists.
+* PLO_OTHERPLPROPS exists.
+* __getLogin property set exists.
+* LevelEntryPlayerPropsSynchronized state exists.
 * Tests are green.
 
 Now continue through these next safe milestones:
 
-# 1. Trace the remaining tail of sendLevel/level entry
+# 1. Minimal level/player runtime ownership
 
-Trace what happens immediately after `PLO_SETACTIVELEVEL` and NPC payload forwarding.
+Start replacing test-only snapshots with a small source-confirmed runtime model for level ownership and player membership.
 
 Focus on:
 
-* remaining player props sent around level entry
-* `sendProps(__getLogin)` or equivalent in this context
-* forwarding of nearby player props
-* GMAP/group-map filtering
-* player visibility/filtering rules
-* player list synchronization
-* any packet order after NPC payloads
-* any transition into true runtime/gameplay
-* exact stop point before full simulation
+* `Server::playerLoggedIn`
+* `Server::playerLoggedOut`
+* `Level` player list ownership
+* player add/remove from level
+* player id/account identity handling
+* duplicate player handling
+* level player lookup
+* map/GMAP membership if source-confirmed
+* ordering of players in level sync
+* lifecycle boundaries when player warps between levels
+* lifecycle boundaries when player disconnects
 
 Allowed:
 
-* Add source-confirmed packet builders.
-* Add DTOs/snapshots for nearby player/player-list data.
-* Add tests/golden fixtures for exact bytes and ordering.
-* Add new session state only when the source boundary is clear.
+* Add minimal runtime classes only for ownership/listing.
+* Add interfaces where behavior is not fully confirmed.
+* Add tests for add/remove/same-level/GMAP filtering.
+* Integrate with existing player visibility sync only where source-confirmed.
 
 Not allowed:
 
-* Do not implement actual player movement/runtime.
-* Do not implement combat/inventory/NPC AI/scripts.
-* Do not invent nearby player defaults.
-* Do not approximate filtering rules.
-* Do not send packet bytes unless confirmed.
+* Do not implement movement runtime.
+* Do not implement combat.
+* Do not implement NPC AI.
+* Do not execute scripts.
+* Do not invent player ordering/filtering rules.
 
-# 2. Player props for level-entry context
+# 2. Level loading parser boundary
 
-Trace and implement only the player properties required by the level-entry tail.
-
-Focus on:
-
-* `sendProps(__getLogin)` or related prop tables
-* property set/order
-* getProp formatting for required fields
-* current level
-* x/y
-* direction
-* nickname/account
-* animation/gani
-* body/head/sword/shield/colors
-* AP, status, guild/nick fields if sent here
-* version-specific behavior
-
-Allowed:
-
-* Add confirmed prop sets/tables.
-* Expand `PlayerPropertySerializer` only for confirmed fields.
-* Add golden byte fixtures.
-* Keep unknown props blocked.
-
-# 3. Nearby player forwarding/list sync
-
-Trace nearby player forwarding during level entry.
+Trace and implement only source-confirmed level loading/parsing needed to create immutable level snapshots.
 
 Focus on:
 
-* which players are sent to the logging-in player
-* which props are sent for other players
-* which packet IDs are used
-* GMAP vs single-level filtering
-* hidden/invisible/staff conditions
-* version/client branches
-* order of players/properties
+* `Level::loadLevel`
+* `Level::loadNW`
+* `Level::loadGraal`
+* `Level::loadZelda`
+* board data
+* layers
+* links
+* signs
+* chests
+* horses
+* baddies
+* NPC payload extraction only as serialized packet data
+* modTime handling
+* missing/malformed file behavior
+* extension/format detection
 
 Allowed:
 
-* Add snapshot models and packet builders.
-* Add tests with deterministic small fixtures.
-* Stop before live runtime updates.
+* Add pure parsers for source-confirmed formats.
+* Add tests with small source-confirmed fixtures.
+* Add DTOs/snapshots for parsed level data.
+* Keep runtime behavior out of scope.
 
-# 4. Docs and tests
+Not allowed:
+
+* Do not implement NPC script execution.
+* Do not implement baddy AI.
+* Do not invent malformed file recovery.
+* Do not approximate unknown level formats.
+
+# 3. Integrate parsed level snapshots into sendLevel
+
+If level parsing is confirmed enough, connect parsed level snapshots to existing `SendLevelBoundary`.
+
+Focus on:
+
+* board/layers raw payload
+* links/signs payload
+* chests/horses/baddies payload
+* NPC serialized payload passthrough
+* modTime
+* level type/map type
+* packet order
+
+Allowed:
+
+* Add integration tests from parsed fixture → sendLevel packet sequence.
+* Add golden fixtures for exact bytes.
+* Stop before runtime simulation.
+
+# 4. Player visibility sync using minimal runtime
+
+Use the minimal level/player runtime to feed existing player visibility sync.
+
+Focus on:
+
+* same-level filtering
+* GMAP/group-map filtering
+* singleplayer skip
+* distance filtering
+* packet order
+* __getLogin props for other players
+
+Allowed:
+
+* Add deterministic tests with multiple players.
+* Keep movement/live updates out of scope.
+
+# 5. Docs and tests
 
 Create/update docs:
 
 ```txt
-docs/spec/SENDLEVEL_TAIL_SPEC.md
-docs/spec/PLAYER_PROPS_SPEC.md
+docs/spec/LEVEL_RUNTIME_OWNERSHIP_SPEC.md
+docs/spec/LEVEL_FILE_FORMAT_SPEC.md
+docs/spec/LEVEL_LOADING_SPEC.md
 docs/spec/PLAYER_VISIBILITY_SYNC_SPEC.md
 docs/spec/SENDLEVEL_SPEC.md
 docs/spec/GOLDEN_FIXTURES.md

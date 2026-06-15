@@ -630,6 +630,70 @@ joining player's outbound suffix:
   [65,10]
 ```
 
+## Minimal Level Runtime Ownership
+
+These fixtures assert source-confirmed ownership/list ordering, not packet
+bytes.
+
+`Level::addPlayer` append behavior:
+
+```txt
+add 7 => returned index 0, players [7]
+add 8 => returned index 1, players [7,8]
+leader 7 => true
+leader 8 => false
+```
+
+`Level::removePlayer` all-matching-id erase behavior:
+
+```txt
+players before remove: [7,8,7]
+remove 7
+players after remove: [8]
+leader 8 => true
+```
+
+`Server::addPlayer` requested-id overwrite behavior:
+
+```txt
+add first player with id 7
+add replacement player with id 7
+server lookup 7 => replacement player
+```
+
+`Server::deletePlayer` deferred cleanup boundary:
+
+```txt
+delete player 7
+lookup 7 before cleanup => player still present
+cleanup deleted players
+lookup 7 after cleanup => missing
+```
+
+## Level Format Detection
+
+Extension-first selection:
+
+```txt
+start.nw => NW
+start.graal => Graal
+start.zelda => Zelda
+start.txt => unknown, inspect header
+START.NW => unknown, inspect header
+```
+
+Eight-byte signatures:
+
+```txt
+GLEVNW01 => NW
+GR-V1.03 => Graal
+GR-V1.02 => Graal
+GR-V1.01 => Graal
+Z3-V1.04 => Zelda
+Z3-V1.03 => Zelda
+UNKNOWN! => unknown
+```
+
 ## Server-List Auth
 
 ### SVO_VERIACC2

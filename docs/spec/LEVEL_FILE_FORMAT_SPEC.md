@@ -87,6 +87,17 @@ stored lowercased with map coordinates.
 
 ## C# Status
 
+Implemented source-confirmed format selection:
+
+- `LevelFileFormat`
+- `LevelFileFormatDetector.FromExtension`
+- `LevelFileFormatDetector.DetectFromHeader`
+- `LevelFileFormatDetector.Choose`
+
+The C# detector preserves the C++ extension-first selection and the confirmed
+eight-byte magic values. It intentionally does not accept uppercase extensions
+because C++ only proves literal `.nw`, `.graal`, and `.zelda` comparisons.
+
 No production level-file parser is implemented yet.
 
 The current C# `sendLevel` boundary accepts pre-serialized board/layer/link/sign

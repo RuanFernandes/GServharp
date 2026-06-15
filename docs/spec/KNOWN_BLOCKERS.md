@@ -28,4 +28,13 @@
   `sendLevel141`, production horse/baddy/NPC state construction, and live
   multi-session player-list forwarding remain blocked because they enter
   level/map/NPC/player-list runtime.
+- Minimal level/player ownership is implemented for source-confirmed id
+  assignment, level player-list append/remove, leader detection, deferred
+  deletion cleanup, and runtime visibility filtering. It does not implement
+  list-server side effects, scripting hooks, player-id generation, production
+  server player-list iteration compatibility, movement, or live forwarding.
+- Level format detection is implemented for the exact C++ extension checks and
+  eight-byte signatures. Full NW/Graal/Zelda parsing remains blocked on
+  dedicated fixtures for board/layer/link/sign/chest/horse/baddy/NPC payloads,
+  malformed file behavior, and filesystem lookup behavior.
 - Server-list connection lifecycle, reconnect backoff, registration, and text/listserver side channels need a dedicated milestone.

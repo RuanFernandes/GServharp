@@ -19,6 +19,14 @@
   `sendLevel141`, production horse/baddy/NPC state construction, and live
   multi-session player-list forwarding remain blocked because they enter
   level/map/NPC/player-list runtime.
+- Minimal level/player ownership is implemented only for confirmed id
+  assignment, same-level membership order, all-matching-id removal, leader
+  detection, deferred deletion cleanup, and visibility selection. List-server
+  side effects, scripting hooks, player-id generation, and live multi-session
+  forwarding remain blocked.
+- Level file format detection is implemented for confirmed extension and
+  signature selection. Full NW/Graal/Zelda parsing remains blocked on exact
+  fixtures and filesystem/malformed-input behavior.
 - WebSocket handling is gated by `WOLFSSL_ENABLED` code paths and needs a dedicated pass.
 - `Server::doMain()` timing branches need a dedicated timing recovery pass.
 - Gameplay systems, account persistence, RC/NC file browser, server-list protocol, and scripting bindings are not implemented.
