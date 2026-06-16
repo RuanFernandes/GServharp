@@ -127,7 +127,11 @@ if (m_server->getName().find("login") != CString::npos)
 }
 ```
 
-`PLO_GHOSTICON = 174` is confirmed in `IEnums.h`. `PLO_FULLSTOP` is referenced in `PlayerLogin.cpp` but not present in recovered `IEnums.h`; only `PLO_FULLSTOP2 = 177` exists. This branch remains documented but unimplemented until the missing opcode is recovered.
+`PLO_GHOSTICON = 174` is confirmed in `IEnums.h`. `PLO_FULLSTOP` is referenced in `PlayerLogin.cpp` but not present in the C++ tree or recovered `IEnums.h`; only `PLO_FULLSTOP2 = 177` exists. For this recovered source set, the branch is permanently blocked: do not map `PLO_FULLSTOP` to `PLO_FULLSTOP2` without recovering the original missing enum/source or proving the exact byte from a running original server capture.
+
+The C# boundary now exposes this as `LoginServerFullStopBlocked` when the server
+name contains `login`, and deliberately emits neither guessed full-stop bytes
+nor the following `PLO_GHOSTICON` packet for that unresolved branch.
 
 ## Stop Point
 

@@ -94,6 +94,16 @@ This is:
 PLO_SIGNATURE, GCHAR 73, "\n", PLO_UNKNOWN168, "\n"
 ```
 
+Login-named server continuation is a confirmed blocked negative fixture for the
+C# port. C++ references missing `PLO_FULLSTOP` before `PLO_GHOSTICON`, but no
+authoritative opcode exists in the recovered source set. The C# boundary reports
+`LoginServerFullStopBlocked` and emits only the source-confirmed surrounding
+client bytes:
+
+```txt
+[57, 105, 10, 200, 10]
+```
+
 Active duplicate client rejection preserves C++ ordering, with early client packets already queued:
 
 ```txt

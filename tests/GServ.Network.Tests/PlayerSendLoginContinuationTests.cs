@@ -241,6 +241,23 @@ public sealed class PlayerSendLoginContinuationTests
     }
 
     [Fact]
+    public void LoginNamedServerReportsBlockedFullStopBranchWithoutGuessingPacketBytes()
+    {
+        var session = AuthenticatedClient3Session();
+        var options = BaseOptions() with { ServerName = "Classic Login" };
+
+        var result = PlayerSendLoginContinuation.Begin(session, BaseAccount(), options);
+
+        Assert.True(result.Accepted);
+        Assert.True(result.LoginServerFullStopBlocked);
+        Assert.Equal(
+            OutboundLoginPackets.Signature(appendNewline: true)
+                .Concat(OutboundLoginPackets.Unknown168(appendNewline: true))
+                .ToArray(),
+            session.TakeOutboundBytes());
+    }
+
+    [Fact]
     public void ActiveDuplicateClientRejectsAfterEarlyClientPackets()
     {
         var session = AuthenticatedClient3Session();

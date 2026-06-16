@@ -141,9 +141,9 @@ maps `BANNED`, `BANREASON`, `LOCALRIGHTS`, staff-list membership, and `IPRANGE`
 wildcards into `PlayerSendLoginAccount`, then runs
 `PlayerSendLoginContinuation`.
 
-`PlayerSendLoginContinuation` sends `PLO_SIGNATURE`, skips the unresolved
-login-server-name branch unless the missing `PLO_FULLSTOP` opcode is recovered,
-sends `PLO_UNKNOWN168` for clients, checks duplicate account sessions, and stops
-before registering the player with the list server through
+`PlayerSendLoginContinuation` sends `PLO_SIGNATURE`, reports
+`LoginServerFullStopBlocked` and skips guessed output for the unresolved
+login-server-name branch, sends `PLO_UNKNOWN168` for clients, checks duplicate
+account sessions, and stops before registering the player with the list server through
 `Server::playerLoggedIn`. Everything after that point is beyond this milestone
 because it begins world, level, props, RC, NC, and scripting behavior.

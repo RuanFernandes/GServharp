@@ -335,8 +335,14 @@ safe world-entry boundaries.
     deletion and before `PLO_SERVERLISTCONNECTED`. Production live lookup,
     default conversion, bytecode/time construction, and class-list ordering
     remain blocked.
-- [ ] Resolve or permanently block `PLO_FULLSTOP` vs `PLO_FULLSTOP2` with source
+- [x] Resolve or permanently block `PLO_FULLSTOP` vs `PLO_FULLSTOP2` with source
   proof.
+  - 2026-06-16: Permanently blocked for the recovered source set.
+    `PlayerLogin.cpp` references `PLO_FULLSTOP` in the login-server-name branch,
+    but no authoritative definition exists in the C++ tree or recovered
+    `external/gs2lib/include/IEnums.h`; only `PLO_FULLSTOP2 = 177` is present.
+    The C# continuation now reports `LoginServerFullStopBlocked` and refuses to
+    emit guessed full-stop or ghost-icon bytes for this branch.
 - [ ] Implement old-client `PLPROP_GANI` behavior if confirmed.
 - [ ] Add golden packet-order fixtures for modern and old clients.
 - [ ] Update `docs/spec/SENDLOGINCLIENT_PACKET_FLOW.md`,

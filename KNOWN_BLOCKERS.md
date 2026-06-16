@@ -37,7 +37,11 @@
   conversion through `msgPLI_WEAPONADD`, script/bytecode compilation, class
   `time(0)` packet construction, concrete class-list ordering, and zlib-fix NPC
   weapon remain blocked.
-- The login-server-name branch in `Player::sendLogin` is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`.
+- The login-server-name branch in `Player::sendLogin` is permanently blocked
+  for the recovered source set because C++ references `PLO_FULLSTOP`, but the
+  C++ tree and recovered `IEnums.h` only define `PLO_FULLSTOP2 = 177`. The C#
+  boundary reports `LoginServerFullStopBlocked` and must not substitute
+  `PLO_FULLSTOP2` without recovered original source or byte-capture proof.
 - `CFileQueue` queue selection, gen1/gen6 socket passthrough, gen2/gen3 zlib
   framing, gen5 uncompressed socket framing for payloads up to 55 bytes, and
   gen5 zlib framing for payloads through `0x2000` bytes are implemented.

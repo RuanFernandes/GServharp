@@ -28,7 +28,11 @@
   conversion through `msgPLI_WEAPONADD`, script/bytecode compilation, class
   `time(0)` packet construction, concrete class-list ordering, and zlib-fix NPC
   weapon remain blocked.
-- The login-server-name branch is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`. Do not assume they are equivalent without source proof.
+- The login-server-name branch is permanently blocked for the recovered source
+  set because C++ references `PLO_FULLSTOP`, but the C++ tree and recovered
+  `IEnums.h` only define `PLO_FULLSTOP2 = 177`. The C# boundary reports
+  `LoginServerFullStopBlocked` and must not substitute `PLO_FULLSTOP2` without
+  recovered original source or byte-capture proof.
 - Exact `CString::guntokenize()` behavior for ban reasons remains blocked; current C# tests cover plain reasons and the confirmed newline-to-carriage-return replacement path only.
 - Real account/password validation must not be invented. The C++ server delegates password/auth verification to the list server through `SVO_VERIACC2`/`SVI_VERIACC2`.
 - Production auth now has confirmed list-server packet body builders for

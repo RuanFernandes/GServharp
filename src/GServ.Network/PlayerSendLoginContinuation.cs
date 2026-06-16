@@ -27,7 +27,8 @@ public sealed record PlayerSendLoginOptions(
 
 public sealed record PlayerSendLoginContinuationResult(
     bool Accepted,
-    IReadOnlyList<DuplicateSessionDisconnect> DuplicateDisconnects);
+    IReadOnlyList<DuplicateSessionDisconnect> DuplicateDisconnects,
+    bool LoginServerFullStopBlocked = false);
 
 public static class PlayerSendLoginContinuation
 {
@@ -61,7 +62,8 @@ public static class PlayerSendLoginContinuation
 
         session.QueuePacket(OutboundLoginPackets.Signature(appendNewline: true));
 
-        if (options.ServerName.Contains("login", StringComparison.OrdinalIgnoreCase))
+        var loginServerFullStopBlocked = options.ServerName.Contains("login", StringComparison.OrdinalIgnoreCase);
+        if (loginServerFullStopBlocked)
         {
             // C++ sends PLO_FULLSTOP here, but recovered gs2lib does not define PLO_FULLSTOP.
             // The branch is documented as blocked until the original opcode source is recovered.
@@ -87,15 +89,15 @@ public static class PlayerSendLoginContinuation
                 }
 
                 session.QueueDisconnect("Account is already in use.");
-                return new PlayerSendLoginContinuationResult(false, duplicateDisconnects);
+                return new PlayerSendLoginContinuationResult(false, duplicateDisconnects, loginServerFullStopBlocked);
             }
 
             session.MarkReadyForWorldEntry();
-            return new PlayerSendLoginContinuationResult(true, duplicateDisconnects);
+            return new PlayerSendLoginContinuationResult(true, duplicateDisconnects, loginServerFullStopBlocked);
         }
 
         session.MarkReadyForWorldEntry();
-        return new PlayerSendLoginContinuationResult(true, []);
+        return new PlayerSendLoginContinuationResult(true, [], loginServerFullStopBlocked);
     }
 
     private static PlayerSendLoginContinuationResult Reject(ClientSessionSkeleton session, string message)
