@@ -20,6 +20,7 @@ public sealed class RuntimePlayer
 
     public ushort Id { get; internal set; }
     public string AccountName { get; }
+    public uint AccountIp { get; set; }
     public RuntimePlayerKind Kind { get; }
     public RuntimeLevel? Level { get; private set; }
     public string? Group { get; set; }

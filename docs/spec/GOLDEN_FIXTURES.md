@@ -1580,6 +1580,14 @@ PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_ACCOUNTNAME + GCHAR(4) + "pc:7" + "\n"
 bytes: 40 32 39 66 36 112 99 58 55 10
 ```
 
+Live `PLPROP_IPADDR` forwarding ignores the consumed client-sent value and uses
+current runtime account-IP state. For account IP `1`:
+
+```txt
+PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_IPADDR + GInt5(1) + "\n"
+bytes: 40 32 39 62 32 32 32 32 33 10
+```
+
 ## Combat Runtime Fixtures
 
 Inbound `PLI_HURTPLAYER` fixture:
@@ -2256,10 +2264,10 @@ Source-confirmed `PLPROP_IPADDR` consume-only update:
 PLPROP_IPADDR + GInt5(0x7F000001)
 ```
 
-The incoming IP bytes are consumed, but C++ `setProps` discards them. Full
-generic forwarding for this property must use the current
-`getProp(PLPROP_IPADDR)` account-IP state and remains blocked until that
-state-backed forwarding path exists.
+The incoming IP bytes are consumed, but C++ `setProps` discards them. The live
+state-backed forwarding path uses the current runtime account IP; isolated
+stateless forwarding remains blocked because it must not echo client-sent IP
+bytes.
 
 Source-confirmed `PLPROP_UDPPORT` update:
 

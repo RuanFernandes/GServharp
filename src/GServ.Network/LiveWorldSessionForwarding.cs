@@ -64,7 +64,8 @@ public static class LiveWorldSessionForwarder
             state: new IncomingPlayerPropsForwardingState(
                 (byte)(sender.Hitpoints * 2.0f),
                 CurrentLevelName: BuildCurrentLevelPropValue(sender),
-                AccountName: sender.AccountName));
+                AccountName: sender.AccountName,
+                AccountIp: sender.AccountIp));
 
         return ForwardConfirmedLevelAreaPacket(
             server,

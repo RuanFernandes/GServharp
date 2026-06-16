@@ -574,8 +574,9 @@ behavior, and movement-loop invocation.
   - 2026-06-16: Implemented the source-confirmed `PLPROP_IPADDR`
     consume-only mutation boundary. The parser consumes the incoming `GInt5`,
     and the runtime applier ignores it because C++ `setProps` reads and
-    discards client-sent IP bytes. Generic forwarding remains blocked until it
-    can serialize the current account IP state through `getProp`.
+    discards client-sent IP bytes. Live forwarding now serializes the current
+    runtime account-IP state through `getProp`-equivalent bytes; stateless
+    forwarding remains blocked.
   - 2026-06-16: Implemented the source-confirmed `PLPROP_UDPPORT` state
     mutation boundary. The parser reads the incoming `GInt`, and the runtime
     applier stores the current UDP port. The C++ loaded/id-gated
@@ -677,6 +678,11 @@ behavior, and movement-loop invocation.
     discards the client-sent string exactly like C++; the live forwarding path
     now emits `getProp(PLPROP_ACCOUNTNAME)`-equivalent bytes using the
     authenticated/runtime account name instead of echoing untrusted input.
+  - 2026-06-16: Implemented source-confirmed live `PLPROP_IPADDR` forwarding
+    from runtime account-IP state. The parser still consumes and discards the
+    client-sent `GInt5` exactly like C++; the live forwarding path now emits
+    `getProp(PLPROP_IPADDR)`-equivalent bytes using runtime state instead of
+    echoing untrusted input.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -747,6 +753,9 @@ behavior, and movement-loop invocation.
   - 2026-06-16: Added source-confirmed live `PLPROP_ACCOUNTNAME` fixture
     proving discarded inbound bytes are not echoed; forwarding uses runtime
     account state.
+  - 2026-06-16: Added source-confirmed live `PLPROP_IPADDR` fixture proving
+    discarded inbound bytes are not echoed; forwarding uses runtime account-IP
+    state.
 
 Completion criteria:
 
