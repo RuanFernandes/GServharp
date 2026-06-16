@@ -76,6 +76,16 @@ public sealed class RcNcPacketTests
     }
 
     [Fact]
+    public void LegacyNcWeaponGetUsesNpcWeaponAddShapeWithSectionByteNewlines()
+    {
+        var bytes = RcNcPackets.LegacyNcWeaponGet("Tool", "tool.png", "a\nb");
+
+        Assert.Equal(
+            new byte[] { 65, 36, 84, 111, 111, 108, 32, 40, 116, 111, 111, 108, 46, 112, 110, 103, 33, 32, 35, 97, 167, 98, 10 },
+            bytes);
+    }
+
+    [Fact]
     public void NpcServerAddressUsesConfirmedOpcodeGShortIdAndCommaAddress()
     {
         var bytes = RcNcPackets.NpcServerAddress(7, "127.0.0.1", 14950);

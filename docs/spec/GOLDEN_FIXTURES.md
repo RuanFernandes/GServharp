@@ -1891,6 +1891,14 @@ PLO_NC_WEAPONGET "Tool" "tool.png" "a\nb" "\n"
 => [224, 36, 84, 111, 111, 108, 40, 116, 111, 111, 108, 46, 112, 110, 103, 97, 167, 98, 10]
 ```
 
+For NC clients older than `NCVER_2_1`, the same request uses the legacy
+`PLO_NPCWEAPONADD` shape:
+
+```txt
+PLO_NPCWEAPONADD "Tool" NPCPROP_IMAGE "tool.png" NPCPROP_SCRIPT GSHORT(3) "a\xa7b" "\n"
+=> [65, 36, 84, 111, 111, 108, 32, 40, 116, 111, 111, 108, 46, 112, 110, 103, 33, 32, 35, 97, 167, 98, 10]
+```
+
 ### `PLO_NPCSERVERADDR`
 
 ```txt

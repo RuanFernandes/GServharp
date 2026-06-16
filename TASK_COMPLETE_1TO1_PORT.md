@@ -709,6 +709,9 @@ Completion criteria:
     builders for `UPDATESCRIPT`/`UPDATECLASS` bytecode responses. This remains
     open for class edit/get mutation boundaries, bytecode header generation, and
     production repository wiring.
+  - 2026-06-16: Added source-confirmed legacy NC weapon-get packet builder for
+    `getVersion() < NCVER_2_1`, preserving `PLO_NPCWEAPONADD` property order,
+    `GSHORT` script length, and newline-to-`0xa7` script conversion.
 - [x] Implement gani checksum/script request behavior.
   - 2026-06-16: Added source-confirmed `PLI_UPDATEGANI` parser,
     CRC32 mismatch decision, `PLO_RAWDATA + PLO_GANISCRIPT` bytecode wrapper,

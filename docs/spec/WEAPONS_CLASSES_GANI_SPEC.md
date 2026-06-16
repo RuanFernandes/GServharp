@@ -151,6 +151,43 @@ formattedClientGS1 bytes
 - trims each line;
 - joins every line with byte `0xA7`.
 
+## NC Weapon Inspection
+
+`Player::msgPLI_NC_WEAPONGET`:
+
+- reads trailing weapon name;
+- requires NC access;
+- if weapon exists and is not a default weapon:
+  - uses `weapon->getFullScript()`;
+  - replaces every `'\n'` with byte `0xa7`;
+  - for NC clients older than `NCVER_2_1`, sends the legacy
+    `PLO_NPCWEAPONADD` packet shape:
+
+```txt
+PLO_NPCWEAPONADD
+GCHAR weaponName.length
+weaponName
+GCHAR NPCPROP_IMAGE
+GCHAR image.length
+image
+GCHAR NPCPROP_SCRIPT
+GSHORT script.length
+script_with_0xa7_newlines
+```
+
+  - otherwise sends the modern NC packet:
+
+```txt
+PLO_NC_WEAPONGET
+GCHAR weaponName.length
+weaponName
+GCHAR image.length
+image
+script_with_0xa7_newlines
+```
+
+- if missing or default, sends an RC chat error to all NC users.
+
 ## Weapon Runtime Updates
 
 `Weapon::updateWeapon`:
@@ -300,8 +337,10 @@ Implemented:
 - `PLO_RAWDATA + GINT(bytecode.length) + "\n" + PLO_NPCWEAPONSCRIPT +
   bytecode` for confirmed script/class bytecode response shape;
 - missing-class `PLI_UPDATECLASS` fallback packet:
-  `PLO_NPCWEAPONSCRIPT + raw GSHORT(header length) + retokenized empty
+  `PLO_NPCWEAPONSCRIPT + GSHORT(header length) + retokenized empty
   bytecode header + "\n"`;
+- legacy NC weapon-get response packet for clients older than `NCVER_2_1`,
+  including newline-to-`0xa7` conversion and `PLO_NPCWEAPONADD` property order;
 - `PLI_UPDATEGANI` parser for `GUInt5 checksum + trailing gani name`;
 - GANI CRC mismatch decision using the source-confirmed CRC32 primitive;
 - `PLO_RAWDATA + PLO_GANISCRIPT` bytecode response wrapper from

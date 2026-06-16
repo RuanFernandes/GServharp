@@ -65,6 +65,19 @@ public static class RcNcPackets
         return WithTrailingNewline(writer);
     }
 
+    public static byte[] LegacyNcWeaponGet(string weaponName, string imageName, string script)
+    {
+        var formattedScript = Encoding.Latin1.GetBytes(script.Replace('\n', '\u00a7'));
+        var writer = NewServerPacket(ServerToPlayerPacketId.NpcWeaponAdd);
+        WriteGCharString(writer, weaponName);
+        writer.WriteGChar(0);
+        WriteGCharString(writer, imageName);
+        writer.WriteGChar(1);
+        writer.WriteGShort((ushort)formattedScript.Length);
+        writer.WriteBytes(formattedScript);
+        return WithTrailingNewline(writer);
+    }
+
     public static byte[] NpcServerAddress(ushort npcServerId, string ip, int port)
     {
         var writer = NewServerPacket(ServerToPlayerPacketId.NpcServerAddress);
