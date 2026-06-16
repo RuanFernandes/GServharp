@@ -5,6 +5,11 @@
 - `Server::playerLoggedIn` and the beginning of `sendLoginClient` are implemented only through a source-confirmed pre-warp boundary. C# stops at `ReadyForLevelWarp`, immediately before `warp(m_levelName, getX(), getY())`.
 - The `sendProps(__sendLogin)` property ID table/order is implemented as a source-confirmed C# constant. Full production emission remains blocked on account/default-account data loading, old-client `PLPROP_GANI` behavior, and runtime-dependent properties outside the login set.
 - The C# pre-warp boundary now uses the confirmed property serializer for explicit property IDs instead of inventing defaults.
+- Production startup now resolves the server name from overrides,
+  `startupserver.txt`, or exactly one `servers/` directory, and loads
+  source-confirmed `CSettings` syntax for `config/serveroptions.txt` and
+  `config/adminconfig.txt`. Production runtime remains blocked before sockets,
+  list-server auth, full config loaders, filesystem scans, and gameplay.
 - Old-version map-file workaround, flaghack mutation, weapons, protected weapons, classes, and zlib-fix NPC weapon branches in `sendLoginClient` are traced but not implemented.
 - The login-server-name branch is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`. Do not assume they are equivalent without source proof.
 - Exact `CString::guntokenize()` behavior for ban reasons remains blocked; current C# tests cover plain reasons and the confirmed newline-to-carriage-return replacement path only.

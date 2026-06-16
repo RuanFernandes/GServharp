@@ -2,6 +2,11 @@
 
 - Exact original `gs2compiler` submodule commit is not present in this fresh source snapshot. The repository URL is confirmed and current source was cloned, but scripting work should recover the exact commit before implementing runtime behavior.
 - Full `IEnums.h` packet catalog is large; only foundation-critical IDs are implemented in C# so far.
+- Production startup now has source-confirmed command-line/environment server
+  selection plus `CSettings`-compatible `serveroptions.txt` and
+  `adminconfig.txt` parsing. It still stops before production sockets,
+  list-server auth, full `Server::init`, filesystem runtime loaders, and
+  gameplay because those belong to later milestones.
 - Full login success is blocked on production account/default account loading side effects, remaining `sendLoginClient` branches, `sendLoginRC`/`sendLoginNC`, and world warp behavior.
 - The login packet parse boundary, server-list auth boundary, source-confirmed beginning of `Player::sendLogin`, `Server::playerLoggedIn` list-server add side effect, minimal pre-warp `sendLoginClient` packet order, the confirmed `__sendLogin` property ID table, and login property serialization are implemented. The current stop point is `ReadyForLevelWarp`, immediately before `warp(m_levelName, getX(), getY())`.
 - Old-version map-file workaround, `flaghack_ip`, weapons, protected weapons, classes, and zlib-fix NPC weapon branches in `sendLoginClient` are traced but not implemented.

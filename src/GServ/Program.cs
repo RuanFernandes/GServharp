@@ -1,11 +1,34 @@
 using System.Net;
 using GServ.Game;
 using GServ.Network;
+using GServ.Persistence;
 
 var config = DevOnlyLocalServerCommandLine.Parse(args);
 if (!config.Enabled)
 {
     Console.WriteLine("GServ C# compatibility foundation initialized. Full server runtime is not implemented yet.");
+    var productionArgs = ProductionStartupCommandLine.Parse(args, Environment.GetEnvironmentVariable);
+    if (productionArgs.ShowHelp)
+    {
+        Console.WriteLine("Confirmed C++ options: -h, --help, -s/--server, -p/--port, --localip, --serverip, --interface, --staff, --name.");
+        Console.WriteLine("Dev-only shell: --dev-only-local --dev-root <path> --dev-level <level.nw> [--port <port>].");
+        return;
+    }
+
+    var snapshot = ProductionStartupLoader.Load(Environment.CurrentDirectory, productionArgs);
+    if (snapshot.Resolution.Success)
+    {
+        Console.WriteLine($"Production startup resolved server '{snapshot.Resolution.ServerName}' from {snapshot.Resolution.Source}.");
+        Console.WriteLine($"Server path: {snapshot.Resolution.ServerPath}");
+        Console.WriteLine($"config/serveroptions.txt opened: {snapshot.ServerOptions.IsOpened}");
+        Console.WriteLine($"config/adminconfig.txt opened: {snapshot.AdminConfig.IsOpened}");
+    }
+    else
+    {
+        Console.WriteLine(snapshot.Resolution.Diagnostic);
+    }
+
+    Console.WriteLine(snapshot.BlockedReason);
     Console.WriteLine("Dev-only local shell is disabled. Pass --dev-only-local --dev-root <path> --dev-level <level.nw> to run the diagnostic shell.");
     return;
 }
