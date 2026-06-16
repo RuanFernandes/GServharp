@@ -1204,6 +1204,31 @@ outside: (5,6), (4,7)
 
 When multiple links match, C++ returns the first stored link.
 
+Inbound `PLI_LEVELWARP`, x `30.5`, y `31.0`, level `"start.nw"`:
+
+```txt
+PLI_LEVELWARP
+GCHAR(61)
+GCHAR(62)
+"start.nw"
+
+=> [32, 93, 94, 115, 116, 97, 114, 116, 46, 110, 119]
+```
+
+Inbound `PLI_LEVELWARPMOD`, mod time `123`, x `40.0`, y `40.5`,
+level `"world_a01.nw"`:
+
+```txt
+PLI_LEVELWARPMOD
+GINT5(123)
+GCHAR(80)
+GCHAR(81)
+"world_a01.nw"
+
+=> [62, 32, 32, 32, 32, 155, 112, 113,
+    119, 111, 114, 108, 100, 95, 97, 48, 49, 46, 110, 119]
+```
+
 Chest key formatting from `Level::getChestStr`:
 
 ```txt

@@ -5,6 +5,7 @@ public enum PlayerToServerPacketId : byte
     LevelWarp = 0,
     BoardModify = 1,
     PlayerProps = 2,
+    LevelWarpMod = 30,
     RawData = 50,
     RcServerOptionsGet = 51,
     RcServerOptionsSet = 52,

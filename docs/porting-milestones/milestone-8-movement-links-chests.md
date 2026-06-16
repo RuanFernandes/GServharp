@@ -22,7 +22,9 @@
 - [x] Update `docs/spec/MOVEMENT_LINKS_CHESTS_SPEC.md`.
 - [x] Add tests for X/Y/Z/X2/Y2/Z2, level-name changes, link touch bounds, sign text translation, chest item names, and blocked side effects.
 - [x] Implement source-confirmed property mutation and forwarding behavior.
-- [ ] Implement link-triggered warp only after exact branch conditions are proven.
+- [x] Implement source-confirmed client-triggered link warp packet parsing
+  (`PLI_LEVELWARP`/`PLI_LEVELWARPMOD`) and keep automatic movement-to-link warp
+  blocked until a direct C++ player call path is proven.
 - [x] Implement chest/sign packet responses only where bytes and state changes are confirmed.
 - [x] Keep combat/NPC/script triggers blocked unless explicitly confirmed in this milestone.
 - [x] Run `dotnet build GServharp.sln`.

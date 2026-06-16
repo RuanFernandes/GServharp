@@ -70,6 +70,30 @@ public sealed record PlayerWarpBoundaryResult(
 
 public static class WarpWorldEntryBoundary
 {
+    public static PlayerWarpBoundaryResult BeginClientLevelWarpPacket(
+        ClientSessionSkeleton session,
+        ILevelLookup levelLookup,
+        PlayerWarpState state,
+        ReadOnlySpan<byte> packet,
+        ClientVersionId clientVersion,
+        float currentZ,
+        PlayerWarpSettings settings)
+    {
+        var levelWarp = LevelWarpPacketParser.Parse(packet);
+        return BeginWarp(
+            session,
+            levelLookup,
+            state,
+            new LevelWarpRequest(
+                levelWarp.LevelName,
+                levelWarp.X,
+                levelWarp.Y,
+                currentZ,
+                clientVersion,
+                levelWarp.ModTime),
+            settings);
+    }
+
     public static PlayerWarpBoundaryResult BeginWarp(
         ClientSessionSkeleton session,
         ILevelLookup levelLookup,

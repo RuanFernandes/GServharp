@@ -107,11 +107,33 @@ pY >= link.y && pY <= link.y + link.height
 The bounds are inclusive at both ends. The C# port implements this pure
 hit-test as `LevelInteraction.FindTouchedLink`.
 
-No direct C++ player link-warp call path was confirmed in this milestone.
-`NPC::testTouch` uses `Level::getLink` for NPC link traversal, but player
-movement currently calls `Level::testTouch` for NPC touch events, not
-`Level::getLink`. Automatic player link-triggered warp remains blocked until a
-source-confirmed path is traced.
+No direct C++ automatic player movement-to-link warp call path was confirmed in
+this milestone. `NPC::testTouch` uses `Level::getLink` for NPC link traversal,
+but player movement currently calls `Level::testTouch` for NPC touch events, not
+`Level::getLink`.
+
+The source-confirmed player-facing warp boundary is client-triggered:
+
+- `Player.cpp` registers `TPLFunc[PLI_LEVELWARP] = &Player::msgPLI_LEVELWARP`.
+- `Player.cpp` registers `TPLFunc[PLI_LEVELWARPMOD] = &Player::msgPLI_LEVELWARP`.
+- `IEnums.h` confirms `PLI_LEVELWARP = 0` and `PLI_LEVELWARPMOD = 30`.
+- `Player::parsePacket` consumes the packet id with `curPacket.readGUChar()`
+  before calling the handler, while the handler still checks `pPacket[0] - 32`.
+- `Player::msgPLI_LEVELWARP` reads optional `GUInt5 modTime` only for
+  `PLI_LEVELWARPMOD`, then reads `x = readGChar() / 2.0f`,
+  `y = readGChar() / 2.0f`, reads the rest of the packet as the level name, and
+  calls `warp(newLevel, x, y, modTime)`.
+- `Player::warp` sets X/Y but does not set Z before entering `setLevel`.
+
+The C# port implements this confirmed inbound packet parser in
+`LevelWarpPacketParser` and exposes `WarpWorldEntryBoundary.BeginClientLevelWarpPacket`
+to convert the parsed packet into the existing `warp` boundary. The caller must
+provide the current Z because the C++ inbound packet does not contain one and
+`Player::warp` does not mutate it.
+
+Automatic server-side player movement-to-link warp remains blocked until a
+direct C++ player call path from movement/touch processing to `Level::getLink`
+and `warp` is proven.
 
 ## Confirmed Chest Behavior
 
@@ -162,9 +184,10 @@ weapon, status, and stat mutation behavior.
 
 ## Blocked Areas
 
-- Automatic player link warp is blocked. The milestone confirmed inclusive
-  `Level::getLink` lookup but did not find a direct player movement-to-link
-  warp path.
+- Automatic player movement-to-link warp is blocked. The milestone confirmed
+  inclusive `Level::getLink` lookup and the client-triggered
+  `PLI_LEVELWARP`/`PLI_LEVELWARPMOD` path, but did not find a direct player
+  movement-to-link warp path.
 - `Player::testSign` runtime responses are blocked on server-side setting
   plumbing, `PLO_SAY2`, and player translation behavior.
 - Chest item reward mutation is blocked on a dedicated `LevelItem`/player stat

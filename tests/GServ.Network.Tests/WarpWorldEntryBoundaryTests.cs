@@ -171,6 +171,38 @@ public sealed class WarpWorldEntryBoundaryTests
         Assert.Equal(new byte[] { 46, 93, 94, (byte)'s', (byte)'t', (byte)'a', (byte)'r', (byte)'t', (byte)'.', (byte)'n', (byte)'w', 10 }, session.TakeOutboundBytes());
     }
 
+    [Fact]
+    public void BeginClientLevelWarpPacketParsesInboundPacketAndPreservesCurrentZ()
+    {
+        var session = ReadyForLevelWarpSession();
+        var levels = new MemoryLevelLookup();
+        levels.Add(new LevelEntrySnapshot(
+            "world_a01.nw",
+            new LevelMapSnapshot(LevelMapType.Gmap, "world.gmap"),
+            MapX: 4,
+            MapY: 5));
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)PlayerToServerPacketId.LevelWarp);
+        packet.WriteGChar(61);
+        packet.WriteGChar(62);
+        packet.WriteBytes("world_a01.nw"u8);
+
+        var result = WarpWorldEntryBoundary.BeginClientLevelWarpPacket(
+            session,
+            levels,
+            new PlayerWarpState(new LevelEntrySnapshot("start.nw"), CurrentX: 12.0f, CurrentY: 13.0f),
+            packet.ToArray(),
+            ClientVersionId.Client21,
+            currentZ: 1.5f,
+            PlayerWarpSettings.Default);
+
+        Assert.True(result.CppReturnValue);
+        Assert.Equal(PlayerWarpStopPoint.TargetReadyForSendLevelRuntime, result.StopPoint);
+        Assert.Equal(
+            new byte[] { 81, 93, 94, 85, 36, 37, (byte)'w', (byte)'o', (byte)'r', (byte)'l', (byte)'d', (byte)'.', (byte)'g', (byte)'m', (byte)'a', (byte)'p', 10 },
+            session.TakeOutboundBytes());
+    }
+
     private static ClientSessionSkeleton ReadyForLevelWarpSession()
     {
         var session = new ClientSessionSkeleton(7);

@@ -88,10 +88,11 @@
   dev-only TCP shell preserves source-confirmed `PLI_RAWDATA` state for decoded
   gen1/gen2/gen5/gen6 post-login payloads. Inbound bzip2 branches, inbound
   bundle dispatch, full `setProps`, NPC/combat side effects, and invalid-update
-  behavior remain blocked. Pure inclusive link hit-testing, static sign
-  encoding, chest key formatting, and the unopened chest acknowledgement packet
-  are implemented; automatic player link warp, runtime `PLO_SAY2` sign touch,
-  and chest item reward mutation remain blocked.
+  behavior remain blocked. Pure inclusive link hit-testing, client-triggered
+  `PLI_LEVELWARP`/`PLI_LEVELWARPMOD` parsing, static sign encoding, chest key
+  formatting, and the unopened chest acknowledgement packet are implemented;
+  automatic player movement-to-link warp, runtime `PLO_SAY2` sign touch, and
+  chest item reward mutation remain blocked.
 - Server-list connection lifecycle, reconnect backoff, registration, and text/listserver side channels need a dedicated milestone.
 - Production timing boundaries now cover the source-confirmed `Server::doMain`
   one-second gate, 5s/60s/180s/300s periodic server jobs, server-list reconnect
