@@ -2104,3 +2104,11 @@ Source-confirmed `PLPROP_GATTRIB1` generic forwarding from
 PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_GATTRIB1 + GCHAR(5) + "sword" + "\n"
 [40, 32, 39, 69, 37, 115, 119, 111, 114, 100, 10]
 ```
+
+Source-confirmed `PLPROP_COLORS` generic forwarding from `Player::setProps`,
+player id `7`, colors `[1, 2, 3, 4, 5]`, newline appended by `sendPacket`:
+
+```txt
+PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_COLORS + five GUChar color bytes + "\n"
+[40, 32, 39, 45, 33, 34, 35, 36, 37, 10]
+```

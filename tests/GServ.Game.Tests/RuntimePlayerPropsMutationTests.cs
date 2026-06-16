@@ -162,4 +162,18 @@ public sealed class RuntimePlayerPropsMutationTests
         Assert.False(player.MovementUpdated);
         Assert.False(player.TouchTestRequested);
     }
+
+    [Fact]
+    public void AppliesConfirmedColorPropWithoutMovementSideEffects()
+    {
+        var player = new RuntimePlayer(7, "pc:Ruan", RuntimePlayerKind.Client);
+
+        RuntimePlayerPropsApplier.ApplyConfirmed(
+            player,
+            [IncomingPlayerPropertyUpdate.Bytes(PlayerPropertyId.Colors, [1, 2, 3, 4, 5])]);
+
+        Assert.Equal([1, 2, 3, 4, 5], player.Colors);
+        Assert.False(player.MovementUpdated);
+        Assert.False(player.TouchTestRequested);
+    }
 }

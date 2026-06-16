@@ -21,7 +21,8 @@ public sealed record IncomingPlayerPropertyUpdate(
     byte? GCharValue = null,
     ushort? GShortValue = null,
     int? GIntValue = null,
-    string? StringValue = null)
+    string? StringValue = null,
+    IReadOnlyList<byte>? BytesValue = null)
 {
     public static IncomingPlayerPropertyUpdate GChar(PlayerPropertyId propertyId, byte value) =>
         new(propertyId, GCharValue: value);
@@ -34,6 +35,9 @@ public sealed record IncomingPlayerPropertyUpdate(
 
     public static IncomingPlayerPropertyUpdate String(PlayerPropertyId propertyId, string value) =>
         new(propertyId, StringValue: value);
+
+    public static IncomingPlayerPropertyUpdate Bytes(PlayerPropertyId propertyId, IReadOnlyList<byte> value) =>
+        new(propertyId, BytesValue: value);
 
     public static IncomingPlayerPropertyUpdate NoValue(PlayerPropertyId propertyId) =>
         new(propertyId);
@@ -78,6 +82,12 @@ public static class IncomingPlayerPropsParser
                 case PlayerPropertyId.PlayerLanguage:
                 case PlayerPropertyId.OsType:
                     updates.Add(IncomingPlayerPropertyUpdate.String(propertyId, ReadGCharString(reader)));
+                    break;
+
+                case PlayerPropertyId.Colors:
+                    updates.Add(IncomingPlayerPropertyUpdate.Bytes(
+                        propertyId,
+                        [reader.ReadGChar(), reader.ReadGChar(), reader.ReadGChar(), reader.ReadGChar(), reader.ReadGChar()]));
                     break;
 
                 case PlayerPropertyId.TextCodePage:
@@ -201,6 +211,14 @@ public static class IncomingPlayerPropsForwarding
 
                 case PlayerPropertyId.ApCounter:
                     WriteProperty(levelBuff, PlayerPropertyId.ApCounter, writer => writer.WriteGShort((ushort)(update.GShortValue.GetValueOrDefault() + 1)));
+                    break;
+
+                case PlayerPropertyId.Colors:
+                    WriteProperty(levelBuff, PlayerPropertyId.Colors, writer =>
+                    {
+                        foreach (var color in update.BytesValue?.Take(5) ?? [])
+                            writer.WriteGChar(color);
+                    });
                     break;
 
                 default:

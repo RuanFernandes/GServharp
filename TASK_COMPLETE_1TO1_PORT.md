@@ -531,6 +531,10 @@ behavior, and movement-loop invocation.
     `GATTRIB` forwarding uses the C++ generic local prop payload. Language,
     OS, and text codepage remain local-only because `__sendLocal` disables
     forwarding for their ids.
+  - 2026-06-16: Implemented `PLPROP_COLORS` as a five-`GUChar` runtime subset.
+    The parser consumes exactly five color bytes, the runtime applier stores
+    the confirmed five slots without movement side effects, and forwarding
+    emits the C++ generic local payload because `__sendLocal[13]` is true.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to

@@ -49,16 +49,21 @@ public sealed class RuntimePlayer
     public string Language { get; internal set; } = string.Empty;
     public string Os { get; internal set; } = string.Empty;
     public uint TextCodePage { get; internal set; }
+    public IReadOnlyList<byte> Colors => _colors;
     public IReadOnlyList<string> GaniAttributes => _ganiAttributes;
     public bool MovementUpdated { get; internal set; }
     public bool TouchTestRequested { get; internal set; }
 
+    private readonly byte[] _colors = new byte[5];
     private readonly string[] _ganiAttributes = Enumerable.Repeat(string.Empty, 30).ToArray();
 
     public bool IsClient => Kind == RuntimePlayerKind.Client;
 
     internal void SetGaniAttribute(int index, string value) =>
         _ganiAttributes[index] = value;
+
+    internal void SetColor(int index, byte value) =>
+        _colors[index] = value;
 
     public void JoinLevel(RuntimeLevel level)
     {
@@ -176,6 +181,10 @@ public static class RuntimePlayerPropsApplier
                     player.Gani = update.StringValue ?? string.Empty;
                     break;
 
+                case GServ.Protocol.PlayerPropertyId.Colors:
+                    ApplyColors(player, update.BytesValue ?? []);
+                    break;
+
                 case GServ.Protocol.PlayerPropertyId.PlayerLanguage:
                     player.Language = update.StringValue ?? string.Empty;
                     break;
@@ -228,6 +237,12 @@ public static class RuntimePlayerPropsApplier
     {
         player.MovementUpdated = true;
         player.TouchTestRequested = true;
+    }
+
+    private static void ApplyColors(RuntimePlayer player, IReadOnlyList<byte> colors)
+    {
+        for (var i = 0; i < 5 && i < colors.Count; i++)
+            player.SetColor(i, colors[i]);
     }
 
     private static int DecodePreciseCoordinate(ushort encoded)

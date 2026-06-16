@@ -191,6 +191,25 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedColorPropAsFiveGChars()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.Colors);
+        body.WriteGChar(1);
+        body.WriteGChar(2);
+        body.WriteGChar(3);
+        body.WriteGChar(4);
+        body.WriteGChar(5);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray());
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.Colors, update.PropertyId);
+        Assert.Equal([1, 2, 3, 4, 5], update.BytesValue);
+    }
+
+    [Fact]
     public void BuildsConfirmedForwardedMovementPropsForPreciseSender()
     {
         var updates = new[]
@@ -272,5 +291,20 @@ public sealed class IncomingPlayerPropsParserTests
             appendNewline: true);
 
         Assert.Equal([40, 32, 39, 69, 37, 115, 119, 111, 114, 100, 10], packet);
+    }
+
+    [Fact]
+    public void ForwardsConfirmedColorsWithFiveGChars()
+    {
+        var packet = IncomingPlayerPropsForwarding.BuildOtherPlayerPropsPacket(
+            playerId: 7,
+            pixelX: 0,
+            pixelY: 0,
+            pixelZ: 0,
+            [IncomingPlayerPropertyUpdate.Bytes(PlayerPropertyId.Colors, [1, 2, 3, 4, 5])],
+            senderSupportsPreciseMovement: true,
+            appendNewline: true);
+
+        Assert.Equal([40, 32, 39, 45, 33, 34, 35, 36, 37, 10], packet);
     }
 }
