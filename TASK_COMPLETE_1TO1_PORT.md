@@ -546,6 +546,10 @@ behavior, and movement-loop invocation.
     terminal payload coverage via `PLPROP_GATTRIB1`, matching
     `CString::readChars` clamping the requested attribute length to bytes
     remaining in the packet.
+  - 2026-06-16: Added source-confirmed local-only environment string truncated
+    terminal payload coverage for `PLPROP_PLANGUAGE` and `PLPROP_OSTYPE`,
+    matching `CString::readChars` clamping requested lengths to remaining packet
+    bytes.
   - 2026-06-16: Implemented `PLPROP_COLORS` as a five-`GUChar` runtime subset.
     The parser consumes exactly five color bytes, the runtime applier stores
     the confirmed five slots without movement side effects, and forwarding

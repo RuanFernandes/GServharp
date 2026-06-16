@@ -245,6 +245,30 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedEnvironmentStringsByClampingDeclaredLengthToRemainingBytes()
+    {
+        var languageBody = new GraalBinaryWriter();
+        languageBody.WriteGChar((byte)PlayerPropertyId.PlayerLanguage);
+        languageBody.WriteGChar(4);
+        languageBody.WriteBytes("pt"u8);
+
+        var osBody = new GraalBinaryWriter();
+        osBody.WriteGChar((byte)PlayerPropertyId.OsType);
+        osBody.WriteGChar(4);
+        osBody.WriteBytes("wi"u8);
+
+        var language = IncomingPlayerPropsParser.Parse(languageBody.ToArray());
+        var os = IncomingPlayerPropsParser.Parse(osBody.ToArray());
+
+        Assert.True(language.Success);
+        Assert.True(os.Success);
+        Assert.Equal("pt", Assert.Single(language.Updates).StringValue);
+        Assert.Equal(PlayerPropertyId.PlayerLanguage, language.Updates[0].PropertyId);
+        Assert.Equal("wi", Assert.Single(os.Updates).StringValue);
+        Assert.Equal(PlayerPropertyId.OsType, os.Updates[0].PropertyId);
+    }
+
+    [Fact]
     public void ParsesConfirmedGaniAttributeByClampingDeclaredLengthToRemainingBytes()
     {
         var body = new GraalBinaryWriter();
