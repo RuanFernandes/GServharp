@@ -35,13 +35,15 @@ Implemented:
   - enters `PlayerSendLoginContinuation`, `PostLoginWorldEntryBoundary`,
     `WarpWorldEntryBoundary`, `NwLevelFileLoader`, and `SendLevelBoundary`
   - stops at `DynamicLevelPayloadSent` before live world simulation
+  - accepts decoded post-login `PLI_PLAYERPROPS` frames for the confirmed
+    movement/player-prop subset and applies local runtime state mutation only
 - `DevOnlyLocalTcpServer`
   - accepts one TCP client at a time
   - reads length-prefixed frames in a continuous per-connection loop
   - reuses one `ClientSessionSkeleton` for all frames on that connection
   - writes outbound bytes through `GraalFileQueue.FlushSocket`
-  - stops clearly on the first unsupported post-login frame before movement,
-    gameplay, NPC, script, or map runtime handling
+  - stops clearly on the first unsupported post-login frame before gameplay,
+    NPC, script, or map runtime handling
 
 This is a diagnostic shell, not a production session loop.
 
@@ -76,11 +78,13 @@ yet.
 
 ## Known Gaps
 
-- The TCP shell processes multiple frames for one connection, but after login it
-  stops on unsupported post-login input instead of dispatching gameplay/runtime
-  packets.
+- The TCP shell processes multiple frames for one connection and can apply
+  decoded `PLI_PLAYERPROPS` movement/player-prop frames, but it does not yet
+  decrypt real encrypted post-login client frames.
+- Unsupported post-login packet ids still stop before gameplay/runtime
+  dispatch.
 - Outbound bzip2 socket framing for gen4 and gen5 payloads over `0x2000` bytes
   is still blocked.
 - Websocket wrapping is not implemented.
-- Movement, reconnect cleanup, and multi-session forwarding are not
-  implemented.
+- Touch/link traversal, reconnect cleanup, and live multi-session forwarding
+  are not implemented.

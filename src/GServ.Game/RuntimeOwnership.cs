@@ -25,6 +25,14 @@ public sealed class RuntimePlayer
     public string? Group { get; set; }
     public int MapX { get; set; }
     public int MapY { get; set; }
+    public int PixelX { get; internal set; }
+    public int PixelY { get; internal set; }
+    public int PixelZ { get; internal set; }
+    public byte Sprite { get; internal set; }
+    public string CurrentLevelName { get; internal set; } = string.Empty;
+    public string Gani { get; internal set; } = string.Empty;
+    public bool MovementUpdated { get; internal set; }
+    public bool TouchTestRequested { get; internal set; }
 
     public bool IsClient => Kind == RuntimePlayerKind.Client;
 
@@ -45,6 +53,78 @@ public sealed class RuntimePlayer
 
         level.RemovePlayer(Id);
         Level = null;
+    }
+}
+
+public static class RuntimePlayerPropsApplier
+{
+    public static void ApplyConfirmed(
+        RuntimePlayer player,
+        IEnumerable<GServ.Protocol.IncomingPlayerPropertyUpdate> updates)
+    {
+        foreach (var update in updates)
+        {
+            switch (update.PropertyId)
+            {
+                case GServ.Protocol.PlayerPropertyId.X:
+                    player.PixelX = update.GCharValue.GetValueOrDefault() * 8;
+                    MarkMovement(player);
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.Y:
+                    player.PixelY = update.GCharValue.GetValueOrDefault() * 8;
+                    MarkMovement(player);
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.Z:
+                    player.PixelZ = (update.GCharValue.GetValueOrDefault() - 50) * 8;
+                    MarkMovement(player);
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.Sprite:
+                    player.Sprite = update.GCharValue.GetValueOrDefault();
+                    player.TouchTestRequested = true;
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.CurrentLevel:
+                    player.CurrentLevelName = update.StringValue ?? string.Empty;
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.Gani:
+                    player.Gani = update.StringValue ?? string.Empty;
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.X2:
+                    player.PixelX = DecodePreciseCoordinate(update.GShortValue.GetValueOrDefault());
+                    MarkMovement(player);
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.Y2:
+                    player.PixelY = DecodePreciseCoordinate(update.GShortValue.GetValueOrDefault());
+                    MarkMovement(player);
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.Z2:
+                    player.PixelZ = DecodePreciseCoordinate(update.GShortValue.GetValueOrDefault());
+                    MarkMovement(player);
+                    break;
+
+                default:
+                    throw new NotSupportedException($"Runtime mutation for player prop {(byte)update.PropertyId} is not source-confirmed.");
+            }
+        }
+    }
+
+    private static void MarkMovement(RuntimePlayer player)
+    {
+        player.MovementUpdated = true;
+        player.TouchTestRequested = true;
+    }
+
+    private static int DecodePreciseCoordinate(ushort encoded)
+    {
+        var value = encoded >> 1;
+        return (encoded & 0x0001) != 0 ? -value : value;
     }
 }
 

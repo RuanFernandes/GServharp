@@ -47,6 +47,7 @@ public sealed class DevOnlyLocalSessionPipeline(
 
     internal DevOnlyLocalSessionResult ProcessConnectionInput(
         ClientSessionSkeleton session,
+        RuntimePlayer runtimePlayer,
         List<string> log,
         ReadOnlySpan<byte> input)
     {
@@ -63,6 +64,9 @@ public sealed class DevOnlyLocalSessionPipeline(
                 RunDevOnlyLoginFlow(session, log);
                 return Finish(session, session.Lifecycle == SessionLifecycle.DynamicLevelPayloadSent, ToStopPoint(session), log);
             }
+
+            if (TryProcessDecodedPostLoginPacket(session, runtimePlayer, log, frame.Span))
+                return Finish(session, session.Lifecycle == SessionLifecycle.DynamicLevelPayloadSent, ToStopPoint(session), log);
 
             log.Add("Unsupported post-login frame received by dev-only shell; continuous loop stopped before gameplay/runtime packet handling.");
             return Finish(session, session.Lifecycle == SessionLifecycle.DynamicLevelPayloadSent, ToStopPoint(session), log);
@@ -160,6 +164,34 @@ public sealed class DevOnlyLocalSessionPipeline(
             SessionLifecycle.ReadyForLevelWarp => DevOnlyLocalStopPoint.MissingLevel,
             _ => DevOnlyLocalStopPoint.Rejected
         };
+
+    private static bool TryProcessDecodedPostLoginPacket(
+        ClientSessionSkeleton session,
+        RuntimePlayer runtimePlayer,
+        List<string> log,
+        ReadOnlySpan<byte> packet)
+    {
+        if (packet.IsEmpty)
+            return false;
+
+        var packetId = (byte)(packet[0] - 32);
+        if (packetId != (byte)PlayerToServerPacketId.PlayerProps)
+            return false;
+
+        var parsed = IncomingPlayerPropsParser.Parse(packet[1..]);
+        RuntimePlayerPropsApplier.ApplyConfirmed(runtimePlayer, parsed.Updates);
+        if (!parsed.Success)
+        {
+            log.Add($"Decoded PLI_PLAYERPROPS stopped at unconfirmed property {(byte)parsed.UnsupportedPropertyId!.Value}; no gameplay side effects were run.");
+            return true;
+        }
+
+        log.Add(
+            $"Applied decoded PLI_PLAYERPROPS to dev-only runtime player {session.Id}: " +
+            $"x={runtimePlayer.PixelX}, y={runtimePlayer.PixelY}, z={runtimePlayer.PixelZ}, " +
+            $"sprite={runtimePlayer.Sprite}, level={runtimePlayer.CurrentLevelName}, gani={runtimePlayer.Gani}.");
+        return true;
+    }
 
     private static DevOnlyLocalSessionResult Finish(
         ClientSessionSkeleton session,
@@ -319,14 +351,16 @@ public sealed class DevOnlyLocalSessionConnection
 {
     private readonly DevOnlyLocalSessionPipeline _pipeline;
     private readonly ClientSessionSkeleton _session;
+    private readonly RuntimePlayer _runtimePlayer;
     private readonly List<string> _log = [];
 
     internal DevOnlyLocalSessionConnection(DevOnlyLocalSessionPipeline pipeline, ushort playerId)
     {
         _pipeline = pipeline;
         _session = new ClientSessionSkeleton(playerId);
+        _runtimePlayer = new RuntimePlayer(playerId, string.Empty, RuntimePlayerKind.Client);
     }
 
     public DevOnlyLocalSessionResult ProcessLengthPrefixedInput(ReadOnlySpan<byte> input) =>
-        _pipeline.ProcessConnectionInput(_session, _log, input);
+        _pipeline.ProcessConnectionInput(_session, _runtimePlayer, _log, input);
 }

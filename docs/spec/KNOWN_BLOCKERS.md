@@ -55,8 +55,11 @@
   and chest packet builders. Player sign translation, NPC runtime creation,
   baddy ids/props/AI, chest opening gameplay, and `.graal`/`.zelda` parsers
   remain blocked.
-- Incoming `PLI_PLAYERPROPS` movement/property flow is traced through the first
-  confirmed X/Y/Z/sprite/current-level/gani cases, but implementation remains
-  blocked on `setProps` forwarding, touch/link traversal, NPC/chest/combat side
-  effects, and invalid-update behavior.
+- Incoming decoded `PLI_PLAYERPROPS` movement/property parsing is implemented
+  for the confirmed X/Y/Z, X2/Y2/Z2, sprite, current-level, and gani subset.
+  Safe local runtime mutation and a packet builder for confirmed movement
+  `PLO_OTHERPLPROPS` forwarding bytes exist. Real encrypted post-login frame
+  decoding, live multi-session forwarding, full `setProps`, touch/link
+  traversal, NPC/chest/combat side effects, and invalid-update behavior remain
+  blocked.
 - Server-list connection lifecycle, reconnect backoff, registration, and text/listserver side channels need a dedicated milestone.

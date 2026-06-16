@@ -63,6 +63,25 @@ After this sync, C++ `sendLevel` returns `true`. The C# session state
 runtime simulation, movement updates, combat, item interactions, NPC AI, and
 scripting callbacks.
 
+## Movement Prop Forwarding
+
+`Player::setProps(... PLSETPROPS_FORWARD ...)` forwards local player property
+changes through the same `Server::sendPacketToLevelArea` filtering used by
+nearby level sync, excluding the sender id.
+
+For the confirmed movement subset, C# can now build the forwarded packet body:
+
+```txt
+PLO_OTHERPLPROPS
+GSHORT playerId
+levelBuff2 then levelBuff for sender version >= CLVER_2_3
+levelBuff then levelBuff2 for older sender versions
+```
+
+The implemented builder covers `X/Y/Z`, `X2/Y2/Z2`, `Sprite`, `CurrentLevel`,
+and `Gani`. It does not yet send to live sockets; production recipient routing
+remains blocked on the real multi-session runtime.
+
 ## Tests
 
 `tests/GServ.Game.Tests/LevelEntryVisibilitySelectionTests.cs` covers:
@@ -71,3 +90,9 @@ scripting callbacks.
 - singleplayer levels skipping visibility sync
 - GMAP/group-map filtering by client type, same map object, group, and
   `abs(delta) < 2`
+
+`tests/GServ.Protocol.Tests/IncomingPlayerPropsParserTests.cs` covers:
+
+- decoded incoming movement/player prop parsing
+- stopping at the first unconfirmed property
+- forwarded `PLO_OTHERPLPROPS` bytes for a precise-movement sender

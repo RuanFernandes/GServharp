@@ -962,6 +962,42 @@ log contains:
 "Unsupported post-login frame received by dev-only shell; continuous loop stopped before gameplay/runtime packet handling."
 ```
 
+Decoded post-login `PLI_PLAYERPROPS` movement frame:
+
+```txt
+packet body:
+PLI_PLAYERPROPS
+PLPROP_X GCHAR(70)
+PLPROP_Y GCHAR(71)
+
+bytes:
+[34, 47, 102, 48, 103]
+
+dev-only applied state:
+x=560
+y=568
+```
+
+Confirmed precise-movement forwarding packet for `playerId=7`,
+`pixelX=560`, `pixelY=560`, sender version `>= CLVER_2_3`:
+
+```txt
+PLO_OTHERPLPROPS
+GSHORT 7
+PLPROP_X GCHAR(70)
+PLPROP_Y GCHAR(70)
+PLPROP_X2 GSHORT(1120)
+PLPROP_Y2 GSHORT(1120)
+"\n"
+
+=> [40, 32, 39,
+    47, 102,
+    48, 102,
+    110, 40, 128,
+    111, 40, 128,
+    10]
+```
+
 ## Server-List Auth
 
 ### SVO_VERIACC2

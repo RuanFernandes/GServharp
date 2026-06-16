@@ -144,6 +144,35 @@ public sealed class DevOnlyLocalSessionPipelineTests
         Assert.Contains(result.Log, line => line.Contains("Unsupported post-login frame", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void ConnectionAppliesDecodedPlayerPropsFrameAfterLoginBoundary()
+    {
+        using var temp = new TemporaryDirectory();
+        var world = Directory.CreateDirectory(Path.Combine(temp.Path, "world"));
+        File.WriteAllText(Path.Combine(world.FullName, "start.nw"), "GLEVNW01\n");
+
+        var fileSystem = new IndexedServerFileSystem(temp.Path);
+        fileSystem.AddDirectory("world", "*.nw");
+        var pipeline = new DevOnlyLocalSessionPipeline(
+            new DevOnlyLocalServerOptions(EnableDevOnlyAuth: true, LevelName: "start.nw"),
+            new NwLevelFileLoader(fileSystem));
+        var connection = pipeline.CreateConnection();
+
+        var login = connection.ProcessLengthPrefixedInput(LengthFrame(Client3LoginPacket()));
+        var movement = connection.ProcessLengthPrefixedInput(LengthFrame(PlayerPropsPacket(
+            PlayerPropertyId.X,
+            70,
+            PlayerPropertyId.Y,
+            71)));
+
+        Assert.True(login.Accepted);
+        Assert.True(movement.Accepted);
+        Assert.DoesNotContain(movement.Log, line => line.Contains("Unsupported post-login frame", StringComparison.Ordinal));
+        Assert.Contains(movement.Log, line => line.Contains("Applied decoded PLI_PLAYERPROPS", StringComparison.Ordinal));
+        Assert.Contains(movement.Log, line => line.Contains("x=560", StringComparison.Ordinal));
+        Assert.Contains(movement.Log, line => line.Contains("y=568", StringComparison.Ordinal));
+    }
+
     private static byte[] Client3LoginPacket()
     {
         var packet = new GraalBinaryWriter();
@@ -171,6 +200,17 @@ public sealed class DevOnlyLocalSessionPipelineTests
         ..System.Text.Encoding.ASCII.GetBytes(levelName),
         (byte)'\n'
     ];
+
+    private static byte[] PlayerPropsPacket(PlayerPropertyId first, byte firstValue, PlayerPropertyId second, byte secondValue)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)PlayerToServerPacketId.PlayerProps);
+        packet.WriteGChar((byte)first);
+        packet.WriteGChar(firstValue);
+        packet.WriteGChar((byte)second);
+        packet.WriteGChar(secondValue);
+        return packet.ToArray();
+    }
 
     private sealed class TemporaryDirectory : IDisposable
     {

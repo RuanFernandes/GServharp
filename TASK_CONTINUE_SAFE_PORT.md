@@ -18,173 +18,164 @@ If something is unclear, document it as unknown and continue with the next safe 
 Current status:
 
 * Dev-only local TCP shell exists behind explicit `--dev-only-local`.
-* C++ gs2lib fixture harness exists under `tools/gs2lib-fixtures`.
-* Byte-exact fixtures were captured through real CFileQueue -> CSocket::sendData.
-* GraalFileQueue now supports:
+* Shell integrates `GraalFileQueue.FlushSocket`.
+* Shell maintains connection state and reads multiple length-prefixed frames.
+* Dev-only pipeline can reach login -> fake dev auth -> account/level boundary -> `.nw` sendLevel.
+* Manual diagnostic client test is now possible, but not gameplay.
+* Post-login frames currently stop with explicit unsupported logs.
+* Known blockers:
 
-  * gen1/gen6 passthrough
-  * gen2/gen3 zlib socket flush
-  * gen5 uncompressed payload <= 55
-  * gen5 zlib payload 56..0x2000
-* gen5 bzip2 > 0x2000 remains explicitly blocked.
-* Manual client test is closer but still blocked by:
-
-  1. gen4/gen5 bzip2 socket flush,
-  2. integrating FlushSocket into dev TCP shell safely,
-  3. continuous session loop + movement/player props runtime.
+  * bzip2 socket flush for large payloads,
+  * real auth/list-server,
+  * post-login movement/player props/runtime dispatch.
 * Tests are green.
 
 Goal of this run:
 
-Integrate the confirmed socket flush into the dev-only TCP shell for small/medium payloads, add a continuous session loop, and begin the source-confirmed incoming movement/player-props boundary if safe.
-
-Do not block on bzip2 unless it is required by the tested dev payload.
+Implement the first source-confirmed post-login incoming packet boundary: movement/player props parsing, safe state mutation, and nearby player forwarding where confirmed.
 
 ---
 
-# Milestone 1: Integrate confirmed FlushSocket into dev-only TCP shell
+# Milestone 1: Trace post-login packet dispatch
 
-Update the dev-only TCP shell to use `GraalFileQueue.FlushSocket` for outbound bytes where confirmed.
-
-Focus on:
-
-* preserving packet order
-* preserving generation/key state
-* using gen5 zlib/uncompressed where source-confirmed
-* not using unsupported bzip2 branches
-* not consuming pending queue on unsupported branches
-* logging when payload size would require blocked bzip2
-* making dev-only test payloads small enough to avoid bzip2 when possible
-
-Allowed:
-
-* Add explicit dev config to keep payload small or fail clearly if bzip2 is required.
-* Add tests with fake transport/socket output.
-* Add integration test for login -> level entry outbound sequence through FlushSocket.
-* Add docs warning about bzip2 limitation.
-
-Not allowed:
-
-* Do not approximate bzip2.
-* Do not silently fall back to a different compression mode.
-* Do not bypass source-confirmed flush behavior.
-
----
-
-# Milestone 2: Continuous session loop
-
-Improve the dev-only TCP shell from single-frame diagnostic to continuous session loop.
-
-Focus on:
-
-* accept connection
-* read frames repeatedly
-* pass frames into session pipeline
-* preserve session state between frames
-* flush outbound bytes after each frame
-* detect disconnect
-* support cancellation token
-* log unsupported incoming packets clearly
-* stop safely on unsupported protocol rather than invent behavior
-
-Allowed:
-
-* Add fake transport tests.
-* Add manual run docs.
-* Add debug logging.
-
-Not allowed:
-
-* Do not invent handling for unknown PLI packets.
-* Do not silently swallow unsupported packets unless C++ confirms this behavior.
-* Do not implement gameplay.
-
----
-
-# Milestone 3: Dev-only manual client test readiness
-
-Make the dev server more ready for a controlled manual test with a tiny `.nw` level.
-
-Focus on:
-
-* create or document a tiny `.nw` fixture that avoids bzip2 threshold
-* document exact command to run
-* document expected stage reached
-* document expected limitations
-* document how to recognize blocked bzip2/unsupported movement packets
-* ensure dev-only fake auth is visibly marked
-
-Allowed:
-
-* Add sample dev world under a clearly marked dev/test path if appropriate.
-* Add docs only if adding files is not appropriate.
-* Add integration test using the same fixture if possible.
-
-Not allowed:
-
-* Do not claim production readiness.
-* Do not remove warnings.
-
----
-
-# Milestone 4: Movement/player props receive boundary
-
-If the dev TCP shell is stable enough, trace and implement the first source-confirmed incoming movement/player-props boundary.
-
-Focus on:
+Deeply trace:
 
 * `Player::parsePacket`
-* incoming player props packet IDs
-* `Player::setProps`
-* `Player::setProp`
-* x/y
-* z if present
-* direction
-* gani/animation
-* current level
-* prop forwarding to other players
-* validation/clipping
-* level link traversal trigger
+* packet handlers under `server/src/player/packets/`
+* incoming movement/player props packets
 * unsupported packet behavior
-
-Allowed:
-
-* Add parsers for confirmed incoming prop packets.
-* Add DTOs for incoming property updates.
-* Add tests/golden fixtures.
-* Add source-confirmed mutation of RuntimePlayer only for safe fields.
-* Add forwarding builders only if exact behavior is confirmed.
-
-Not allowed:
-
-* Do not implement combat/items/weapons.
-* Do not implement NPC/scripts.
-* Do not invent anti-cheat.
-* Do not implement link traversal unless fully traced.
-* Do not integrate movement into live dev server if behavior is incomplete.
-
----
-
-# Milestone 5: Optional bzip2 research only if time remains
-
-If the previous milestones are complete and safe, research bzip2 implementation options.
+* behavior after login/level entry
+* rawdata mode interactions if any
 
 Focus on:
 
-* exact bzip2 format emitted by gs2lib
-* available .NET libraries
-* whether byte output can match fixtures exactly
-* licensing/dependency concerns
-* tests against harness fixture
+* exact PLI packet IDs involved in movement/player props
+* packet body format
+* handler dispatch order
+* unknown/unsupported packet behavior
+* disconnect or ignore behavior for bad packets
+* session state requirements
 
 Allowed:
 
-* Add dependency only if it is necessary, safe, and byte-exact.
-* Otherwise keep bzip2 blocked.
+* Add docs and packet catalog updates.
+* Add dispatcher skeleton only for source-confirmed packets.
+* Unsupported packets should behave according to C++ if known; otherwise log/block explicitly.
+
+---
+
+# Milestone 2: Incoming player props parser
+
+Trace and implement source-confirmed parser for incoming player property updates.
+
+Focus on:
+
+* `Player::setProps`
+* `Player::setProp`
+* property ID encoding
+* property value boundaries
+* property sequence parsing
+* x/y/level/direction/gani props if present
+* exact string/number parsing behavior
+* empty/malformed property behavior
+* client-version branches
+
+Allowed:
+
+* Add DTOs for parsed property updates.
+* Add parsers with golden fixtures.
+* Add tests for exact byte inputs.
+* Only include confirmed props.
 
 Not allowed:
 
-* Do not add approximate bzip2 behavior.
+* Do not invent prop defaults.
+* Do not guess unknown props.
+* Do not implement gameplay side effects.
+
+---
+
+# Milestone 3: Safe RuntimePlayer mutation
+
+Apply only source-confirmed safe props to runtime player state.
+
+Focus on:
+
+* x/y
+* level name if handled here
+* direction
+* gani/animation
+* nickname/body/head/etc only if confirmed here
+* clipping/validation if source-confirmed
+* no side effects beyond confirmed state update
+
+Allowed:
+
+* Add methods on RuntimePlayer or a movement/props service.
+* Add tests for state mutation.
+* Keep unsupported props ignored/blocked exactly as C++ behavior if known.
+
+Not allowed:
+
+* Do not implement combat.
+* Do not implement item use.
+* Do not implement anti-cheat unless traced.
+* Do not implement link traversal unless traced.
+
+---
+
+# Milestone 4: Forward player props to nearby players
+
+Trace and implement source-confirmed forwarding behavior.
+
+Focus on:
+
+* which packet ID is used
+* PLO_OTHERPLPROPS or related packets
+* property table/order for forwarded updates
+* same-level filtering
+* GMAP filtering
+* singleplayer behavior
+* hidden/staff/invisible filters if confirmed
+* packet order
+* whether sender also receives anything
+
+Allowed:
+
+* Add forwarding builder/service.
+* Add tests with two or three RuntimePlayers.
+* Integrate with dev-only shell only if safe and source-confirmed.
+
+Not allowed:
+
+* Do not invent visibility rules.
+* Do not implement live gameplay beyond prop sync.
+
+---
+
+# Milestone 5: Integrate minimal movement/player props into dev-only TCP shell
+
+If parser + mutation + forwarding are source-confirmed enough, integrate them into the dev-only shell.
+
+Focus on:
+
+* after level entry, accept movement/player prop frames
+* mutate runtime player state
+* flush forwarding packets to affected players if supported
+* log unsupported packets
+* keep fake auth clearly dev-only
+* preserve packet framing/encryption/flush behavior
+
+Allowed:
+
+* Add integration tests with fake transports.
+* Add docs for manual client test expectations.
+
+Not allowed:
+
+* Do not implement unknown packets.
+* Do not fake gameplay.
+* Do not hide unsupported behavior.
 
 ---
 
@@ -193,11 +184,10 @@ Not allowed:
 Create/update docs:
 
 ```txt
+docs/spec/MOVEMENT_PLAYER_PROPS_SPEC.md
+docs/spec/PLAYER_VISIBILITY_SYNC_SPEC.md
 docs/spec/TCP_SESSION_PIPELINE_SPEC.md
 docs/spec/RUN_LOCAL_DEV_SERVER.md
-docs/spec/CFILEQUEUE_FLUSH_SPEC.md
-docs/spec/MOVEMENT_PLAYER_PROPS_SPEC.md
-docs/spec/CFILEQUEUE_FIXTURE_HARNESS.md
 docs/spec/GOLDEN_FIXTURES.md
 docs/spec/KNOWN_BLOCKERS.md
 KNOWN_BLOCKERS.md
@@ -213,15 +203,15 @@ dotnet test GServharp.sln
 At the end, report:
 
 * What was completed
-* Whether FlushSocket is now used by the dev TCP shell
-* Whether the continuous loop exists
-* Whether a tiny `.nw` manual client test is now recommended
-* Exact command to run if recommended
-* Exact known limitations
+* Which incoming movement/player prop packets are supported
+* Whether dev-only shell now handles post-login movement/props
+* Which C++/gs2lib files were used
 * Which C# files/tests were added or modified
 * Which docs were updated
 * Whether `ai_resources/` stayed untouched
 * Build/test results
+* Whether manual client test should now be attempted
+* Exact run command and expected limitations
 * Safest next step
 
 Continue as far as safely possible. Do not stop after one small task if another safe task can be done safely.

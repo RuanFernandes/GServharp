@@ -45,10 +45,13 @@
   payload preservation, and baddy verse payload preservation. Board/layer/link/
   sign/chest packet builders exist. Player sign translation, NPC runtime props,
   baddy runtime props/AI, and chest opening gameplay remain blocked.
-- Incoming `PLI_PLAYERPROPS` movement/property flow is traced for the first
-  X/Y/Z/sprite/current-level/gani cases, but implementation remains blocked on
-  `setProps` forwarding, touch/link traversal, NPC/chest/combat side effects,
-  and invalid-update behavior.
+- Incoming decoded `PLI_PLAYERPROPS` movement/property parsing is implemented
+  for the confirmed X/Y/Z, X2/Y2/Z2, sprite, current-level, and gani subset.
+  Safe local runtime mutation and a packet builder for confirmed movement
+  `PLO_OTHERPLPROPS` forwarding bytes exist. Real encrypted post-login frame
+  decoding, live multi-session forwarding, full `setProps`, touch/link
+  traversal, NPC/chest/combat side effects, and invalid-update behavior remain
+  blocked.
 - WebSocket handling is gated by `WOLFSSL_ENABLED` code paths and needs a dedicated pass.
 - `Server::doMain()` timing branches need a dedicated timing recovery pass.
 - Gameplay systems, account persistence, RC/NC file browser, server-list protocol, and scripting bindings are not implemented.
