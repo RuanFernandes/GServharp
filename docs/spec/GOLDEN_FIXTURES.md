@@ -1561,6 +1561,14 @@ PLO_OTHERPLPROPS + GSHORT(7)
 bytes: 40 32 39 52 53 115 116 97 114 116 46 110 119 46 115 105 110 103 108 101 112 108 97 121 101 114 10
 ```
 
+Inbound `PLPROP_CURLEVEL` uses `GCHAR len` plus `CString::readChars(len)` in
+the non-V8 branch. Terminal truncated level-name payloads parse the remaining
+bytes:
+
+```txt
+PLPROP_CURLEVEL + GCHAR(8) + "start" => "start"
+```
+
 Forwarded `PLPROP_APCOUNTER` uses C++ `getProp` semantics, so stored `123`
 emits `GSHORT(124)`:
 

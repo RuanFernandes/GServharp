@@ -694,6 +694,9 @@ behavior, and movement-loop invocation.
     current runtime level is singleplayer, matching `getProp(PLPROP_CURLEVEL)`.
     GMAP map-name forwarding remains blocked until the live GMAP state path is
     fixture-confirmed.
+  - 2026-06-16: Added source-confirmed `PLPROP_CURLEVEL` truncated terminal
+    payload coverage, matching `CString::readChars` clamping the requested
+    level-name length to bytes remaining in the packet.
   - 2026-06-16: Implemented the source-confirmed `PLPROP_UDPPORT` generic
     local forwarding tail. The parser/runtime already stored the incoming
     `GInt`; the forwarding builder now emits `PLPROP_UDPPORT + GInt(port)` like

@@ -104,6 +104,22 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedCurrentLevelByClampingDeclaredLengthToRemainingBytes()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.CurrentLevel);
+        body.WriteGChar(8);
+        body.WriteBytes("start"u8);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray());
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.CurrentLevel, update.PropertyId);
+        Assert.Equal("start", update.StringValue);
+    }
+
+    [Fact]
     public void ParsesConfirmedModernGaniByClampingDeclaredLengthToRemainingBytes()
     {
         var body = new GraalBinaryWriter();
