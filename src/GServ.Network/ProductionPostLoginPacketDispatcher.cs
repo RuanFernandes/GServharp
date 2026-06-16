@@ -77,7 +77,19 @@ public sealed class ProductionPostLoginPacketDispatcher
     private ProductionPostLoginPacketDispatchResult DispatchPlayerProps(byte rawPacketId, ReadOnlySpan<byte> body)
     {
         var parsed = IncomingPlayerPropsParser.Parse(body);
-        RuntimePlayerPropsApplier.ApplyConfirmed(_player, parsed.Updates);
+        foreach (var update in parsed.Updates)
+        {
+            try
+            {
+                RuntimePlayerPropsApplier.ApplyConfirmed(_player, [update]);
+            }
+            catch (NotSupportedException ex)
+            {
+                return ProductionPostLoginPacketDispatchResult.Blocked(
+                    rawPacketId,
+                    $"{CppNameOf(update.PropertyId)} was parsed with source-confirmed bytes, but its runtime side effects are not ported yet: {ex.Message}");
+            }
+        }
 
         if (!parsed.Success)
             return ProductionPostLoginPacketDispatchResult.Blocked(
@@ -89,6 +101,16 @@ public sealed class ProductionPostLoginPacketDispatcher
             PlayerToServerPacketId.PlayerProps,
             "Applied confirmed PLI_PLAYERPROPS subset.");
     }
+
+    private static string CppNameOf(PlayerPropertyId propertyId) =>
+        propertyId switch
+        {
+            PlayerPropertyId.CarryNpc => "PLPROP_CARRYNPC",
+            PlayerPropertyId.GmapLevelX => "PLPROP_GMAPLEVELX",
+            PlayerPropertyId.GmapLevelY => "PLPROP_GMAPLEVELY",
+            PlayerPropertyId.Status => "PLPROP_STATUS",
+            _ => $"PLPROP_{(byte)propertyId}"
+        };
 
     private ProductionPostLoginPacketDispatchResult CountInvalidPacket(byte rawPacketId)
     {

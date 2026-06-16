@@ -788,6 +788,11 @@ behavior, and movement-loop invocation.
   - 2026-06-16: Added source-confirmed `PLPROP_CARRYNPC` parser fixture proving
     exact `GUInt`/three-byte Graal integer consumption while keeping ownership
     side effects blocked on NPC runtime.
+  - 2026-06-16: Added a production dispatcher guard for parsed-but-unported
+    player-prop runtime side effects. Confirmed earlier props in a
+    `PLI_PLAYERPROPS` packet are applied in order, then properties such as
+    `PLPROP_CARRYNPC` return a blocked dispatch result instead of crashing or
+    pretending NPC ownership/deletion/forwarding is implemented.
 
 Completion criteria:
 

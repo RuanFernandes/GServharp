@@ -159,3 +159,18 @@ Recommended safe slices:
 Do not implement side effects that depend on word filtering, NPC ownership,
 script events, combat/death, RC permissions, or map ownership until those
 systems have their own C++-confirmed fixtures.
+
+## Production Dispatcher Guard
+
+`ProductionPostLoginPacketDispatcher` applies parsed player-property updates in
+wire order, one confirmed update at a time. If a parsed update reaches a C++
+branch whose byte encoding is known but whose runtime side effects are still
+blocked in C#, the dispatcher returns a blocked result instead of allowing
+`NotSupportedException` to escape the production session path. Confirmed earlier
+updates stay applied, matching the C++ function's sequential mutation shape as
+closely as the current guarded boundary allows.
+
+This is not a substitute implementation for the blocked C++ branch. For
+example, `PLPROP_CARRYNPC` remains blocked until NPC ownership, duplicate carry
+checks, `PLO_PLAYERPROPS`, `PLO_NPCDEL2`, `PLO_OTHERPLPROPS`, and
+`m_carryNpcId` mutation are ported together from `PlayerProps.cpp`.
