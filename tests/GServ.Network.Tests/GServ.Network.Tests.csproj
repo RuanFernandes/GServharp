@@ -9,6 +9,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <ProjectReference Include="..\..\src\GServ.Persistence\GServ.Persistence.csproj" />
     <ProjectReference Include="..\..\src\GServ.Game\GServ.Game.csproj" />
     <ProjectReference Include="..\..\src\GServ.Network\GServ.Network.csproj" />
   </ItemGroup>

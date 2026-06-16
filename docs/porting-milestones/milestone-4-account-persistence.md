@@ -24,7 +24,7 @@
 - [x] Add test fixtures for `GRACC001` and any other confirmed account format markers.
 - [x] Add failing tests for parse, round-trip save, missing file, default account load, banned/staff/admin fields, and guest account behavior where confirmed.
 - [x] Implement account repository behavior only for source-confirmed filesystem semantics.
-- [ ] Wire account DTOs into the existing pre-world login boundary without inventing gameplay defaults.
+- [x] Wire account DTOs into the existing pre-world login boundary without inventing gameplay defaults.
 - [x] Run `dotnet build GServharp.sln`.
 - [x] Run `dotnet test GServharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
@@ -44,7 +44,10 @@
 
 - `AccountFileSerializer` and `AccountSaveService` now cover the
   source-confirmed account save text format and filesystem side effects.
-- The existing pre-world login boundary already consumes typed account data, but
-  production live wiring from `AccountLoadService`/`AccountSaveService` into that
-  boundary remains intentionally unchecked because it needs a dedicated
-  repository/session pass to avoid inventing account validation behavior.
+- `ProductionAccountLoginBoundary` now loads account files through
+  `AccountLoadService`, maps source-confirmed account fields into
+  `PlayerSendLoginAccount`, invokes the existing `Player::sendLogin`
+  continuation boundary, and applies the source-confirmed default-account
+  save/add-file side effect before continuation checks.
+- Guest identity generation remains explicitly blocked because C++ depends on
+  `rand()` timing and connected-player uniqueness checks.

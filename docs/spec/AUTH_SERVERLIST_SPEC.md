@@ -114,4 +114,16 @@ behavior.
 - Client admin IP mismatch unless `IPRANGE` contains `0.0.0.0`: `"Your IP doesn't match one of the allowed IPs for this account."`.
 - Same non-guest account already in use by the same client family and active within 30 seconds: `"Account is already in use."`.
 
-The implemented success-boundary path sends `PLO_SIGNATURE`, skips the unresolved login-server-name branch unless the missing `PLO_FULLSTOP` opcode is recovered, sends `PLO_UNKNOWN168` for clients, checks duplicate account sessions, and stops before registering the player with the list server through `Server::playerLoggedIn`. Everything after that point is beyond this milestone because it begins account state, world, level, props, RC, NC, and scripting behavior.
+The implemented success-boundary path now has a production account-login wrapper:
+`ProductionAccountLoginBoundary` loads the server-list-approved account through
+`AccountLoadService`, saves/adds a default-created account when C++ would do so,
+maps `BANNED`, `BANREASON`, `LOCALRIGHTS`, staff-list membership, and `IPRANGE`
+wildcards into `PlayerSendLoginAccount`, then runs
+`PlayerSendLoginContinuation`.
+
+`PlayerSendLoginContinuation` sends `PLO_SIGNATURE`, skips the unresolved
+login-server-name branch unless the missing `PLO_FULLSTOP` opcode is recovered,
+sends `PLO_UNKNOWN168` for clients, checks duplicate account sessions, and stops
+before registering the player with the list server through
+`Server::playerLoggedIn`. Everything after that point is beyond this milestone
+because it begins world, level, props, RC, NC, and scripting behavior.

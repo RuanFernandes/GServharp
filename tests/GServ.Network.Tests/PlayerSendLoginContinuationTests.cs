@@ -1,4 +1,5 @@
 using GServ.Network;
+using GServ.Persistence;
 using GServ.Protocol;
 using Xunit;
 
@@ -6,6 +7,127 @@ namespace GServ.Network.Tests;
 
 public sealed class PlayerSendLoginContinuationTests
 {
+    [Fact]
+    public void ProductionAccountLoginLoadsAccountSnapshotAndRunsContinuationChecks()
+    {
+        var session = AuthenticatedClient3Session();
+        var filesystem = new MemoryAccountFileSystem(@"C:\gserver\");
+        filesystem.AddExisting(
+            @"C:\gserver\accounts\pc-Ruan.txt",
+            "pc:Ruan.txt",
+            string.Join(
+                "\n",
+                "GRACC001",
+                "BANNED 1",
+                "BANREASON source-confirmed",
+                "LOCALRIGHTS 16384",
+                "IPRANGE 127.0.0.*"));
+
+        var result = ProductionAccountLoginBoundary.Begin(
+            session,
+            filesystem,
+            AccountLoadSettings.Empty,
+            new ProductionAccountLoginOptions(
+                OnlyStaff: false,
+                ServerName: "Graal Reborn",
+                ActiveSessions: [],
+                StaffAccounts: [],
+                RemoteIp: "127.0.0.55"));
+
+        Assert.True(result.AccountLoaded);
+        Assert.True(result.Accepted);
+        Assert.False(result.GuestIdentityBlocked);
+        Assert.Null(result.CreatedAccountSave);
+        Assert.Equal(
+            OutboundLoginPackets.Signature(appendNewline: true)
+                .Concat(OutboundLoginPackets.Unknown168(appendNewline: true))
+                .ToArray(),
+            session.TakeOutboundBytes());
+    }
+
+    [Fact]
+    public void ProductionAccountLoginSavesDefaultCreatedAccountBeforeContinuation()
+    {
+        var session = AuthenticatedClient3Session();
+        var filesystem = new MemoryAccountFileSystem(@"C:\gserver\");
+        filesystem.AddReadable(
+            @"C:\gserver\accounts\defaultaccount.txt",
+            "GRACC001\nLEVEL ignored.nw\nLOADONLY 0");
+        var settings = new AccountLoadSettings(new Dictionary<string, string>
+        {
+            ["startlevel"] = "onlinestartlocal.nw"
+        });
+
+        var result = ProductionAccountLoginBoundary.Begin(
+            session,
+            filesystem,
+            settings,
+            new ProductionAccountLoginOptions(
+                OnlyStaff: false,
+                ServerName: "Graal Reborn",
+                ActiveSessions: [],
+                StaffAccounts: [],
+                RemoteIp: "127.0.0.1"));
+
+        Assert.True(result.Accepted);
+        Assert.True(result.AccountLoaded);
+        Assert.NotNull(result.CreatedAccountSave);
+        Assert.Equal(@"accounts/pc:Ruan.txt", result.CreatedAccountSave!.AccountFileAdded);
+        Assert.Contains("LEVEL onlinestartlocal.nw", result.CreatedAccountSave.Contents);
+        Assert.Contains(@"accounts/pc:Ruan.txt", filesystem.AddedFiles);
+    }
+
+    [Fact]
+    public void ProductionAccountLoginKeepsGuestIdentityGenerationBlocked()
+    {
+        var session = AuthenticatedClient3Session("guest");
+        session.ReceiveServerListAuthResponse(
+            new ServerListVerifyAccount2Response("guest", session.Id, PlayerSessionType.Client3, "SUCCESS"));
+        var filesystem = new MemoryAccountFileSystem(@"C:\gserver\");
+        filesystem.AddExisting(
+            @"C:\gserver\accounts\guest.txt",
+            "guest.txt",
+            "GRACC001\nLOADONLY 0");
+
+        var result = ProductionAccountLoginBoundary.Begin(
+            session,
+            filesystem,
+            AccountLoadSettings.Empty,
+            new ProductionAccountLoginOptions(
+                OnlyStaff: false,
+                ServerName: "Graal Reborn",
+                ActiveSessions: [],
+                StaffAccounts: [],
+                RemoteIp: "127.0.0.1"));
+
+        Assert.False(result.Accepted);
+        Assert.True(result.AccountLoaded);
+        Assert.True(result.GuestIdentityBlocked);
+        Assert.Empty(session.TakeOutboundBytes());
+    }
+
+    [Fact]
+    public void AccountSnapshotUsesStaffListAndCppAdminIpWildcardMatching()
+    {
+        var account = new AccountFileData
+        {
+            AccountName = "pc:Ruan",
+            AdminRights = 0x04000,
+            AdminIp = "10.0.0.?,127.0.0.*"
+        };
+
+        var snapshot = ProductionAccountLoginBoundary.ToPlayerSendLoginAccount(
+            account,
+            staffAccounts: [" pc:ruan "],
+            remoteIp: "127.0.0.44",
+            isGuest: false);
+
+        Assert.True(snapshot.HasModifyStaffAccountRight);
+        Assert.True(snapshot.IsStaff);
+        Assert.True(snapshot.IsAdminIp);
+        Assert.Equal(["10.0.0.?", "127.0.0.*"], snapshot.AdminIps);
+    }
+
     [Fact]
     public void BannedAccountRejectsBeforeEarlyLoginPackets()
     {
@@ -142,21 +264,24 @@ public sealed class PlayerSendLoginContinuationTests
             ServerName: "Graal Reborn",
             ActiveSessions: []);
 
-    private static ClientSessionSkeleton AuthenticatedClient3Session()
+    private static ClientSessionSkeleton AuthenticatedClient3Session(string accountName = "Ruan")
     {
         var session = new ClientSessionSkeleton(7);
         var packet = new GraalBinaryWriter();
         packet.WriteGChar(5);
         packet.WriteGChar(42);
         packet.WriteBytes("G3D0311C"u8);
-        packet.WriteGChar(4);
-        packet.WriteBytes("Ruan"u8);
+        packet.WriteGChar((byte)accountName.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(accountName));
         packet.WriteGChar(2);
         packet.WriteBytes("pw"u8);
         packet.WriteBytes("win"u8);
         Assert.True(session.ReceiveLoginPacket(packet.ToArray()));
-        Assert.True(session.ReceiveServerListAuthResponse(
-            new ServerListVerifyAccount2Response("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS")));
+        if (!string.Equals(accountName, "guest", StringComparison.OrdinalIgnoreCase))
+        {
+            Assert.True(session.ReceiveServerListAuthResponse(
+                new ServerListVerifyAccount2Response("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS")));
+        }
         return session;
     }
 
@@ -176,5 +301,42 @@ public sealed class PlayerSendLoginContinuationTests
         Assert.True(session.ReceiveServerListAuthResponse(
             new ServerListVerifyAccount2Response("pc:Ruan", 8, PlayerSessionType.RemoteControl, "SUCCESS")));
         return session;
+    }
+
+    private sealed class MemoryAccountFileSystem(string serverPath) : IAccountPersistenceFileSystem
+    {
+        private readonly Dictionary<string, string> _files = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, string> _findi = new(StringComparer.OrdinalIgnoreCase);
+
+        public List<string> AddedFiles { get; } = [];
+        public string ServerPath { get; } = serverPath;
+
+        public string? FindCaseInsensitive(string fileName) =>
+            _findi.TryGetValue(fileName, out var path) ? path : null;
+
+        public string? ReadAllText(string path) =>
+            _files.TryGetValue(path, out var contents) ? contents : null;
+
+        public string? FileExistsAs(string fileName) =>
+            _findi.TryGetValue(fileName, out var path) ? Path.GetFileName(path) : null;
+
+        public bool WriteAllText(string path, string contents)
+        {
+            _files[path] = contents;
+            _findi[Path.GetFileName(path)] = path;
+            return true;
+        }
+
+        public void AddFile(string relativePath) =>
+            AddedFiles.Add(relativePath);
+
+        public void AddExisting(string path, string indexedFileName, string contents)
+        {
+            AddReadable(path, contents);
+            _findi[indexedFileName] = path;
+        }
+
+        public void AddReadable(string path, string contents) =>
+            _files[path] = contents;
     }
 }

@@ -135,9 +135,10 @@ Confirmed resolver behavior:
 - When loaded from default and the parsed account is not `LOADONLY`, return a
   source-confirmed request to save the newly created account and add
   `accounts/<pAccount>.txt` to the account filesystem.
-- Real disk writes are now represented by `AccountSaveService` and tested behind
-  `IAccountPersistenceFileSystem`. Production login/session wiring still needs a
-  repository pass before this side effect is invoked for live accounts.
+- Real disk writes are represented by `AccountSaveService` and tested behind
+  `IAccountPersistenceFileSystem`. `ProductionAccountLoginBoundary` now invokes
+  the source-confirmed default-account save/add-file side effect before running
+  the pre-world `Player::sendLogin` continuation checks.
 - For `guest`, force `IsLoadOnly = true` and mark guest identity generation as
   required. The random `pc:` name selection itself remains blocked on the
   connected-player repository and C++ RNG timing behavior.
@@ -151,8 +152,9 @@ Confirmed resolver behavior:
   9999999`, six-character truncation, and connected-player uniqueness checks.
   C# must not invent this until the player repository and RNG compatibility
   boundary are designed.
-- Production account loading and saving now expose the default-account save/add
-  side effect, but the live login pipeline still needs repository wiring before
-  it can create accounts during production authentication.
+- Production account loading and saving now expose and wire the default-account
+  save/add-file side effect into the account-login boundary. A complete live
+  server still needs concrete filesystem/session host integration before this is
+  exercised by a real socket listener.
 - Exact `CString(float)` formatting for unusual float values remains open. Tests
   currently lock unambiguous values such as `30`, `30.5`, and `4.5`.

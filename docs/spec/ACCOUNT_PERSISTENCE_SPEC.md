@@ -144,6 +144,12 @@ future compatibility test proves the exact compiled/runtime behavior.
   filename selection, disk write attempts, and default-account add-file
   signaling.
 
+`GServ.Network` now contains `ProductionAccountLoginBoundary`, which loads the
+server-list-approved account, maps confirmed account fields into the existing
+`PlayerSendLoginAccount` snapshot, applies the default-account save/add-file
+side effect when requested by `AccountLoadService`, and then runs the
+source-confirmed pre-world `Player::sendLogin` continuation checks.
+
 Compatibility tests cover:
 
 - exact CRLF output for a controlled representative account
@@ -152,6 +158,10 @@ Compatibility tests cover:
 - case-preserved account filename selection
 - C++ true return value when the disk write fails after serialization
 - default-account created-file `accounts/<account>.txt` add-file signaling
+- production account-login wiring from `AccountLoadService` into
+  `PlayerSendLoginContinuation`
+- `LOCALRIGHTS` mapping to `PLPERM_MODIFYSTAFFACCOUNT`
+- staff-list and `IPRANGE` wildcard mapping for pre-world login checks
 
 ## Remaining Unknowns
 
