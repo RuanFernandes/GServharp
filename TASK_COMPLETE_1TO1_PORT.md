@@ -761,6 +761,9 @@ behavior, and movement-loop invocation.
   - 2026-06-16: Added source-confirmed `PLPROP_Z2` forwarding fixture proving
     the modern sender order emits the legacy `PLPROP_Z` mirror before the
     precise `PLPROP_Z2` payload, matching `levelBuff2` before `levelBuff`.
+  - 2026-06-16: Added the matching old-sender `PLPROP_Z2` forwarding fixture,
+    proving versions older than `CLVER_2_3` emit `levelBuff` before the legacy
+    mirror in `levelBuff2`.
   - 2026-06-16: Added source-confirmed blocked/update boundary fixtures for
     `PLPROP_ACCOUNTNAME`: exact inbound byte consumption, no invented mutation
     value, and no runtime account-name change. Broader malformed-value fixtures
