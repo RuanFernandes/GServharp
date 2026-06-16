@@ -94,6 +94,30 @@ public sealed class LiveWorldSessionForwardingTests
     }
 
     [Fact]
+    public void ApplyAndForwardConfirmedCurrentLevelUsesSingleplayerSuffixLikeCpp()
+    {
+        var server = new RuntimeServer();
+        var level = new RuntimeLevel("start.nw") { IsSingleplayer = true };
+        var sender = Add(server, 7, RuntimePlayerKind.Client, level);
+        Add(server, 8, RuntimePlayerKind.Client, level);
+        var sinks = CreateSinks(7, 8);
+
+        var deliveries = LiveWorldSessionForwarder.ApplyAndForwardConfirmedPlayerProps(
+            server,
+            sender,
+            [IncomingPlayerPropertyUpdate.String(PlayerPropertyId.CurrentLevel, "start.nw")],
+            senderSupportsPreciseMovement: true,
+            AsSinks(sinks));
+
+        Assert.Equal("start.nw", sender.CurrentLevelName);
+        var delivery = Assert.Single(deliveries);
+        Assert.Equal(8, delivery.PlayerId);
+        Assert.Equal(
+            [40, 32, 39, 52, 53, 115, 116, 97, 114, 116, 46, 110, 119, 46, 115, 105, 110, 103, 108, 101, 112, 108, 97, 121, 101, 114, 10],
+            sinks[8].Packets.Single());
+    }
+
+    [Fact]
     public void ForwardConfirmedLevelAreaPacketFiltersByGmapGroupAndDistance()
     {
         var server = new RuntimeServer();

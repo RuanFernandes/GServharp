@@ -388,7 +388,7 @@ public static class IncomingPlayerPropsForwarding
                     break;
 
                 case PlayerPropertyId.CurrentLevel:
-                    WriteProperty(levelBuff, PlayerPropertyId.CurrentLevel, writer => WriteGCharString(writer, update.StringValue ?? string.Empty));
+                    WriteProperty(levelBuff, PlayerPropertyId.CurrentLevel, writer => WriteGCharString(writer, state?.CurrentLevelName ?? update.StringValue ?? string.Empty));
                     break;
 
                 case PlayerPropertyId.Gani:
@@ -514,4 +514,6 @@ public static class IncomingPlayerPropsForwarding
             or >= PlayerPropertyId.GAttrib10 and <= PlayerPropertyId.GAttrib30;
 }
 
-public sealed record IncomingPlayerPropsForwardingState(byte CurrentPowerRaw);
+public sealed record IncomingPlayerPropsForwardingState(
+    byte CurrentPowerRaw,
+    string? CurrentLevelName = null);

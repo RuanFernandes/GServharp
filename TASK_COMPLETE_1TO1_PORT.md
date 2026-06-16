@@ -659,6 +659,12 @@ behavior, and movement-loop invocation.
     the C++ AP healing gate: if AP is below `40` and an incoming current-power
     update would heal, runtime HP is unchanged and forwarding emits the
     existing `hitpoints * 2` byte rather than echoing the incoming byte.
+  - 2026-06-16: Implemented source-confirmed live `PLPROP_CURLEVEL`
+    forwarding for singleplayer levels. The live forwarding path now uses the
+    post-mutation runtime level state and appends `.singleplayer` when the
+    current runtime level is singleplayer, matching `getProp(PLPROP_CURLEVEL)`.
+    GMAP map-name forwarding remains blocked until the live GMAP state path is
+    fixture-confirmed.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -722,6 +728,8 @@ behavior, and movement-loop invocation.
     fixture showing the emitted `PLPROP_CURPOWER + GCHAR(maxPower * 2)` bytes.
   - 2026-06-16: Added source-confirmed live `PLPROP_CURPOWER` fixture covering
     the AP-below-40 healing refusal and post-mutation forwarded HP byte.
+  - 2026-06-16: Added source-confirmed live `PLPROP_CURLEVEL` fixture covering
+    the singleplayer `.singleplayer` suffix emitted by `getProp`.
 
 Completion criteria:
 

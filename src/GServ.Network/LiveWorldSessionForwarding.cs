@@ -61,7 +61,9 @@ public static class LiveWorldSessionForwarder
             updateArray,
             senderSupportsPreciseMovement,
             appendNewline: true,
-            state: new IncomingPlayerPropsForwardingState((byte)(sender.Hitpoints * 2.0f)));
+            state: new IncomingPlayerPropsForwardingState(
+                (byte)(sender.Hitpoints * 2.0f),
+                CurrentLevelName: BuildCurrentLevelPropValue(sender)));
 
         return ForwardConfirmedLevelAreaPacket(
             server,
@@ -87,5 +89,16 @@ public static class LiveWorldSessionForwarder
         }
 
         return deliveries;
+    }
+
+    private static string BuildCurrentLevelPropValue(RuntimePlayer sender)
+    {
+        if (sender.Level?.Map is { Type: RuntimeMapType.Gmap } map)
+            return map.Name;
+
+        if (sender.Level?.IsSingleplayer == true)
+            return sender.CurrentLevelName + ".singleplayer";
+
+        return sender.CurrentLevelName;
     }
 }

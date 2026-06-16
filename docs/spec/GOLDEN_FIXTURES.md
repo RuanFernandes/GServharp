@@ -1533,6 +1533,17 @@ PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_CURPOWER + GCHAR(4) + "\n"
 bytes: 40 32 39 34 36 10
 ```
 
+Live `PLPROP_CURLEVEL` forwarding uses `getProp(PLPROP_CURLEVEL)` semantics.
+For a client on a singleplayer level, stored level `"start.nw"` is emitted as
+`"start.nw.singleplayer"`:
+
+```txt
+PLO_OTHERPLPROPS + GSHORT(7)
++ PLPROP_CURLEVEL + GCHAR(21) + "start.nw.singleplayer"
++ "\n"
+bytes: 40 32 39 52 53 115 116 97 114 116 46 110 119 46 115 105 110 103 108 101 112 108 97 121 101 114 10
+```
+
 Forwarded `PLPROP_APCOUNTER` uses C++ `getProp` semantics, so stored `123`
 emits `GSHORT(124)`:
 
