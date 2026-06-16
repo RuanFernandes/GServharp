@@ -255,6 +255,33 @@ classCode.gtokenize()
 
 - if the class is missing, it returns true without response.
 
+`Player::msgPLI_NC_CLASSADD`:
+
+- requires NC access;
+- reads `GCHAR name.length + name + guntokenized script`;
+- calls `Server::updateClass`;
+- calls `Server::updateClassForPlayers`;
+- only if the class did not already exist, broadcasts:
+
+```txt
+PLO_NC_CLASSADD
+className
+```
+
+`Player::msgPLI_NC_CLASSDELETE`:
+
+- requires NC access;
+- reads trailing class name;
+- if `Server::deleteClass(className)` succeeds, broadcasts:
+
+```txt
+PLO_NC_CLASSDELETE
+className
+```
+
+- if deletion fails, sends only NC log/chat text; no class-delete packet is
+  emitted.
+
 `Server::updateClass`:
 
 - replaces `m_classList[className]`;
@@ -361,6 +388,9 @@ Implemented:
 - NC class edit/get response packet:
   `PLO_NC_CLASSGET + GCHAR(className.length) + className +
   classCode.gtokenize() + "\n"`;
+- NC class add/delete broadcast packet builders:
+  `PLO_NC_CLASSADD + className + "\n"` and
+  `PLO_NC_CLASSDELETE + className + "\n"`;
 - `PLI_UPDATEGANI` parser for `GUInt5 checksum + trailing gani name`;
 - GANI CRC mismatch decision using the source-confirmed CRC32 primitive;
 - `PLO_RAWDATA + PLO_GANISCRIPT` bytecode response wrapper from
@@ -377,6 +407,7 @@ Blocked:
 - exact GS1 formatting fixtures beyond the currently documented rules;
 - exact GS2 bytecode compiler commit and bytecode golden outputs;
 - live weapon/class mutation commands;
+- production class repository update/delete side effects;
 - dynamic `time(0)` packet fixture strategy;
 - production `PLI_UPDATEGANI` animation manager/repository wiring and real
   compiled bytecode generation.

@@ -96,6 +96,18 @@ public sealed class RcNcPacketTests
     }
 
     [Fact]
+    public void NcClassAddAndDeleteBroadcastRawClassNamePayloads()
+    {
+        Assert.Equal(
+            new byte[] { 195, 102, 111, 111, 10 },
+            RcNcPackets.NcClassAdd("foo"));
+
+        Assert.Equal(
+            new byte[] { 220, 102, 111, 111, 10 },
+            RcNcPackets.NcClassDelete("foo"));
+    }
+
+    [Fact]
     public void NpcServerAddressUsesConfirmedOpcodeGShortIdAndCommaAddress()
     {
         var bytes = RcNcPackets.NpcServerAddress(7, "127.0.0.1", 14950);

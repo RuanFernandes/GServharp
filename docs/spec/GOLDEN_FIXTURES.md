@@ -1908,6 +1908,20 @@ PLO_NC_CLASSGET "foo" gtokenize("a\nb,c") "\n"
 => [194, 35, 102, 111, 111, 97, 44, 34, 98, 44, 99, 34, 10]
 ```
 
+`msgPLI_NC_CLASSADD` broadcasts only when the class did not already exist:
+
+```txt
+PLO_NC_CLASSADD "foo" "\n"
+=> [195, 102, 111, 111, 10]
+```
+
+`msgPLI_NC_CLASSDELETE` broadcasts only when `Server::deleteClass` succeeds:
+
+```txt
+PLO_NC_CLASSDELETE "foo" "\n"
+=> [220, 102, 111, 111, 10]
+```
+
 ### `PLO_NPCSERVERADDR`
 
 ```txt

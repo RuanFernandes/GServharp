@@ -86,6 +86,12 @@ public static class RcNcPackets
         return WithTrailingNewline(writer);
     }
 
+    public static byte[] NcClassAdd(string className) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.NcClassAdd, className);
+
+    public static byte[] NcClassDelete(string className) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.NcClassDelete, className);
+
     public static byte[] NpcServerAddress(ushort npcServerId, string ip, int port)
     {
         var writer = NewServerPacket(ServerToPlayerPacketId.NpcServerAddress);

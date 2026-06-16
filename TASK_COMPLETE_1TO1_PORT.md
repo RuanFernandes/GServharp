@@ -715,6 +715,10 @@ Completion criteria:
   - 2026-06-16: Added source-confirmed `PLO_NC_CLASSGET` builder for
     `msgPLI_NC_CLASSEDIT`, preserving `GCHAR` class-name length and
     `CString::gtokenize` source formatting.
+  - 2026-06-16: Added source-confirmed `PLO_NC_CLASSADD`/`PLO_NC_CLASSDELETE`
+    broadcast packet builders for successful add/delete branches. Production
+    repository mutation, save/delete filesystem side effects, and
+    `updateClassForPlayers` runtime wiring remain blocked.
 - [x] Implement gani checksum/script request behavior.
   - 2026-06-16: Added source-confirmed `PLI_UPDATEGANI` parser,
     CRC32 mismatch decision, `PLO_RAWDATA + PLO_GANISCRIPT` bytecode wrapper,
