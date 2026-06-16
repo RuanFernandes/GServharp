@@ -2153,3 +2153,14 @@ The incoming account-name bytes are consumed, but C++ `setProps` discards them.
 Full generic forwarding for this property must use the current
 `getProp(PLPROP_ACCOUNTNAME)` account state and remains blocked until that
 state-backed forwarding path exists.
+
+Source-confirmed `PLPROP_COMMUNITYNAME` consume-only update:
+
+```txt
+PLPROP_COMMUNITYNAME + GCHAR(8) + "commname"
+```
+
+The incoming community-name bytes are consumed, but C++ `setProps` discards
+them. Full generic forwarding for this property must use the current
+`getProp(PLPROP_COMMUNITYNAME)` state and remains blocked until that
+state-backed forwarding path exists.

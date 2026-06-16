@@ -86,6 +86,7 @@ public static class IncomingPlayerPropsParser
                     break;
 
                 case PlayerPropertyId.AccountName:
+                case PlayerPropertyId.CommunityName:
                     ReadGCharString(reader);
                     updates.Add(IncomingPlayerPropertyUpdate.NoValue(propertyId));
                     break;

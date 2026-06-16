@@ -226,6 +226,7 @@ public static class RuntimePlayerPropsApplier
                 case GServ.Protocol.PlayerPropertyId.JoinLeaveLevel:
                 case GServ.Protocol.PlayerPropertyId.PlayerConnected:
                 case GServ.Protocol.PlayerPropertyId.Unknown81:
+                case GServ.Protocol.PlayerPropertyId.CommunityName:
                     break;
 
                 default:

@@ -119,7 +119,7 @@ For sender client versions `>= CLVER_2_3`, C++ sends `levelBuff2` before
 | 79 | `PLPROP_Y2` | `GUShort` | Same signed pixel encoding for Y. | Adds `PLPROP_Y` mirror to `levelBuff2`; generic forwarding. | Implemented for confirmed movement subset. |
 | 80 | `PLPROP_Z2` | `GUShort` | Same signed pixel encoding for Z. | Adds `PLPROP_Z` mirror to `levelBuff2`; generic forwarding. | Implemented for confirmed movement subset. |
 | 81 | `PLPROP_UNKNOWN81` | `GUChar` | Reads and ignores. | No local forwarding. | Implemented as confirmed no-op/read-only parse. |
-| 82 | `PLPROP_COMMUNITYNAME` | `GCHAR len` + bytes | Reads and ignores. | Generic forwarding. | Safe parse/no-op candidate with forwarding fixture. |
+| 82 | `PLPROP_COMMUNITYNAME` | `GCHAR len` + bytes | Reads and ignores. | Generic forwarding from current `getProp(PLPROP_COMMUNITYNAME)`. | Parser/applier implemented as consume-only no-op. Forwarding remains blocked until it can use current community-name state, not incoming bytes. |
 
 ## Invalid Property Behavior
 

@@ -294,6 +294,25 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedCommunityNameByConsumingStringWithoutInventingMutationValue()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.CommunityName);
+        body.WriteGChar(8);
+        body.WriteBytes("commname"u8);
+        body.WriteGChar((byte)PlayerPropertyId.X);
+        body.WriteGChar(70);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray());
+
+        Assert.True(result.Success);
+        Assert.Equal([PlayerPropertyId.CommunityName, PlayerPropertyId.X], result.Updates.Select(update => update.PropertyId));
+        Assert.Null(result.Updates[0].StringValue);
+        Assert.Null(result.Updates[0].GCharValue);
+        Assert.Equal((byte)70, result.Updates[1].GCharValue);
+    }
+
+    [Fact]
     public void BuildsConfirmedForwardedMovementPropsForPreciseSender()
     {
         var updates = new[]

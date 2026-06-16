@@ -566,6 +566,11 @@ behavior, and movement-loop invocation.
     `setProps` reads and discards it. Generic forwarding remains blocked until
     forwarding can serialize the current account name through the C++ `getProp`
     state path instead of echoing the untrusted incoming bytes.
+  - 2026-06-16: Implemented the source-confirmed `PLPROP_COMMUNITYNAME`
+    consume-only mutation boundary. The parser consumes `GCHAR len + bytes`,
+    and the runtime applier ignores the incoming value because C++ `setProps`
+    only discards those bytes. Generic forwarding remains blocked until it can
+    serialize the current community-name state through `getProp`.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -589,6 +594,8 @@ behavior, and movement-loop invocation.
     `PLPROP_ACCOUNTNAME`: exact inbound byte consumption, no invented mutation
     value, and no runtime account-name change. Broader malformed-value fixtures
     and full state-backed forwarding order remain open.
+  - 2026-06-16: Added the same source-confirmed blocked/update boundary
+    fixtures for `PLPROP_COMMUNITYNAME`.
 
 Completion criteria:
 

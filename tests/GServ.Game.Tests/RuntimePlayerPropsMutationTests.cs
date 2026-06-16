@@ -66,7 +66,8 @@ public sealed class RuntimePlayerPropsMutationTests
             IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.Rating),
             IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.JoinLeaveLevel),
             IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.PlayerConnected),
-            IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.Unknown81)
+            IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.Unknown81),
+            IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.CommunityName)
         };
 
         RuntimePlayerPropsApplier.ApplyConfirmed(player, updates);
