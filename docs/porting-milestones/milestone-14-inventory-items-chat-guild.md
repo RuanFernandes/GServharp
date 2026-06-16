@@ -1,4 +1,4 @@
-# Inventory, Items, Chat, And Guild Implementation Plan
+# Source-Confirmed Inventory, Items, Chat, And Guild Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
@@ -38,13 +38,14 @@ account sources.
 - [x] Run `dotnet test GServharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 
-## Explicit Non-Goals
+## Removed From Scope Unless Source Is Recovered
 
-Built-in shop, trade, party, quest, and mission systems are outside the current
+Built-in shop, trade, party, quest, and mission systems are not part of this
 port backlog because the recovered C++ source does not contain confirmed core
-runtime paths for them. Reopen scope only if future recovered original C++
-source or exact dependency source proves that the original C++ server exposed a
-concrete client-facing path.
+runtime paths for them. Do not add tasks, code, tests, or matrix rows for these
+categories unless future recovered original C++ source or exact dependency
+source proves that the original C++ server exposed a concrete client-facing
+path.
 
 Do not add generic service categories to fill gaps. If a behavior is not
 implemented by the recovered C++ source, it is not part of the C# port backlog.

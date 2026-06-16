@@ -35,7 +35,7 @@ Rules for every milestone:
 11. `milestone-11-npc-baddy-item-weapon-runtime.md`: port level runtime entities that are not the scripting VM itself.
 12. `milestone-12-scripting-runtime.md`: recover exact scripting dependencies and port the GS2/V8-compatible scripting boundary.
 13. `milestone-13-combat-player-gameplay.md`: port combat, damage, death, hearts, AP, spar, and player gameplay rules.
-14. `milestone-14-inventory-items-chat-guild.md`: port source-confirmed inventory/item, chat/profile, and guild behavior only.
+14. `milestone-14-inventory-items-chat-guild.md`: port only inventory/item, chat/profile, and guild behavior that has concrete recovered C++ handlers, packet paths, persistence paths, or runtime rules.
 15. `milestone-15-timing-save-loop-production-hardening.md`: port server timing, autosave, shutdown, websocket, and production hardening behavior.
 16. `milestone-16-client-certification.md`: build the compatibility harness and certify against the closed-source client.
 

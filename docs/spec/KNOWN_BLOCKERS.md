@@ -196,9 +196,6 @@
 - Inventory/chat/guild/profile work is implemented only for confirmed level
   item pickup payloads, player-drop removal rules, and weapon pickup state side
   effects. Full inventory runtime wiring, chat/PM/profile behavior, guild
-  filesystem mutation, and script/content-driven behavior from the C++ runtime
-  remain blocked. Dedicated built-in shop, trade, party, quest, and mission
-  runtimes were not found in the recovered C++ core. They are not blockers,
-  missing features, or future implementation work for the faithful port; their
-  absence is the compatible behavior unless future recovered original C++ source
-  or exact dependency source shows a client-facing C++ path.
+  filesystem mutation, and script/content-driven behavior remain blocked only
+  where the recovered C++ runtime contains concrete handlers, packet paths,
+  persistence paths, or runtime rules.

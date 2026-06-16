@@ -71,9 +71,11 @@ to:
 * Game loop behavior
 * Movement behavior
 * Combat behavior
-* Skill behavior
-* Item/inventory behavior
-* NPC/mob behavior
+* Weapon/class/gani behavior where the original C++ source contains concrete
+  handlers
+* Item/inventory behavior where the original C++ source contains concrete
+  handlers or persistence paths
+* NPC/baddy behavior
 * Map/level behavior
 * Guild/chat/profile behavior only where the original C++ source contains a
   concrete handler or persistence path

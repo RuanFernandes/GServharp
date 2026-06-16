@@ -10,8 +10,6 @@ Status values:
   runtime behavior is incomplete.
 - `Blocked`: certification cannot run without more source recovery, runtime
   implementation, content, or client capture.
-- `Absent By Compatibility`: the recovered C++ source does not implement this
-  built-in system, so the faithful C# port must leave it absent.
 
 No row is currently `Certified`.
 
@@ -34,7 +32,6 @@ No row is currently `Certified`.
 | Inventory/items/weapons | Partially Implemented | Selected pickup/drop/weapon side effects | Durable inventory/runtime behavior pending |
 | NPC runtime | Blocked | Inert entity packet boundaries only | Script VM, NPC full props, bytecode, runtime events pending |
 | Baddy/mob runtime | Partially Implemented | Default containers/selected props | AI/combat/drop/respawn/timers pending |
-| Built-in quests/missions/resource-defined systems | Absent By Compatibility | No dedicated C++ core runtime found | Do not implement built-ins without recovered original C++ source or exact dependency proof |
 | Source-confirmed guild/chat/profile paths | Blocked | Some group-map visibility, chat/PM/profile handlers, and guild verification boundaries | Full filesystem/runtime mutation and chat/guild packet flows pending |
 | RC admin login and packets | Partially Implemented | Rights constants, gate decisions, selected packets | Production RC sockets and mutation families pending |
 | NC login and packets | Partially Implemented | Selected packet IDs/builders | Production NC sockets, NPC/class/weapon mutation, script execution pending |
@@ -60,3 +57,7 @@ When a row becomes certified, record:
 - capture file paths/checksums;
 - exact scenario;
 - comparison result.
+
+Rows are intentionally limited to source-confirmed C++ behavior paths. Generic
+server/game feature categories that do not exist in the recovered C++ source
+must not be added to this matrix.

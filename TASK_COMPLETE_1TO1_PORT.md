@@ -122,7 +122,7 @@ Implemented/partially implemented:
 - Timing/save-loop boundaries.
 - Passive client compatibility harness.
 
-Major missing areas:
+Major source-confirmed areas still missing or partial:
 
 - Production socket host and full continuous session dispatch.
 - Full server-list socket lifecycle/reconnect/registration.
@@ -136,9 +136,6 @@ Major missing areas:
 - Baddy AI, combat, projectiles, hit validation, damage, drops, death, respawn.
 - Inventory, item pickup mutations, chest reward mutations, guild, chat/PM, and
   profile systems only where the recovered C++ source has explicit handlers.
-  Built-in shop, trade, party, quest, and mission systems are outside the active
-  port scope because the recovered C++ core has no confirmed client-facing paths
-  for them. They are not missing features for this port.
 - RC/NC/admin production sockets and mutation commands.
 - Upload/write paths and update-package lifecycle.
 - Websocket/TLS/bzip2 blocked branches.
@@ -728,13 +725,11 @@ Completion criteria:
     heart/equipment/spinattack payloads and mutations, default weapon empty
     payload side effects, invalid catalog IDs/names, and invalid item reward
     empty payload behavior.
-- [x] Keep shop/trade/party/quest/mission behavior out of scope unless future
-  recovered original C++ source or exact dependency source shows a built-in C++
-  server path.
-  - 2026-06-16: Removed these as future implementation scope. The port now
-    treats them as absent from the recovered C++ core unless future recovered
-    original C++ source or exact dependency source shows a client-facing
-    original server path.
+- [x] Remove non-source-derived gameplay/service categories from this phase.
+  - 2026-06-16: Removed built-in shop/trade/party/quest/mission categories as
+    future implementation scope. The port treats them as absent from the
+    recovered C++ core unless future recovered original C++ source or exact
+    dependency source shows a client-facing original server path.
 
 Completion criteria:
 
@@ -953,14 +948,13 @@ Completion criteria:
 
 - RC/NC clients can perform source-confirmed admin workflows.
 
-## Phase 14: Inventory, Guild, Chat, And Profile
+## Phase 14: Source-Confirmed Inventory, Guild, Chat, And Profile
 
 **Goal:** Port source-confirmed durable inventory, guild, chat, and profile
-systems. Do not add built-in shop, trade, party, quest, or mission systems
-unless future recovered original C++ source or exact dependency source shows
-they exist in the original C++ server.
-Absence in the recovered C++ source is considered faithful behavior, not a
-backlog gap.
+systems. This phase is limited to concrete handlers, packet paths, persistence
+paths, and runtime rules found in the recovered original C++ source or exact
+dependencies. Absence in the recovered C++ source is considered faithful
+behavior, not a backlog gap.
 
 **Source files to trace first:**
 
@@ -970,10 +964,10 @@ backlog gap.
 - [ ] Inventory durable runtime and save/load behavior.
 - [ ] Guild filesystem mutation and display behavior.
 - [ ] Chat/PM/profile packets.
-- [x] Remove built-in shop/trade/party/quest/mission systems from feature scope
-  unless future recovered original C++ source or exact dependency source shows
-  the original server exposed them. Current source pass found no dedicated C++
-  core runtime for these systems, so absence is the compatible behavior.
+- [x] Remove all non-source-derived systems from feature scope. Current source
+  pass found no dedicated C++ core runtime for built-in shop/trade/party/quest/
+  mission systems, so their absence is the compatible behavior and not a
+  remaining implementation item.
 - [ ] Add golden tests for every confirmed packet/rule branch.
 
 Completion criteria:
