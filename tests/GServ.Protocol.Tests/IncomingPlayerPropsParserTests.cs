@@ -295,6 +295,22 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedHorseImageByClampingDeclaredLengthToRemainingBytes()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.HorseGif);
+        body.WriteGChar(9);
+        body.WriteBytes("horse"u8);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray(), ClientVersionId.Client21);
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.HorseGif, update.PropertyId);
+        Assert.Equal("horse", update.StringValue);
+    }
+
+    [Fact]
     public void ParsesConfirmedCurrentChatByReadingAtMost223Bytes()
     {
         var body = new GraalBinaryWriter();

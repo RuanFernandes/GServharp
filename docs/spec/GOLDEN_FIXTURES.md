@@ -2345,6 +2345,14 @@ PLPROP_HORSEGIF + GCHAR(222) + 219 * "h" + PLPROP_X + GCHAR(70)
 => horse image length 219, then PLPROP_X is parsed normally
 ```
 
+`CString::readChars` also clamps the requested length to the bytes remaining in
+the packet. A truncated terminal horse-image payload therefore parses the
+available bytes instead of failing:
+
+```txt
+PLPROP_HORSEGIF + GCHAR(9) + "horse" => "horse"
+```
+
 Generic local forwarding uses C++ `getProp(PLPROP_HORSEGIF)` shape:
 
 ```txt

@@ -746,8 +746,11 @@ behavior, and movement-loop invocation.
   - 2026-06-16: Added source-confirmed `PLPROP_PSTATUSMSG` fixtures for exact
     `GUChar` parsing and runtime state mutation.
   - 2026-06-16: Added source-confirmed modern `PLPROP_HORSEGIF` fixtures for
-    exact string parsing and runtime state mutation. Old-client suffix fixtures
-    remain open.
+    exact string parsing and runtime state mutation. Existing old-client
+    fixtures cover extensionless `.gif` suffixing.
+  - 2026-06-16: Added source-confirmed `PLPROP_HORSEGIF` truncated terminal
+    payload coverage, matching `CString::readChars` clamping the requested
+    image length to bytes remaining in the packet instead of failing.
   - 2026-06-16: Added source-confirmed `PLPROP_HORSEGIF` fixtures for
     old-client `.gif` suffixing, the 219-byte maximum read behavior that leaves
     following bytes for subsequent props, and generic local forwarding bytes.
