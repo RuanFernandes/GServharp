@@ -645,7 +645,12 @@ server-side behavior.
 - `server/include/scripting/**`
 - recovered `gs2compiler` source under `external/` if present
 
-- [ ] Recover exact `gs2compiler` gitlink commit or document why impossible.
+- [x] Recover exact `gs2compiler` gitlink commit or document why impossible.
+  - 2026-06-16: Documented in `docs/spec/SCRIPTING_RUNTIME_SPEC.md` that the
+    current C++ reference snapshot proves `.gitmodules` URL/path and CMake
+    usage, but does not preserve a usable `160000` gitlink entry or populated
+    submodule checkout. `external/gs2compiler` remains a supporting reference at
+    `4fa0a26ca75ac5238fe34a1d90ef9a459b02c2f9`, not canonical bytecode source.
 - [ ] Document SourceCode classification, GS1/GS2 compilation, bytecode headers,
   V8 bindings, script lifecycle, errors, and scheduling.
 - [ ] Implement compiler invocation or compatible bytecode path only when

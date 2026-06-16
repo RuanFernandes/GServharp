@@ -29,6 +29,33 @@ does not prove the exact original submodule commit. The recovered commit must
 therefore remain a supporting reference until the original gitlink is recovered
 from a fuller source checkout or historical commit.
 
+## `gs2compiler` Gitlink Recovery Result
+
+Recovery pass on 2026-06-16:
+
+- `.gitmodules` proves the submodule path `dependencies/gs2compiler`.
+- `.gitmodules` proves the URL
+  `https://github.com/xtjoeytx/gs2-parser.git`.
+- top-level CMake proves the server expects
+  `add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/gs2compiler
+  EXCLUDE_FROM_ALL)`.
+- `server/CMakeLists.txt` proves the target includes, depends on, and links
+  `gs2compiler`.
+- the extracted `ai_resources/GServer-CPP-ORIGINAL/dependencies/gs2compiler`
+  directory contains no usable source checkout in this workspace snapshot.
+- the workspace git index does not expose a `160000` submodule gitlink entry for
+  `ai_resources/GServer-CPP-ORIGINAL/dependencies/gs2compiler`, because
+  `ai_resources` is a reference snapshot inside this port repository rather
+  than the original repository metadata.
+
+Conclusion: the exact original `dependencies/gs2compiler` gitlink commit cannot
+be recovered from the current source snapshot. The cloned
+`external/gs2compiler` commit
+`4fa0a26ca75ac5238fe34a1d90ef9a459b02c2f9` is useful for understanding API
+shape and intent, but it is not canonical for bytecode compatibility until a
+full original checkout, upstream commit, release archive, or build artifact
+proves the historical submodule pointer.
+
 ## Build Facts
 
 `V8NPCSERVER` defaults to `OFF` in top-level CMake. When enabled:
@@ -161,7 +188,8 @@ Not implemented:
 
 Before implementing real script compilation/execution:
 
-- recover the exact original `dependencies/gs2compiler` gitlink commit
+- recover the exact original `dependencies/gs2compiler` gitlink commit from an
+  external source that still preserves the submodule pointer
 - decide how C# will load or host the exact compiler behavior
 - produce golden compile fixtures from the original C++/compiler pair
 - map V8 bindings function by function from `V8*Impl.cpp`
