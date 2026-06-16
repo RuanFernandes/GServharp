@@ -278,6 +278,23 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedAttachNpcByReadingObjectTypeAndNpcId()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.AttachNpc);
+        body.WriteGChar(99);
+        body.WriteGInt(123);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray(), ClientVersionId.Client21);
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.AttachNpc, update.PropertyId);
+        Assert.Equal((byte)99, update.GCharValue);
+        Assert.Equal(123, update.GIntValue);
+    }
+
+    [Fact]
     public void ParsesConfirmedSwordAndShieldPowerRawValuesAndCustomImages()
     {
         var body = new GraalBinaryWriter();
@@ -704,6 +721,21 @@ public sealed class IncomingPlayerPropsParserTests
             appendNewline: true);
 
         Assert.Equal([40, 32, 39, 44, 37, 104, 101, 108, 108, 111, 10], packet);
+    }
+
+    [Fact]
+    public void ForwardsConfirmedAttachNpcWithNpcObjectTypeZero()
+    {
+        var packet = IncomingPlayerPropsForwarding.BuildOtherPlayerPropsPacket(
+            playerId: 7,
+            pixelX: 0,
+            pixelY: 0,
+            pixelZ: 0,
+            [new IncomingPlayerPropertyUpdate(PlayerPropertyId.AttachNpc, GCharValue: 99, GIntValue: 123)],
+            senderSupportsPreciseMovement: true,
+            appendNewline: true);
+
+        Assert.Equal([40, 32, 39, 74, 32, 32, 32, 155, 10], packet);
     }
 
     [Fact]

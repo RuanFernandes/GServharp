@@ -2325,3 +2325,23 @@ The current C# slice stores and serializes the current chat message only.
 `m_lastChat`, `processChat`, word-filter replacement/warning echo, and V8 NPC
 chat event dispatch remain blocked until those source-confirmed systems are
 ported.
+
+Source-confirmed `PLPROP_ATTACHNPC` update:
+
+```txt
+incoming:
+PLPROP_ATTACHNPC + GCHAR(99) + GINT(123)
+=> object_type byte is read, attached NPC id becomes 123
+```
+
+`Player::getProp(PLPROP_ATTACHNPC)` always emits object type `0` followed by the
+current attached NPC id:
+
+```txt
+PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_ATTACHNPC + GCHAR(0) + GINT(123) + "\n"
+bytes: 40 32 39 74 32 32 32 155 10
+```
+
+This fixture covers only the source-confirmed property payload boundary. NPC
+existence, attachment validation, and exact level recipient routing remain
+blocked on the NPC/runtime systems.

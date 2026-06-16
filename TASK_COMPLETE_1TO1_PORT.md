@@ -609,6 +609,13 @@ behavior, and movement-loop invocation.
     `GCHAR(chatMessage.length) + chatMessage`. `m_lastChat`, `processChat`,
     word-filter self echo, and V8 NPC chat events remain blocked until those
     systems are ported from C++.
+  - 2026-06-16: Implemented the source-confirmed `PLPROP_ATTACHNPC`
+    property-payload boundary. The parser consumes `GCHAR object_type +
+    GINT npcID`, the runtime stores the attached NPC id while ignoring the
+    object type for state exactly as the C++ branch does, and outgoing payload
+    serialization uses `GCHAR(0) + GINT(attachedNpcId)` like
+    `getProp(PLPROP_ATTACHNPC)`. NPC attachment validation, NPC lifecycle
+    semantics, and exact recipient routing remain blocked.
   - 2026-06-16: Implemented the source-confirmed `PLPROP_HEADGIF` state
     mutation and generic local forwarding boundary. The parser preserves the
     C++ `len < 100` default-head mapping, `len == 100` no-change sentinel,
@@ -671,6 +678,9 @@ behavior, and movement-loop invocation.
   - 2026-06-16: Added source-confirmed `PLPROP_CURCHAT` fixtures for the
     223-byte maximum read behavior that leaves following bytes for subsequent
     props, runtime message storage, and generic local forwarding bytes.
+  - 2026-06-16: Added source-confirmed `PLPROP_ATTACHNPC` fixtures for
+    object-type/id parsing, runtime attached-id storage, and outgoing payload
+    bytes that force object type `0` like C++ `getProp`.
   - 2026-06-16: Added source-confirmed `PLPROP_HEADGIF` fixtures for
     modern/old default heads, custom `len - 100` images, newline truncation,
     old-client `.gif` suffix, `len == 100` no-change parsing, 123-char runtime

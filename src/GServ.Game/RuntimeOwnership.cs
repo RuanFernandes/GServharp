@@ -50,6 +50,7 @@ public sealed class RuntimePlayer
     public byte HorseBombCount { get; internal set; }
     public uint UdpPort { get; internal set; }
     public byte StatusMessage { get; internal set; }
+    public uint AttachedNpcId { get; internal set; }
     public string CurrentLevelName { get; internal set; } = string.Empty;
     public string Gani { get; internal set; } = string.Empty;
     public string HeadImage { get; internal set; } = "head0.png";
@@ -199,6 +200,10 @@ public static class RuntimePlayerPropsApplier
 
                 case GServ.Protocol.PlayerPropertyId.UdpPort:
                     player.UdpPort = unchecked((uint)update.GIntValue.GetValueOrDefault());
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.AttachNpc:
+                    player.AttachedNpcId = unchecked((uint)update.GIntValue.GetValueOrDefault());
                     break;
 
                 case GServ.Protocol.PlayerPropertyId.CurrentLevel:

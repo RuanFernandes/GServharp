@@ -132,6 +132,13 @@ public static class IncomingPlayerPropsParser
                     updates.Add(IncomingPlayerPropertyUpdate.GInt(propertyId, reader.ReadGInt()));
                     break;
 
+                case PlayerPropertyId.AttachNpc:
+                    updates.Add(new IncomingPlayerPropertyUpdate(
+                        propertyId,
+                        GCharValue: reader.ReadGChar(),
+                        GIntValue: reader.ReadGInt()));
+                    break;
+
                 case PlayerPropertyId.X2:
                 case PlayerPropertyId.Y2:
                 case PlayerPropertyId.Z2:
@@ -369,6 +376,14 @@ public static class IncomingPlayerPropsForwarding
 
                 case PlayerPropertyId.CurrentChat:
                     WriteProperty(levelBuff, PlayerPropertyId.CurrentChat, writer => WriteGCharString(writer, update.StringValue ?? string.Empty));
+                    break;
+
+                case PlayerPropertyId.AttachNpc:
+                    WriteProperty(levelBuff, PlayerPropertyId.AttachNpc, writer =>
+                    {
+                        writer.WriteGChar(0);
+                        writer.WriteGInt(unchecked((uint)update.GIntValue.GetValueOrDefault()));
+                    });
                     break;
 
                 case PlayerPropertyId.ApCounter:
