@@ -388,7 +388,13 @@ and all level formats.
     global level cache, case-insensitive first-match lookup, exact filesystem
     lookup rules, legacy pointer-to-bool `loadAbsolute` call-site behavior, map
     first-match ownership, map reload remapping, and load failure boundaries.
-- [ ] Implement `.graal` parser from C++ fixtures.
+- [x] Implement `.graal` parser from C++ fixtures.
+  - 2026-06-16: Added `GraalLevelParser` and compatibility fixtures for
+    `GR-V1.00` through `GR-V1.03`, 12/13-bit LSB-first tile RLE, regular and
+    double-repeat control codes, legacy section order, link filtering, baddy
+    verse preservation, NPC `0xa7` newline conversion, direct chest item bytes,
+    signs, and the `GR-V1.00` chest-section skip. Production filesystem/runtime
+    wiring remains blocked.
 - [ ] Implement `.zelda` parser from C++ fixtures.
 - [ ] Implement `.gmap` parser/map adjacency/group behavior.
 - [ ] Implement level cache ownership and invalidation only where confirmed.

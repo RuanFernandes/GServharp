@@ -218,6 +218,62 @@ Wrapped as `PLO_PLAYERPROPS` with newline:
 [41, 33, 35, 34, 40, 66, 39, 112, 99, 58, 82, 117, 97, 110, 10]
 ```
 
+## Legacy `.graal` Level Parser Fixtures
+
+Source:
+
+```txt
+ai_resources/GServer-CPP-ORIGINAL/server/src/level/Level.cpp::loadGraal
+```
+
+Confirmed version headers:
+
+```txt
+GR-V1.00 -> 12-bit tile codes, no chest section
+GR-V1.01 -> 13-bit tile codes
+GR-V1.02 -> 13-bit tile codes
+GR-V1.03 -> 13-bit tile codes
+```
+
+Tile codes are packed least-significant-bit first. The fixture in
+`GraalLevelParserTests.ParseAcceptsConfirmedVersionsAndDecodesTileRle` encodes:
+
+```txt
+tile 1
+regular repeat count 3, tile 7
+double repeat count 2, tiles 8 and 9
+zero-fill remaining tiles
+```
+
+Expected first eight tiles:
+
+```txt
+[1, 7, 7, 7, 8, 9, 8, 9]
+```
+
+The static-section fixture encodes sections in C++ order:
+
+```txt
+links: "target level.graal 1 2 3 4 5.5 6.5\nmissing.graal ...\n#\n"
+baddy: raw [42, 43, 44] + "see\\hurt\n" + raw sentinel [255,255,255] + "\n"
+npc: GCHAR 10, GCHAR 11, "image.png#if (created) {§}\n#\n"
+chest: GCHAR 12, GCHAR 13, GCHAR redrupee-id, GCHAR 4, "\n#\n"
+sign: GCHAR 14, GCHAR 15, "Hello sign\n\n"
+```
+
+Expected preserved records:
+
+```txt
+link: target level.graal, 1,2,3,4, 5.5,6.5
+baddy: x=42 y=43 type=44 verses=["see","hurt"]
+npc: image=image.png x=10 y=11 code="if (created) {\n}"
+chest: x=12 y=13 item=redrupee sign=4
+sign: x=14 y=15 text="Hello sign"
+```
+
+The `GR-V1.00` fixture proves the C++ chest-section skip: bytes that would be a
+chest line for newer versions are parsed as the first sign line instead.
+
 ### GINT Property Example
 
 `PLPROP_RUPEESCOUNT` with value `1234`:

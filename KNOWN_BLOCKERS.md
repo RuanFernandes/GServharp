@@ -90,14 +90,16 @@
   `sendLevel`. `Level::findLevel` cache lookup, `loadAbsolute`
   filesystem-index mutation, map ownership attachment, map reload remapping, and
   load failure behavior are documented in `docs/spec/LEVEL_RUNTIME_SPEC.md`, but
-  the production C# runtime implementation remains blocked. `.graal`/`.zelda`/
-  `.gmap` parsing, write/delete filesystem mutation, and file/resource transfer
-  remain blocked.
+  the production C# runtime implementation remains blocked. Pure `.graal`
+  parsing is implemented for confirmed static payloads, but production `.graal`
+  filesystem/runtime wiring remains blocked. `.zelda`/`.gmap` parsing,
+  write/delete filesystem mutation, and file/resource transfer remain blocked.
 - Pure `.nw` parsing is implemented for confirmed board tiles, links with an
   explicit target resolver, signs, chests with source-confirmed item names, NPC
   payload preservation, and baddy verse payload preservation. Board/layer/link/
   sign/chest packet builders exist. Player sign translation, NPC runtime props,
-  baddy runtime props/AI, and chest opening gameplay remain blocked.
+  baddy runtime props/AI, chest opening gameplay, and production legacy-format
+  loader wiring remain blocked.
 - Incoming decoded `PLI_PLAYERPROPS` movement/property parsing is implemented
   for the confirmed X/Y/Z, X2/Y2/Z2, sprite, current-level, and gani subset.
   Safe local runtime mutation, a packet builder for confirmed movement

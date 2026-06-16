@@ -60,8 +60,9 @@ ignored.
 `m_actualLevelName`, `m_levelName`, `m_fileName`, and `m_modTime` through the
 level filesystem. Both validate their eight-byte file version before parsing.
 
-These formats are source-confirmed but not implemented in C# yet because the RLE
-and legacy sections need dedicated fixtures.
+The pure `.graal` parser is now implemented for source-confirmed static payload
+behavior. See `docs/spec/LEVEL_GRAAL_FORMAT_SPEC.md`. `.zelda` parsing and
+production runtime/filesystem wiring remain blocked.
 
 ## Map Formats
 
@@ -101,6 +102,10 @@ because C++ only proves literal `.nw`, `.graal`, and `.zelda` comparisons.
 The first pure `.nw` parser is implemented for confirmed `BOARD`, `LINK`,
 `SIGN`, `CHEST`, `NPC`, and `BADDY` source-line behavior. See
 `docs/spec/LEVEL_NW_FORMAT_SPEC.md`.
+
+The first pure `.graal` parser is implemented for confirmed versions, RLE tile
+decoding, and static section preservation. See
+`docs/spec/LEVEL_GRAAL_FORMAT_SPEC.md`.
 
 No production level-file parser is wired to filesystem/runtime loading yet.
 

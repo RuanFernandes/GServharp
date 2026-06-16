@@ -96,14 +96,15 @@
   `loadAbsolute` filesystem-index mutation, map ownership attachment, map reload
   remapping, and load failure behavior are documented in
   `LEVEL_RUNTIME_SPEC.md`, but the production C# runtime implementation remains
-  blocked. `.graal`/`.zelda`/`.gmap` parsing, horse/baddy/NPC runtime
-  construction, write/delete filesystem mutation, and file-transfer behavior
-  remain blocked.
+  blocked. Pure `.graal` parsing is implemented for confirmed static payloads,
+  but production `.graal` filesystem/runtime wiring remains blocked.
+  `.zelda`/`.gmap` parsing, horse/baddy/NPC runtime construction, write/delete
+  filesystem mutation, and file-transfer behavior remain blocked.
 - Pure `.nw` parsing is implemented for confirmed `BOARD`, `LINK`, `SIGN`,
   `CHEST`, `NPC`, and `BADDY` source-line behavior, plus board/layer/link/sign
   and chest packet builders. Player sign translation, NPC runtime creation,
-  baddy ids/props/AI, chest opening gameplay, and `.graal`/`.zelda` parsers
-  remain blocked.
+  baddy ids/props/AI, chest opening gameplay, `.zelda` parsing, and production
+  legacy-format loader wiring remain blocked.
 - File transfer cache boundary is implemented for confirmed `PLI_WANTFILE` and
   `PLI_VERIFYWANTSEND` behavior, including file failed/up-to-date packets,
   modern and old-client raw-data `PLO_FILE` chunks, large-file markers, CRC32,

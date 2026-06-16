@@ -161,4 +161,5 @@ Not implemented:
 - NPC runtime creation or packet props
 - baddy runtime ids/props/AI
 - filesystem `find`, `findi`, `nofoldersconfig`, and mod-time integration
-- `.graal` and `.zelda` parsing
+- `.zelda` parsing
+- production `.graal`/`.zelda` filesystem/runtime wiring
