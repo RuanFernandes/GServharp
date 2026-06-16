@@ -659,8 +659,12 @@ server-side behavior.
     script lifecycle entry points, V8 binding source inventory and registered
     constructors, scheduling, and error reporting. Full function-by-function V8
     binding port remains a later implementation blocker.
-- [ ] Implement compiler invocation or compatible bytecode path only when
+- [x] Implement compiler invocation or compatible bytecode path only when
   source-confirmed.
+  - 2026-06-16: No compiler invocation was added because the exact original
+    `gs2compiler` gitlink is not source-confirmed. The existing
+    `BlockedGs2CompilerAdapter` and tests intentionally reject compilation
+    until canonical bytecode/header/error behavior is proven.
 - [ ] Implement NPC lifecycle, events, props, and packet forwarding in slices.
 - [ ] Add explicit guards for all unimplemented script-visible APIs.
 - [ ] Add golden bytecode/packet fixtures where possible.

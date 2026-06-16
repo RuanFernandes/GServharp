@@ -1,6 +1,6 @@
 # Known Blockers
 
-- Exact original `gs2compiler` submodule commit is not present in this fresh source snapshot. The repository URL is confirmed and `external/gs2compiler` is recovered at `4fa0a26ca75ac5238fe34a1d90ef9a459b02c2f9`, but scripting work should recover the exact gitlink commit before implementing runtime behavior.
+- Exact original `gs2compiler` submodule commit is not present in this fresh source snapshot. The repository URL is confirmed and `external/gs2compiler` is recovered at `4fa0a26ca75ac5238fe34a1d90ef9a459b02c2f9`, but the snapshot cannot prove the original gitlink. Runtime compiler invocation remains guarded until an external source preserves the exact pointer or golden bytecode captures prove compatibility.
 - Full `IEnums.h` packet catalog is large; only foundation-critical IDs are implemented in C# so far.
 - Production startup now has source-confirmed command-line/environment server
   selection plus `CSettings`-compatible `serveroptions.txt` and

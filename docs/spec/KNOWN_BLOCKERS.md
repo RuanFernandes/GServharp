@@ -183,7 +183,8 @@
 - Scripting runtime is still blocked. The C# port now documents the recovered
   `gs2compiler` URL/commit, implements only source-confirmed `SourceCode`
   classification, and has explicit guards that reject compile/execute calls.
-  Exact original gs2compiler gitlink commit, native compiler invocation,
+  The current reference snapshot cannot prove the exact original gs2compiler
+  gitlink commit, so native compiler invocation,
   bytecode header golden fixtures, V8 bindings, lifecycle scheduling,
   exception behavior, and all script-visible gameplay APIs remain blocked.
 - Combat/player gameplay is implemented only for deterministic source-confirmed
