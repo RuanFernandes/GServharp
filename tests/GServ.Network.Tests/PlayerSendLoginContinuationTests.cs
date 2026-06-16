@@ -107,6 +107,44 @@ public sealed class PlayerSendLoginContinuationTests
     }
 
     [Fact]
+    public void ProductionAccountLoginUsesConfirmedGuestIdentitySelectionWhenGeneratorIsProvided()
+    {
+        var session = AuthenticatedClient3Session("guest");
+        session.ReceiveServerListAuthResponse(
+            new ServerListVerifyAccount2Response("guest", session.Id, PlayerSessionType.Client3, "SUCCESS"));
+        var filesystem = new MemoryAccountFileSystem(@"C:\gserver\");
+        filesystem.AddExisting(
+            @"C:\gserver\accounts\guest.txt",
+            "guest.txt",
+            "GRACC001\nLOADONLY 0\nIPRANGE 0.0.0.0");
+
+        var result = ProductionAccountLoginBoundary.Begin(
+            session,
+            filesystem,
+            AccountLoadSettings.Empty,
+            new ProductionAccountLoginOptions(
+                OnlyStaff: false,
+                ServerName: "Graal Reborn",
+                ActiveSessions:
+                [
+                    new ActivePlayerSession(12, "PC:123456", PlayerSessionType.Client3, TimeSpan.FromSeconds(1))
+                ],
+                StaffAccounts: [],
+                RemoteIp: "127.0.0.1",
+                GuestIdentitySelector: new CandidateGuestIdentitySelector([1234567, 7654321])));
+
+        Assert.True(result.Accepted);
+        Assert.True(result.AccountLoaded);
+        Assert.False(result.GuestIdentityBlocked);
+        Assert.Equal("pc:765432", result.GuestAccountName);
+        Assert.Equal(
+            OutboundLoginPackets.Signature(appendNewline: true)
+                .Concat(OutboundLoginPackets.Unknown168(appendNewline: true))
+                .ToArray(),
+            session.TakeOutboundBytes());
+    }
+
+    [Fact]
     public void AccountSnapshotUsesStaffListAndCppAdminIpWildcardMatching()
     {
         var account = new AccountFileData

@@ -148,7 +148,10 @@ future compatibility test proves the exact compiled/runtime behavior.
 server-list-approved account, maps confirmed account fields into the existing
 `PlayerSendLoginAccount` snapshot, applies the default-account save/add-file
 side effect when requested by `AccountLoadService`, and then runs the
-source-confirmed pre-world `Player::sendLogin` continuation checks.
+source-confirmed pre-world `Player::sendLogin` continuation checks. Guest login
+can proceed only when an explicit `IGuestIdentitySelector` supplies the
+source-shaped `pc:` candidate stream; otherwise guest identity generation remains
+blocked instead of faked.
 
 Compatibility tests cover:
 
@@ -162,6 +165,8 @@ Compatibility tests cover:
   `PlayerSendLoginContinuation`
 - `LOCALRIGHTS` mapping to `PLPERM_MODIFYSTAFFACCOUNT`
 - staff-list and `IPRANGE` wildcard mapping for pre-world login checks
+- deterministic guest identity candidate truncation and active-name collision
+  skipping
 
 ## Remaining Unknowns
 
@@ -170,5 +175,6 @@ Compatibility tests cover:
   Current tests lock simple values whose text is unambiguous.
 - `std::unordered_map` flag iteration order is runtime/container-dependent and
   should not be asserted as a protocol-stable order.
-- Guest random account identity generation remains blocked on connected-player
-  repository behavior and C++ `rand()` timing compatibility.
+- Guest random account identity generation remains blocked only for the exact
+  C `rand()`/`time(0)` candidate stream. The candidate-to-account transform and
+  active-player uniqueness rule are implemented behind an explicit selector.

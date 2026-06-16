@@ -44,10 +44,12 @@
 - Production account loading has a pure `GRACC001` parser plus source-confirmed
   default-account fallback, start overrides, save-format serialization,
   case-preserved filename selection, disk write attempt reporting, and
-  default-account add-file signalling. Live login repository wiring, full
+  default-account add-file signalling. The deterministic part of guest `pc:`
+  identity selection is implemented behind an explicit candidate selector, but
+  the exact C `rand()`/`time(0)` candidate stream remains blocked. Full
   filesystem resync behavior, exact unusual `CString(float)` save formatting,
-  `std::unordered_map` flag order guarantees, and guest random `pc:` identity
-  generation remain blocked.
+  `std::unordered_map` flag order guarantees, and concrete continuous
+  session-host save/load repository wiring remain blocked.
 - Isolated warp packet builders are implemented. A source-confirmed
   `warp`/`setLevel` pre-runtime boundary now handles same-level X/Y updates,
   missing levels, previous-level fallback, unstick fallback, `PLO_PLAYERWARP`,

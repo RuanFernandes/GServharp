@@ -7,12 +7,14 @@ public sealed record ProductionAccountLoginOptions(
     string ServerName,
     IReadOnlyList<ActivePlayerSession> ActiveSessions,
     IReadOnlyList<string> StaffAccounts,
-    string RemoteIp);
+    string RemoteIp,
+    IGuestIdentitySelector? GuestIdentitySelector = null);
 
 public sealed record ProductionAccountLoginResult(
     bool Accepted,
     bool AccountLoaded,
     bool GuestIdentityBlocked,
+    string? GuestAccountName,
     AccountSaveResult? CreatedAccountSave,
     IReadOnlyList<DuplicateSessionDisconnect> DuplicateDisconnects);
 
@@ -39,11 +41,23 @@ public static class ProductionAccountLoginBoundary
         if (!load.Success)
         {
             session.QueueDisconnect("Unable to load account.");
-            return new ProductionAccountLoginResult(false, false, false, null, []);
+            return new ProductionAccountLoginResult(false, false, false, null, null, []);
         }
 
         if (load.RequiresGuestIdentityGeneration)
-            return new ProductionAccountLoginResult(false, true, true, null, []);
+        {
+            if (options.GuestIdentitySelector is null)
+                return new ProductionAccountLoginResult(false, true, true, null, null, []);
+
+            var identity = options.GuestIdentitySelector.TrySelect(accountName =>
+                options.ActiveSessions.Any(activeSession =>
+                    string.Equals(activeSession.AccountName, accountName, StringComparison.OrdinalIgnoreCase)));
+            if (!identity.Success || identity.AccountName is null)
+                return new ProductionAccountLoginResult(false, true, true, null, null, []);
+
+            load.Account!.AccountName = identity.AccountName;
+            load.Account.CommunityName = "guest";
+        }
 
         AccountSaveResult? createdAccountSave = null;
         if (load.ShouldSaveCreatedAccount)
@@ -53,7 +67,7 @@ public static class ProductionAccountLoginBoundary
             load.Account!,
             options.StaffAccounts,
             options.RemoteIp,
-            isGuest: false);
+            isGuest: load.RequiresGuestIdentityGeneration);
 
         var continuation = PlayerSendLoginContinuation.Begin(
             session,
@@ -67,6 +81,7 @@ public static class ProductionAccountLoginBoundary
             continuation.Accepted,
             true,
             false,
+            load.RequiresGuestIdentityGeneration ? load.Account!.AccountName : null,
             createdAccountSave,
             continuation.DuplicateDisconnects);
     }

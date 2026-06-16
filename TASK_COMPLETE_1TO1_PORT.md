@@ -267,15 +267,35 @@ preserving C++ save/load semantics.
 - `server/src/player/PlayerProps.cpp`
 - `server/src/Server.cpp`
 
-- [ ] Trace remaining account fields, flags, list order, guest identity, and
+- [x] Trace remaining account fields, flags, list order, guest identity, and
   save timing into `docs/spec/ACCOUNT_RUNTIME_SPEC.md`.
-- [ ] Implement source-confirmed guest `pc:` generation if deterministic enough
+  - 2026-06-16: Added `ACCOUNT_RUNTIME_SPEC.md`, covering load fields,
+    default-account creation, save order, unordered flag-order risk, guest
+    identity, cleanup save, and five-minute timed save behavior.
+- [x] Implement source-confirmed guest `pc:` generation if deterministic enough
   to test; otherwise document and block.
-- [ ] Wire account load/save into production session lifecycle.
-- [ ] Preserve C++ default-account add-file behavior.
-- [ ] Add tests for every confirmed remaining account field and save side
+  - 2026-06-16: Implemented the deterministic candidate-selection boundary:
+    supplied C++-style candidate integers become `pc:` plus the first six
+    decimal digits, with case-insensitive active-name collision checks. Exact C
+    `rand()`/`time(0)` candidate stream remains blocked.
+- [x] Wire account load/save into production session lifecycle.
+  - 2026-06-16: Production account login already loads via
+    `AccountLoadService`, saves default-created accounts, maps account data
+    into `PlayerSendLoginContinuation`, and now optionally completes guest
+    identity selection when an explicit selector is provided.
+- [x] Preserve C++ default-account add-file behavior.
+  - 2026-06-16: Existing `AccountSaveService.SaveCreatedDefaultAccount` and
+    production account-login tests cover `accounts/<pAccount>.txt` add-file
+    signalling.
+- [x] Add tests for every confirmed remaining account field and save side
   effect.
-- [ ] Do not invent unordered-map ordering if C++ does not guarantee it.
+  - 2026-06-16: Existing parser/serializer/load/save tests cover confirmed
+    fields and side effects; added guest identity collision/exhaustion and
+    production guest login tests.
+- [x] Do not invent unordered-map ordering if C++ does not guarantee it.
+  - 2026-06-16: Docs keep flag save ordering explicitly blocked because C++
+    uses `std::unordered_map`; tests do not assert global flag order beyond
+    controlled representative fixtures.
 
 Completion criteria:
 
@@ -646,7 +666,7 @@ Update this matrix whenever a phase makes progress.
 | --- | --- | --- |
 | Production sockets | Missing/partial | Phase 1 |
 | Server-list lifecycle | Missing/partial | Phase 2 |
-| Account runtime | Partial | Phase 3 |
+| Account runtime | Partial: confirmed load/save/guest boundary implemented; host/RNG gaps remain | Phase 16 / certification |
 | Login success sequence | Partial | Phase 4 |
 | Level formats/cache/maps | Partial | Phase 5 |
 | Live world forwarding | Partial | Phase 6 |

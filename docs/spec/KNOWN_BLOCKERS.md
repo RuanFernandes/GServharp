@@ -37,11 +37,12 @@
   The C# account loading boundary now also performs source-confirmed
   case-insensitive lookup, default-account fallback, startlevel/startx/starty
   overrides, save-format serialization, case-preserved filename selection, disk
-  write attempt reporting, default-account add-file signalling, and account DTO
-  mapping into the pre-world login boundary. Full filesystem resync behavior,
-  exact unusual `CString(float)` save formatting, `std::unordered_map` flag
-  order guarantees, live socket-host integration, and guest random `pc:`
-  identity generation remain blocked.
+  write attempt reporting, default-account add-file signalling, account DTO
+  mapping into the pre-world login boundary, and deterministic guest `pc:`
+  candidate selection behind an explicit selector. Full filesystem resync
+  behavior, exact unusual `CString(float)` save formatting,
+  `std::unordered_map` flag order guarantees, live socket-host integration, and
+  the exact C `rand()`/`time(0)` guest candidate stream remain blocked.
 - `CFileQueue` queue selection, gen1/gen6 socket passthrough, gen2/gen3 zlib
   framing, gen5 uncompressed socket framing for payloads up to 55 bytes, and
   gen5 zlib framing for payloads through `0x2000` bytes are implemented.

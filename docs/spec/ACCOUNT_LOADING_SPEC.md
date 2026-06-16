@@ -70,7 +70,14 @@ For `pAccount.toLower() == "guest"`:
    `m_communityName = "guest"`.
 
 This depends on server player-list state and RNG timing, so production behavior
-remains blocked until the account/session repository boundary is implemented.
+is split in C#:
+
+- `CandidateGuestIdentitySelector` implements the source-confirmed deterministic
+  part: `pc:` plus the first six decimal digits of a supplied candidate, with
+  case-insensitive active-player collision checks.
+- The exact C++ candidate stream remains blocked because the source uses
+  `srand(time(0))` and `(rand() * rand()) % 9999999`, whose byte-for-byte
+  sequence depends on the C runtime and signed integer behavior.
 
 ## Save Format
 
@@ -140,18 +147,19 @@ Confirmed resolver behavior:
   the source-confirmed default-account save/add-file side effect before running
   the pre-world `Player::sendLogin` continuation checks.
 - For `guest`, force `IsLoadOnly = true` and mark guest identity generation as
-  required. The random `pc:` name selection itself remains blocked on the
-  connected-player repository and C++ RNG timing behavior.
+  required. `ProductionAccountLoginBoundary` may complete guest login only when
+  an explicit `IGuestIdentitySelector` is provided; otherwise it remains blocked
+  rather than inventing a fake identity.
 
 ## Blockers
 
 - Exact production filesystem scan/resync behavior is still not implemented.
   The C# boundary models only the confirmed `findi` contract needed by account
   loading.
-- Guest account randomization uses `srand(time(0))`, `(rand() * rand()) %
-  9999999`, six-character truncation, and connected-player uniqueness checks.
-  C# must not invent this until the player repository and RNG compatibility
-  boundary are designed.
+- Guest account randomization still lacks the exact C `rand()`/`time(0)`
+  candidate stream. The C# selector covers truncation and uniqueness only; a
+  production RNG-compatible source must be recovered or capture-tested before it
+  becomes fully automatic.
 - Production account loading and saving now expose and wire the default-account
   save/add-file side effect into the account-login boundary. A complete live
   server still needs concrete filesystem/session host integration before this is

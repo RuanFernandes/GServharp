@@ -92,6 +92,29 @@ public sealed class AccountLoadServiceTests
         Assert.False(result.ShouldSaveCreatedAccount);
     }
 
+    [Fact]
+    public void GuestIdentitySelectorUsesFirstSixCandidateDigitsAndSkipsActiveNames()
+    {
+        var selector = new CandidateGuestIdentitySelector([1234567, 7654321]);
+
+        var result = selector.TrySelect(candidate =>
+            string.Equals(candidate, "PC:123456", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(result.Success);
+        Assert.Equal("pc:765432", result.AccountName);
+    }
+
+    [Fact]
+    public void GuestIdentitySelectorReportsBlockedWhenAllCandidatesCollideOrExhaust()
+    {
+        var selector = new CandidateGuestIdentitySelector([123, 9876543]);
+
+        var result = selector.TrySelect(_ => true);
+
+        Assert.False(result.Success);
+        Assert.Null(result.AccountName);
+    }
+
     private sealed class MemoryAccountFileSystem(string serverPath) : IAccountFileSystem
     {
         private readonly Dictionary<string, string> _files = new(StringComparer.Ordinal);
