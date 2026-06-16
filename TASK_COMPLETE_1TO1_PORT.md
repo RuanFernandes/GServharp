@@ -791,6 +791,9 @@ behavior, and movement-loop invocation.
     modern/old default heads, custom `len - 100` images, newline truncation,
     old-client `.gif` suffix, `len == 100` no-change parsing, 123-char runtime
     storage truncation, and generic local forwarding bytes.
+  - 2026-06-16: Added source-confirmed `PLPROP_HEADGIF` leading-newline
+    fixture. The parser preserves a newline at byte zero because the recovered
+    C++ only truncates custom head image strings when `find("\n") > 0`.
   - 2026-06-16: Added source-confirmed `PLPROP_SWORDPOWER` and
     `PLPROP_SHIELDPOWER` fixtures for custom image parsing, old-client `.gif`
     suffixes, default-image settings clamps, the old shield no-change bug,

@@ -2465,6 +2465,10 @@ PLPROP_HEADGIF + GCHAR(25) => "head25.gif"
 modern custom head with embedded newline after byte zero:
 PLPROP_HEADGIF + GCHAR(114) + "headcustom\nbad" => "headcustom"
 
+modern custom head with embedded newline at byte zero keeps the newline because
+the recovered C++ only truncates when `find("\n") > 0`:
+PLPROP_HEADGIF + GCHAR(105) + "\nhead" => "\nhead"
+
 old-client extensionless custom head:
 PLPROP_HEADGIF + GCHAR(104) + "head" => "head.gif"
 
