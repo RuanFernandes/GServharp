@@ -17,7 +17,8 @@
   extraction. It also has decoded post-login dispatcher/frame-handler
   boundaries for the confirmed `PLI_PLAYERPROPS` subset plus C++ `msgPLI_NULL`
   invalid-packet counting. Multi-session scheduling, deferred deletion cleanup,
-  production auth wiring, and gameplay dispatch are not implemented yet.
+  concrete production auth socket-loop wiring, and gameplay dispatch are not
+  implemented yet.
 - Old-version map-file workaround, flaghack mutation, weapons, protected weapons, classes, and zlib-fix NPC weapon branches in `sendLoginClient` are traced but not implemented.
 - The login-server-name branch is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`. Do not assume they are equivalent without source proof.
 - Exact `CString::guntokenize()` behavior for ban reasons remains blocked; current C# tests cover plain reasons and the confirmed newline-to-carriage-return replacement path only.
@@ -27,9 +28,11 @@
   boundary for `SVO_VERIACC2`. A source-confirmed
   `ProductionServerListLifecycle` now sequences connect/register packets,
   local-IP selection, and gen1-to-gen2 codec transition timing behind
-  `IProductionServerListSocket`. The concrete remote TCP client, live
-  list-server receive loop, reconnect host wiring, and player replay from live
-  repositories remain blocked.
+  `IProductionServerListSocket`. The production auth response boundary now
+  parses `SVI_VERIACC2` success/rejection messages and applies them to pending
+  sessions without fake local validation. The concrete remote TCP client, live
+  zlib-framed list-server receive loop, reconnect host wiring, and player
+  replay from live repositories remain blocked.
 - Account file parsing for confirmed `GRACC001` fields/defaults is implemented.
   The C# account loading boundary now also performs source-confirmed
   case-insensitive lookup, default-account fallback, startlevel/startx/starty
@@ -106,7 +109,10 @@
   unopened chest acknowledgement packet are implemented; automatic player
   movement-to-link warp, live movement-loop sign-touch invocation, player sign
   translation, and chest item reward mutation remain blocked.
-- Server-list connection lifecycle, reconnect backoff, registration, and text/listserver side channels need a dedicated milestone.
+- Server-list connection lifecycle, reconnect backoff, registration, auth
+  request/response boundaries, and text/listserver side-channel packet builders
+  are partially implemented behind interfaces. Concrete remote TCP integration,
+  live receive dispatch, and replaying current player records remain blocked.
 - Production timing boundaries now cover the source-confirmed `Server::doMain`
   one-second gate, 5s/60s/180s/300s periodic server jobs, server-list reconnect
   backoff, `Player::doTimedEvents` idle/no-data/save/reset gates, and

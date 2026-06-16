@@ -103,6 +103,23 @@ account validation:
   pre-world checks accept the login.
 - Does not inject a fake success response.
 
+`ProductionServerListAuthResponseHandler` models the source-confirmed
+`SVI_VERIACC2` response boundary:
+
+- Parses the payload after the list-server packet id with
+  `ServerListAuthPackets.ParseVerifyAccount2Response`.
+- Looks up the pending session by the response player id and session type,
+  matching the C++ `getPlayer(id, type)` lookup shape.
+- Overwrites the local account name through
+  `ClientSessionSkeleton.ReceiveServerListAuthResponse`.
+- For non-`SUCCESS` messages, queues `PLO_DISCMESSAGE + message + "\n"` and
+  moves the session to `Rejected`.
+- For `SUCCESS`, moves the session to `ServerListAuthAcceptedPreWorld`, which
+  is the C# stop point immediately before the production account/login
+  continuation invokes the confirmed beginning of `Player::sendLogin`.
+- Does nothing when no matching pending session exists; no fake account
+  validation or fallback success is created.
+
 The dev-only TCP shell still performs an explicit fake server-list success, but
 that remains isolated behind `EnableDevOnlyAuth=true` and is not production
 behavior.

@@ -25,6 +25,11 @@ dotnet run --project src/GServ/GServ.csproj -- --dev-only-local --dev-root <root
 The shell logs a warning on startup. Without `--dev-only-local`, it does not
 enable the fake auth path.
 
+Production auth code now has source-confirmed `SVO_VERIACC2` request and
+`SVI_VERIACC2` response boundaries, but this diagnostic command still does not
+connect to a real list server. The fake success used here is only reachable
+through `--dev-only-local` / `EnableDevOnlyAuth=true`.
+
 Expected limitations:
 
 - accepts one client at a time

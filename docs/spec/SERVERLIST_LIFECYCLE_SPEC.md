@@ -154,9 +154,8 @@ ServerList::sendLoginPacketForPlayer(player, password, identity)
 ```
 
 That sends `SVO_VERIACC2` through the server-list queue. The C# production auth
-boundary already queues the confirmed packet body through
-`IProductionServerListGateway`; real list-server socket delivery remains the
-next integration step.
+boundary queues the confirmed packet body through
+`IProductionServerListGateway`.
 
 `msgSVI_VERIACC2` parses:
 
@@ -171,6 +170,13 @@ remaining bytes as message
 It overwrites the player's account name. Non-`SUCCESS` messages are forwarded
 as `PLO_DISCMESSAGE`, set load-only, and disconnect. `SUCCESS` calls
 `Player::sendLogin()`.
+
+The C# `ProductionServerListAuthResponseHandler` now parses this response
+payload and applies it to the pending `ClientSessionSkeleton` found by id/type.
+It queues the confirmed disconnect message for rejection, and marks success as
+`ServerListAuthAcceptedPreWorld` so the account/login continuation can proceed
+without local fake auth. The concrete zlib-framed list-server receive loop is
+still blocked.
 
 ## C# Mapping
 
@@ -189,6 +195,10 @@ Implemented:
   - models the confirmed exponential reconnect backoff and jitter window
 - `ServerListAuthPackets`
   - builds confirmed server-list packet bodies
+- `ProductionServerListAuthResponseHandler`
+  - parses confirmed `SVI_VERIACC2` payloads
+  - resolves the pending player session by id/type
+  - applies the C++ success/rejection boundary without inventing auth
 
 Not implemented:
 
@@ -197,8 +207,8 @@ Not implemented:
 - zlib frame receive loop for live list-server responses
 - `SVO_PLYRADD` replay from live production player repositories inside
   `ProductionServerListLifecycle`
-- full handling for `SVI_*` packets beyond existing auth response parsing and
-  ping packet body construction
+- full handling for `SVI_*` packets beyond auth response parsing and ping
+  packet body construction
 - production connection to an actual remote list server
 
 ## Tests
@@ -211,3 +221,5 @@ Current tests cover:
 - reconnect backoff math through `ServerListReconnectState`
 - packet body builders for registration, HQ pass/level, new-server,
   allowed-versions text, request-list text, ping, and verify-account
+- auth response success, rejection, and missing-session branches through
+  `ProductionServerListAuthResponseHandler`

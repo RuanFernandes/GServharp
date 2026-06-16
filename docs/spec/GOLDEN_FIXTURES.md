@@ -1297,6 +1297,25 @@ Example message `"Bad password."`:
 [48] + ASCII("Bad password.") + [10]
 ```
 
+The confirmed response payload before dispatch is:
+
+```txt
+account="Ruan", playerId=7, type=PLTYPE_CLIENT3, message="Bad password."
+=> [36, 82, 117, 97, 110, 32, 39, 64, 66, 97, 100, 32, 112, 97, 115, 115, 119, 111, 114, 100, 46]
+```
+
+### SVI_VERIACC2 Success
+
+For `message == "SUCCESS"`, C++ overwrites the local account name and continues
+to `Player::sendLogin()` without sending a disconnect packet.
+
+Confirmed response payload before dispatch:
+
+```txt
+account="pc:Ruan", playerId=7, type=PLTYPE_CLIENT3, message="SUCCESS"
+=> [39, 112, 99, 58, 82, 117, 97, 110, 32, 39, 64, 83, 85, 67, 67, 69, 83, 83]
+```
+
 ## RC/NC/Admin Boundary
 
 ### `PLO_RC_CHAT`

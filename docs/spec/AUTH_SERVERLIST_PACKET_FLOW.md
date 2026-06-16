@@ -22,7 +22,12 @@ list-server SVI_VERIACC2
   -> if message == SUCCESS: Player::sendLogin()
 ```
 
-The C# port currently stops before `Player::sendLogin` and marks the session `ServerListAuthAcceptedPreWorld`.
+The C# production response handler now implements the byte parse, pending
+session lookup, account-name overwrite, rejection packet, and success state
+transition. It marks the session `ServerListAuthAcceptedPreWorld`; the separate
+account/login continuation remains responsible for running the confirmed
+beginning of `Player::sendLogin`. A concrete live list-server TCP receive loop
+is still blocked.
 
 ## Server-List Registration Packet Flow
 

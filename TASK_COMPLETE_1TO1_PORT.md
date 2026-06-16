@@ -227,12 +227,27 @@ without fake auth.
     register, queue clear, gen1 register immediate send, gen2 follow-up packet
     order, and local-IP loopback clearing. Concrete remote TCP client remains
     blocked.
-- [ ] Wire real `SVO_VERIACC2` request/`SVI_VERIACC2` response path into
+- [x] Wire real `SVO_VERIACC2` request/`SVI_VERIACC2` response path into
   production login.
-- [ ] Preserve fake/dev auth only behind explicit dev-only settings.
-- [ ] Add golden tests for registration, ping, reconnect backoff, and auth
+  - 2026-06-16: Added `ProductionServerListAuthResponseHandler`, which parses
+    confirmed `SVI_VERIACC2` payloads, resolves pending sessions by id/type,
+    applies account-name overwrite, queues source-confirmed rejection
+    disconnect bytes, and marks `SUCCESS` as `ServerListAuthAcceptedPreWorld`
+    without local fake auth. Concrete live list-server receive loop remains
+    blocked.
+- [x] Preserve fake/dev auth only behind explicit dev-only settings.
+  - 2026-06-16: Verified the only fake server-list success path remains inside
+    `DevOnlyLocalSessionPipeline` and throws unless `EnableDevOnlyAuth=true`;
+    production auth request/response boundaries do not inject success.
+- [x] Add golden tests for registration, ping, reconnect backoff, and auth
   response branches.
-- [ ] Update blockers and local run docs.
+  - 2026-06-16: Existing protocol/lifecycle/timing tests cover registration
+    bytes/order, ping bytes, and reconnect backoff. Added production auth
+    response success, rejection, and missing-session branch tests.
+- [x] Update blockers and local run docs.
+  - 2026-06-16: Updated server-list/auth specs, golden fixtures, blockers, and
+    local dev docs to distinguish implemented request/response boundaries from
+    the still-blocked concrete remote list-server socket loop.
 
 Completion criteria:
 
