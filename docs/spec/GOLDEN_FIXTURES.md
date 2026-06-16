@@ -1899,6 +1899,15 @@ PLO_NPCWEAPONADD "Tool" NPCPROP_IMAGE "tool.png" NPCPROP_SCRIPT GSHORT(3) "a\xa7
 => [65, 36, 84, 111, 111, 108, 32, 40, 116, 111, 111, 108, 46, 112, 110, 103, 33, 32, 35, 97, 167, 98, 10]
 ```
 
+### `PLO_NC_CLASSGET`
+
+`PlayerNC.cpp::msgPLI_NC_CLASSEDIT` sends `classCode.gtokenize()`.
+
+```txt
+PLO_NC_CLASSGET "foo" gtokenize("a\nb,c") "\n"
+=> [194, 35, 102, 111, 111, 97, 44, 34, 98, 44, 99, 34, 10]
+```
+
 ### `PLO_NPCSERVERADDR`
 
 ```txt

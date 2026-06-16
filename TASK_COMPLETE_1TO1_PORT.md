@@ -712,6 +712,9 @@ Completion criteria:
   - 2026-06-16: Added source-confirmed legacy NC weapon-get packet builder for
     `getVersion() < NCVER_2_1`, preserving `PLO_NPCWEAPONADD` property order,
     `GSHORT` script length, and newline-to-`0xa7` script conversion.
+  - 2026-06-16: Added source-confirmed `PLO_NC_CLASSGET` builder for
+    `msgPLI_NC_CLASSEDIT`, preserving `GCHAR` class-name length and
+    `CString::gtokenize` source formatting.
 - [x] Implement gani checksum/script request behavior.
   - 2026-06-16: Added source-confirmed `PLI_UPDATEGANI` parser,
     CRC32 mismatch decision, `PLO_RAWDATA + PLO_GANISCRIPT` bytecode wrapper,

@@ -238,6 +238,23 @@ script_with_0xa7_newlines
 - otherwise reads the bytecode header length/header;
 - appends `PLO_UNKNOWN197 + header + "," + gtokenize(time(0)) + "\n"`.
 
+`Player::msgPLI_NC_CLASSEDIT`:
+
+- requires NC access;
+- reads trailing class name;
+- if the class exists:
+  - reads `classObj->getSource().getSource()`;
+  - sends:
+
+```txt
+PLO_NC_CLASSGET
+GCHAR className.length
+className
+classCode.gtokenize()
+```
+
+- if the class is missing, it returns true without response.
+
 `Server::updateClass`:
 
 - replaces `m_classList[className]`;
@@ -341,6 +358,9 @@ Implemented:
   bytecode header + "\n"`;
 - legacy NC weapon-get response packet for clients older than `NCVER_2_1`,
   including newline-to-`0xa7` conversion and `PLO_NPCWEAPONADD` property order;
+- NC class edit/get response packet:
+  `PLO_NC_CLASSGET + GCHAR(className.length) + className +
+  classCode.gtokenize() + "\n"`;
 - `PLI_UPDATEGANI` parser for `GUInt5 checksum + trailing gani name`;
 - GANI CRC mismatch decision using the source-confirmed CRC32 primitive;
 - `PLO_RAWDATA + PLO_GANISCRIPT` bytecode response wrapper from

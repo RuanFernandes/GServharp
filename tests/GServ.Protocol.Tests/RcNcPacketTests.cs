@@ -86,6 +86,16 @@ public sealed class RcNcPacketTests
     }
 
     [Fact]
+    public void NcClassGetUsesConfirmedOpcodeNameAndGTokenizedSource()
+    {
+        var bytes = RcNcPackets.NcClassGet("foo", "a\nb,c");
+
+        Assert.Equal(
+            new byte[] { 194, 35, 102, 111, 111, 97, 44, 34, 98, 44, 99, 34, 10 },
+            bytes);
+    }
+
+    [Fact]
     public void NpcServerAddressUsesConfirmedOpcodeGShortIdAndCommaAddress()
     {
         var bytes = RcNcPackets.NpcServerAddress(7, "127.0.0.1", 14950);

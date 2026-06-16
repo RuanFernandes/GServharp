@@ -78,6 +78,14 @@ public static class RcNcPackets
         return WithTrailingNewline(writer);
     }
 
+    public static byte[] NcClassGet(string className, string source)
+    {
+        var writer = NewServerPacket(ServerToPlayerPacketId.NcClassGet);
+        WriteGCharString(writer, className);
+        writer.WriteBytes(Encoding.ASCII.GetBytes(GTokenize(source)));
+        return WithTrailingNewline(writer);
+    }
+
     public static byte[] NpcServerAddress(ushort npcServerId, string ip, int port)
     {
         var writer = NewServerPacket(ServerToPlayerPacketId.NpcServerAddress);
@@ -105,6 +113,33 @@ public static class RcNcPackets
         var bytes = Encoding.ASCII.GetBytes(value);
         writer.WriteGChar((byte)bytes.Length);
         writer.WriteBytes(bytes);
+    }
+
+    private static string GTokenize(string value)
+    {
+        var lines = value.EndsWith('\n') ? value.Split('\n') : (value + "\n").Split('\n');
+        var tokens = new List<string>();
+        foreach (var raw in lines.Take(lines.Length - 1))
+        {
+            var temp = raw.Replace("\r", string.Empty, StringComparison.Ordinal);
+            var complex = temp.StartsWith('"') ||
+                          temp.Any(static c => c < 33 || c > 126 || c == ',' || c == '/') ||
+                          temp.Trim().Length == 0;
+
+            if (complex)
+            {
+                temp = temp
+                    .Replace("\\", "\\\\", StringComparison.Ordinal)
+                    .Replace("\"", "\"\"", StringComparison.Ordinal);
+                tokens.Add($"\"{temp}\"");
+            }
+            else
+            {
+                tokens.Add(temp);
+            }
+        }
+
+        return string.Join(",", tokens);
     }
 
     private static byte[] WithTrailingNewline(GraalBinaryWriter writer)
