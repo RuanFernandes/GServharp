@@ -144,7 +144,9 @@ public sealed class RuntimeLevel
 
     public string LevelName { get; }
     public bool IsSingleplayer { get; set; }
-    public RuntimeMap? Map { get; init; }
+    public RuntimeMap? Map { get; set; }
+    public int MapX { get; private set; }
+    public int MapY { get; private set; }
     public IReadOnlyList<ushort> PlayerIds => _playerIds;
     public IReadOnlyList<RuntimeLevelItem> Items => _items;
     public IReadOnlyList<RuntimeHorse> Horses => _horses;
@@ -228,6 +230,13 @@ public sealed class RuntimeLevel
 
         if (_baddies.Remove(id))
             _baddyIds.FreeId(id);
+    }
+
+    public void SetMap(RuntimeMap? map, int mapX = 0, int mapY = 0)
+    {
+        Map = map;
+        MapX = map is null ? 0 : mapX;
+        MapY = map is null ? 0 : mapY;
     }
 }
 

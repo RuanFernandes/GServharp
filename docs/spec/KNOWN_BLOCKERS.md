@@ -92,15 +92,16 @@
   eight-byte signatures. A read-only indexed filesystem boundary,
   source-confirmed `loadAllFolders`/`loadFolderConfig` bucket setup, and
   filesystem-backed `.nw` loading path now exist for static
-  board/layer/link/sign/chest payloads. `Level::findLevel` cache lookup,
-  `loadAbsolute` filesystem-index mutation, map ownership attachment, map reload
-  remapping, and load failure behavior are documented in
-  `LEVEL_RUNTIME_SPEC.md`, but the production C# runtime implementation remains
-  blocked. Pure `.graal` and `.zelda` parsing are implemented for confirmed
-  static payloads, but production legacy-format filesystem/runtime wiring
-  remains blocked. Pure BIGMAP/GMAP parsing, map lookup, group-map metadata,
-  and preload selection are implemented for confirmed metadata behavior, but
-  production `Server::loadMaps`/`loadMapLevels` wiring remains blocked.
+  board/layer/link/sign/chest payloads. The in-memory `RuntimeLevelCache`
+  implements confirmed `Level::findLevel` list ownership, case-insensitive
+  first-match lookup, no-append-on-failure, source-confirmed `loadAbsolute`
+  callback sequencing, first-map-wins attachment, map reload remapping, and
+  missing-map clearing. Pure `.graal` and `.zelda` parsing are implemented for
+  confirmed static payloads, but production legacy-format filesystem/runtime
+  wiring remains blocked. Pure BIGMAP/GMAP parsing, map lookup, group-map
+  metadata, and preload selection are implemented for confirmed metadata
+  behavior, but production `Server::loadMaps`/`loadMapLevels` wiring remains
+  blocked.
   Horse/baddy/NPC runtime construction, write/delete filesystem mutation, and
   file-transfer behavior remain blocked.
 - Pure `.nw` parsing is implemented for confirmed `BOARD`, `LINK`, `SIGN`,

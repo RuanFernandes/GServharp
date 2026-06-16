@@ -408,7 +408,13 @@ and all level formats.
     exact map lookup, `getLevelAt`, group-map metadata, `MAPIMG`,
     `MINIMAPIMG`, `LOADFULLMAP`, `LOADATSTART`, and preload selection.
     Production `Server::loadMaps`/`loadMapLevels` wiring remains blocked.
-- [ ] Implement level cache ownership and invalidation only where confirmed.
+- [x] Implement level cache ownership and invalidation only where confirmed.
+  - 2026-06-16: Added `RuntimeLevelCache` and fixtures for ordered cache
+    ownership, case-insensitive first-match lookup, no append on load failure,
+    direct `CreateLevel` append, guarded `loadAbsolute` index-mutation
+    sequencing, first-map-wins attachment, map reload remapping, and
+    missing-map clearing. Production filesystem-backed loading/reload side
+    effects remain blocked.
 - [ ] Add golden fixtures for all level format signatures and representative
   packets.
 - [ ] Keep write/delete mutation blocked until source-confirmed.

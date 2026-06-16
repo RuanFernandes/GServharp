@@ -47,8 +47,10 @@ Implemented source-confirmed ownership types:
 
 - `RuntimeServer`
 - `RuntimeLevel`
+- `RuntimeLevelCache`
 - `RuntimePlayer`
 - `RuntimeMap`
+- `RuntimeLevelMapBinding`
 - `RuntimePlayerKind`
 
 The implementation keeps these deliberately small. They model ids, account
@@ -58,6 +60,24 @@ map/group metadata needed by the visibility boundary.
 `RuntimePlayer.JoinLevel(level)` leaves the old level before appending the
 player id to the new level. This maps to the confirmed C++ warp boundary where
 the player leaves one level before entering another.
+
+`RuntimeLevelCache` models the confirmed `Level::findLevel` ownership subset:
+
+- ordered level cache list
+- case-insensitive first cached match
+- no cache append on loader failure
+- direct append through `CreateLevel`
+- optional `loadAbsolute` index-mutation callback before loading when the
+  requested exact name is not already indexed
+- first-map-wins attachment for newly loaded levels using the lowercased
+  requested level name
+- map replacement/remapping for existing cached levels using each cached
+  level's lowercased `LevelName`
+- clearing map ownership when no replacement map matches
+
+`RuntimeLevel.SetMap(...)` stores the current map reference and confirmed map
+coordinates. Clearing the map resets the coordinates to zero, matching the C++
+default `setMap({})` call-site behavior used after map reload misses.
 
 ## Compatibility Risks
 
@@ -85,3 +105,12 @@ production-compatible.
 - automatic id assignment from `PLAYERID_INIT = 2` and smallest-free-id reuse
 - deferred deletion until cleanup
 - leaving the previous level before joining a new level
+
+`tests/GServ.Game.Tests/RuntimeLevelCacheTests.cs` covers:
+
+- case-insensitive first cached match without loading
+- no append on load failure
+- successful load append
+- first matching map attachment by requested lowercased name
+- `loadAbsolute` mutation sequencing and already-indexed skip
+- map replacement remapping and missing-map clearing

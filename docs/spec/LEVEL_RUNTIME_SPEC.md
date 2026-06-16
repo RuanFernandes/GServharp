@@ -230,7 +230,32 @@ without invoking production level loading. See `LEVEL_MAP_FORMAT_SPEC.md`.
 
 ## C# Port Mapping
 
-Recommended C# structure for this boundary:
+Implemented source-confirmed cache boundary:
+
+- `RuntimeLevelCache`
+- `RuntimeLevelMapBinding`
+- `RuntimeLevel.SetMap(...)`
+- `RuntimeLevel.MapX`
+- `RuntimeLevel.MapY`
+
+The C# cache keeps server-owned list semantics instead of dictionary semantics.
+`FindOrLoad` returns the first cached case-insensitive match, appends only after
+successful loader return, and does not append failed loads. `CreateLevel`
+appends directly, matching `Level::createLevel`.
+
+For `loadAbsolute`, the cache exposes the confirmed sequencing but keeps the
+filesystem mutation behind callbacks: if the requested name is not already
+indexed, the caller can perform the C++ `addFile`/`addDir` equivalent before the
+level loader runs. Exact write-capable filesystem mutation remains blocked.
+
+Map attachment is source-confirmed for the safe metadata boundary:
+
+- new loads attach to the first matching map using the lowercased requested
+  level name
+- map replacement remaps every cached level by `level.LevelName.ToLower()`
+- missing map matches clear the level map and reset coordinates to zero
+
+Recommended structure for future production wiring:
 
 - Keep a server-owned level cache service with vector/list semantics, preserving
   first-match behavior and case-insensitive cache lookup.
@@ -245,11 +270,13 @@ Recommended C# structure for this boundary:
 
 ## Confirmed Blockers
 
-- Production C# `Level::findLevel` equivalent is not implemented yet.
+- Production filesystem-backed `Level::findLevel` wiring is not implemented yet.
+  The safe in-memory cache/lookup/map-remap boundary exists in
+  `RuntimeLevelCache`.
 - Write/delete filesystem mutation remains blocked beyond documented
-  `loadAbsolute` index mutation.
-- `.graal`, `.zelda`, and full `.gmap` parsers remain blocked for implementation
-  until dedicated parser fixtures/tests are added.
+  `loadAbsolute` index mutation callback sequencing.
+- `.graal`, `.zelda`, BIGMAP, and GMAP pure parsers exist, but production
+  settings/filesystem-driven load integration remains blocked.
 - Horse, baddy, NPC runtime construction, scripting hooks, and map runtime
   gameplay remain blocked.
 - Exact `getPath(pLevelName)` edge behavior for pathless `loadAbsolute` names
