@@ -605,7 +605,12 @@ Completion criteria:
 - `server/src/level/Level.cpp`
 - projectile/shoot/hurt/drop related files under `server/src/`
 
-- [ ] Document baddy AI timers, reset/default props, hurt/death/drop behavior.
+- [x] Document baddy AI timers, reset/default props, hurt/death/drop behavior.
+  - 2026-06-16: Added `docs/spec/BADDY_COMBAT_SPEC.md`, covering
+    `LevelBaddy` property/mode constants, reset defaults, baddy props order,
+    `PLI_BADDYPROPS`, `PLI_BADDYHURT`, `PLI_BADDYADD`, mode timeout behavior,
+    `BDMODE_DIE -> BDMODE_DEAD`, respawn timing, baddy item drops, and blocked
+    RNG/session-routing areas.
 - [ ] Document player hurt, AP thresholds, death/revive, sparring-zone behavior.
 - [ ] Implement combat packet parsers/builders and deterministic formulas.
 - [ ] Implement drops only after exact C++ RNG/timing behavior is confirmed.

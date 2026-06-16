@@ -164,7 +164,8 @@ baddy.getProps(clientVersion)
 
 `LevelBaddy::getProps` serializes property ids `1..10` in order. The C# boundary
 implements reset/default props only and does not implement AI, damage, death,
-drop, timeout, or respawn behavior.
+drop, timeout, or respawn behavior. The confirmed timeout/death/drop behavior is
+cataloged in `docs/spec/BADDY_COMBAT_SPEC.md`.
 
 ## NPC IDs And NPC Packets
 
