@@ -2245,6 +2245,14 @@ PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_GATTRIB1 + GCHAR(5) + "sword" + "\n"
 [40, 32, 39, 69, 37, 115, 119, 111, 114, 100, 10]
 ```
 
+Inbound `PLPROP_GATTRIB1..30` each use `GCHAR len` plus
+`CString::readChars(len)`. A terminal truncated attribute payload parses the
+remaining bytes:
+
+```txt
+PLPROP_GATTRIB1 + GCHAR(5) + "sw" => "sw"
+```
+
 Source-confirmed `PLPROP_COLORS` generic forwarding from `Player::setProps`,
 player id `7`, colors `[1, 2, 3, 4, 5]`, newline appended by `sendPacket`:
 

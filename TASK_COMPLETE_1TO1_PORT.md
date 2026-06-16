@@ -542,6 +542,10 @@ behavior, and movement-loop invocation.
     `GATTRIB` forwarding uses the C++ generic local prop payload. Language,
     OS, and text codepage remain local-only because `__sendLocal` disables
     forwarding for their ids.
+  - 2026-06-16: Added source-confirmed `PLPROP_GATTRIB1..30` truncated
+    terminal payload coverage via `PLPROP_GATTRIB1`, matching
+    `CString::readChars` clamping the requested attribute length to bytes
+    remaining in the packet.
   - 2026-06-16: Implemented `PLPROP_COLORS` as a five-`GUChar` runtime subset.
     The parser consumes exactly five color bytes, the runtime applier stores
     the confirmed five slots without movement side effects, and forwarding

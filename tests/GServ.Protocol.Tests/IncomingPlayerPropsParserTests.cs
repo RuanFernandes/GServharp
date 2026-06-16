@@ -245,6 +245,22 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedGaniAttributeByClampingDeclaredLengthToRemainingBytes()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.GAttrib1);
+        body.WriteGChar(5);
+        body.WriteBytes("sw"u8);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray());
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.GAttrib1, update.PropertyId);
+        Assert.Equal("sw", update.StringValue);
+    }
+
+    [Fact]
     public void ParsesConfirmedBodyImageProp()
     {
         var body = new GraalBinaryWriter();
