@@ -398,4 +398,55 @@ public sealed class RuntimePlayerPropsMutationTests
         Assert.False(player.MovementUpdated);
         Assert.False(player.TouchTestRequested);
     }
+
+    [Fact]
+    public void NicknameMutationStaysBlockedUnlessWordFilterAllowedBoundaryIsExplicit()
+    {
+        var player = new RuntimePlayer(7, "pc:7", RuntimePlayerKind.Client);
+
+        var error = Assert.Throws<NotSupportedException>(() =>
+            RuntimePlayerPropsApplier.ApplyConfirmed(
+                player,
+                [IncomingPlayerPropertyUpdate.String(PlayerPropertyId.Nickname, "Ruan")]));
+
+        Assert.Contains("word filter", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(string.Empty, player.Nickname);
+    }
+
+    [Fact]
+    public void AppliesConfirmedNicknameWithoutGuildAfterExplicitWordFilterAllow()
+    {
+        var player = new RuntimePlayer(7, "pc:7", RuntimePlayerKind.Client);
+        var options = RuntimePlayerPropsOptions.Default with
+        {
+            NicknamePolicy = RuntimeNicknameUpdatePolicy.WordFilterAllowedNoGuild
+        };
+
+        RuntimePlayerPropsApplier.ApplyConfirmed(
+            player,
+            [IncomingPlayerPropertyUpdate.String(PlayerPropertyId.Nickname, "  **pc:7  ")],
+            options);
+
+        Assert.Equal("*pc:7", player.Nickname);
+        Assert.Equal(string.Empty, player.Guild);
+    }
+
+    [Fact]
+    public void NicknameWithGuildRemainsBlockedBecauseGuildValidationIsNotPorted()
+    {
+        var player = new RuntimePlayer(7, "pc:7", RuntimePlayerKind.Client);
+        var options = RuntimePlayerPropsOptions.Default with
+        {
+            NicknamePolicy = RuntimeNicknameUpdatePolicy.WordFilterAllowedNoGuild
+        };
+
+        var error = Assert.Throws<NotSupportedException>(() =>
+            RuntimePlayerPropsApplier.ApplyConfirmed(
+                player,
+                [IncomingPlayerPropertyUpdate.String(PlayerPropertyId.Nickname, "Ruan (LAT)")],
+                options));
+
+        Assert.Contains("guild", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(string.Empty, player.Nickname);
+    }
 }

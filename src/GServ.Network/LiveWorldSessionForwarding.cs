@@ -66,14 +66,16 @@ public static class LiveWorldSessionForwarder
         RuntimePlayer sender,
         IEnumerable<IncomingPlayerPropertyUpdate> updates,
         bool senderSupportsPreciseMovement,
-        IReadOnlyDictionary<ushort, ILiveWorldSessionSink> sinks)
+        IReadOnlyDictionary<ushort, ILiveWorldSessionSink> sinks,
+        RuntimePlayerPropsOptions? options = null)
     {
         var result = TryApplyAndForwardConfirmedPlayerProps(
             server,
             sender,
             updates,
             senderSupportsPreciseMovement,
-            sinks);
+            sinks,
+            options);
 
         if (result.Status == LiveWorldPlayerPropsForwardingStatus.Blocked)
             throw new NotSupportedException(result.Message);
@@ -86,15 +88,17 @@ public static class LiveWorldSessionForwarder
         RuntimePlayer sender,
         IEnumerable<IncomingPlayerPropertyUpdate> updates,
         bool senderSupportsPreciseMovement,
-        IReadOnlyDictionary<ushort, ILiveWorldSessionSink> sinks)
+        IReadOnlyDictionary<ushort, ILiveWorldSessionSink> sinks,
+        RuntimePlayerPropsOptions? options = null)
     {
+        options ??= RuntimePlayerPropsOptions.Default;
         var updateArray = updates.ToArray();
         var directDeliveries = new List<LiveWorldForwardingDelivery>();
         foreach (var update in updateArray)
         {
             try
             {
-                RuntimePlayerPropsApplier.ApplyConfirmed(sender, [update]);
+                RuntimePlayerPropsApplier.ApplyConfirmed(sender, [update], options);
             }
             catch (NotSupportedException ex)
             {
@@ -122,12 +126,14 @@ public static class LiveWorldSessionForwarder
                 EloRating: sender.EloRating,
                 EloDeviation: sender.EloDeviation));
 
-        var levelDeliveries = ForwardConfirmedLevelAreaPacket(
-            server,
-            sender,
-            packet,
-            sinks,
-            new HashSet<ushort> { sender.Id });
+        var levelDeliveries = HasPlayerPropsPayload(packet)
+            ? ForwardConfirmedLevelAreaPacket(
+                server,
+                sender,
+                packet,
+                sinks,
+                new HashSet<ushort> { sender.Id })
+            : [];
 
         var deliveries = new List<LiveWorldForwardingDelivery>(directDeliveries.Count + levelDeliveries.Count);
         deliveries.AddRange(directDeliveries);
@@ -153,17 +159,28 @@ public static class LiveWorldSessionForwarder
             case PlayerPropertyId.PlayerStatusMessage:
                 payload.WriteGChar((byte)PlayerPropertyId.PlayerStatusMessage);
                 payload.WriteGChar(sender.StatusMessage);
-                break;
+                return Deliver(packet: BuildPacket(sender.Id, payload), SelectAnyClientExceptSelf(server, sender), sinks);
+
+            case PlayerPropertyId.Nickname:
+                payload.WriteGChar((byte)PlayerPropertyId.Nickname);
+                WriteGCharString(payload, sender.Nickname);
+                return Deliver(packet: BuildPacket(sender.Id, payload), SelectAllExceptSelfAndNpcServer(server, sender), sinks);
 
             default:
                 return [];
         }
 
-        var packet = PlayerPropertySerializer.BuildOtherPlayerPropsPacket(
-            sender.Id,
+        return Deliver(packet: BuildPacket(sender.Id, payload), SelectAnyClientExceptSelf(server, sender), sinks);
+    }
+
+    private static byte[] BuildPacket(ushort playerId, GraalBinaryWriter payload) =>
+        PlayerPropertySerializer.BuildOtherPlayerPropsPacket(
+            playerId,
             payload.ToArray(),
             appendNewline: true);
 
+    private static IReadOnlyList<ushort> SelectAnyClientExceptSelf(RuntimeServer server, RuntimePlayer sender)
+    {
         var recipients = new List<ushort>();
         foreach (var other in server.Players)
         {
@@ -175,8 +192,33 @@ public static class LiveWorldSessionForwarder
             recipients.Add(other.Id);
         }
 
-        return Deliver(packet, recipients, sinks);
+        return recipients;
     }
+
+    private static IReadOnlyList<ushort> SelectAllExceptSelfAndNpcServer(RuntimeServer server, RuntimePlayer sender)
+    {
+        var recipients = new List<ushort>();
+        foreach (var other in server.Players)
+        {
+            if (other.Id == sender.Id)
+                continue;
+            if (other.Kind == RuntimePlayerKind.NpcServer)
+                continue;
+
+            recipients.Add(other.Id);
+        }
+
+        return recipients;
+    }
+
+    private static void WriteGCharString(GraalBinaryWriter writer, string value)
+    {
+        writer.WriteGChar((byte)value.Length);
+        writer.WriteBytes(System.Text.Encoding.ASCII.GetBytes(value));
+    }
+
+    private static bool HasPlayerPropsPayload(byte[] packet) =>
+        packet.Length > 4;
 
     private static IReadOnlyList<LiveWorldForwardingDelivery> Deliver(
         byte[] packet,

@@ -759,6 +759,12 @@ behavior, and movement-loop invocation.
     before the generic local forwarding tail; same-level clients therefore see
     both packets, other-level clients see only the direct packet, and RC/NC
     sessions receive neither.
+  - 2026-06-16: Implemented the safe `PLPROP_NICKNAME` no-guild mutation and
+    global forwarding boundary behind an explicit word-filter-allowed option.
+    The default path still blocks until the real word filter is ported. The
+    implemented subcase preserves C++ `setNick` normalization, global
+    `sendPacketToAll` recipients excluding self and NPC-Server only, and the
+    no-empty-`levelBuff` flush rule.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to

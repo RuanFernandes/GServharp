@@ -1214,11 +1214,23 @@ PLPROP_X GCHAR(70)
 
 Inbound `PLPROP_NICKNAME` uses `GCHAR len` plus `CString::readChars(len)`.
 `readChars` clamps to bytes remaining, so a terminal truncated nickname payload
-parses the available bytes and remains blocked only at the runtime side-effect
-boundary:
+parses the available bytes. Runtime mutation remains blocked by default until
+the word filter is ported, but the explicit clean no-guild boundary preserves
+C++ `setNick` normalization:
 
 ```txt
 PLPROP_NICKNAME + GCHAR(4) + "Ru" => "Ru"
+PLPROP_NICKNAME + GCHAR(10) + "  **pc:7  " with account "pc:7" => nickname "*pc:7"
+```
+
+When the clean no-guild boundary forwards player id `7` changing nickname to
+`"Ruan"`, C++ places the prop in `globalBuff` and calls `sendPacketToAll`,
+which excludes only self and NPC-Server players. It does not emit an empty
+level-area `PLO_OTHERPLPROPS` packet when `levelBuff` is empty:
+
+```txt
+PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_NICKNAME + GCHAR(4) + "Ruan" + "\n"
+bytes: 40 32 39 32 36 82 117 97 110 10
 ```
 
 Inbound `PLPROP_RUPEESCOUNT` uses `CString::readGUInt()` in the recovered

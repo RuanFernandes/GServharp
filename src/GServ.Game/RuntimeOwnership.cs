@@ -20,6 +20,8 @@ public sealed class RuntimePlayer
 
     public ushort Id { get; internal set; }
     public string AccountName { get; }
+    public string Nickname { get; internal set; } = string.Empty;
+    public string Guild { get; internal set; } = string.Empty;
     public uint AccountIp { get; set; }
     public string CommunityName { get; set; } = string.Empty;
     public int EloRating { get; set; } = 1500;
@@ -200,6 +202,10 @@ public static class RuntimePlayerPropsApplier
                     player.HorseBombCount = update.GCharValue.GetValueOrDefault();
                     break;
 
+                case GServ.Protocol.PlayerPropertyId.Nickname:
+                    ApplyNickname(player, update, options);
+                    break;
+
                 case GServ.Protocol.PlayerPropertyId.PlayerStatusMessage:
                     player.StatusMessage = update.GCharValue.GetValueOrDefault();
                     break;
@@ -378,6 +384,29 @@ public static class RuntimePlayerPropsApplier
         player.BowImage = string.Empty;
     }
 
+    private static void ApplyNickname(
+        RuntimePlayer player,
+        GServ.Protocol.IncomingPlayerPropertyUpdate update,
+        RuntimePlayerPropsOptions options)
+    {
+        if (options.NicknamePolicy != RuntimeNicknameUpdatePolicy.WordFilterAllowedNoGuild)
+            throw new NotSupportedException("PLPROP_NICKNAME is blocked until the word filter boundary explicitly allows the nickname update.");
+
+        var nickname = LimitString(update.StringValue ?? string.Empty, 223);
+        if (nickname.Contains('(', StringComparison.Ordinal))
+            throw new NotSupportedException("PLPROP_NICKNAME guild validation is blocked until guild filesystem/list-server behavior is ported.");
+
+        var nick = nickname.Trim();
+        while (nick.Length > 0 && nick[0] == '*')
+            nick = nick[1..];
+
+        if (nick.Length == 0)
+            nick = "unknown";
+
+        player.Nickname = nick == player.AccountName ? "*" + nick : nick;
+        player.Guild = string.Empty;
+    }
+
     private static string LimitString(string value, int length) =>
         value.Length <= length ? value : value[..length];
 
@@ -408,9 +437,16 @@ public static class RuntimePlayerPropsApplier
 public sealed record RuntimePlayerPropsOptions(
     GServ.Protocol.ClientVersionId ClientVersion = GServ.Protocol.ClientVersionId.Client21,
     int SwordLimit = 3,
-    int ShieldLimit = 3)
+    int ShieldLimit = 3,
+    RuntimeNicknameUpdatePolicy NicknamePolicy = RuntimeNicknameUpdatePolicy.Blocked)
 {
     public static RuntimePlayerPropsOptions Default { get; } = new();
+}
+
+public enum RuntimeNicknameUpdatePolicy
+{
+    Blocked,
+    WordFilterAllowedNoGuild
 }
 
 public sealed class RuntimeLevel

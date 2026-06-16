@@ -282,6 +282,46 @@ public sealed class LiveWorldSessionForwardingTests
     }
 
     [Fact]
+    public void ApplyAndForwardConfirmedNicknameSendsGlobalPacketToAllExceptSelfAndNpcServer()
+    {
+        var server = new RuntimeServer();
+        var level = new RuntimeLevel("start.nw");
+        var sender = Add(server, 7, RuntimePlayerKind.Client, level);
+        Add(server, 8, RuntimePlayerKind.Client, level);
+        Add(server, 9, RuntimePlayerKind.RemoteControl, level);
+        Add(server, 10, RuntimePlayerKind.NpcServer, level);
+        Add(server, 11, RuntimePlayerKind.Client, new RuntimeLevel("other.nw"));
+        var sinks = CreateSinks(7, 8, 9, 10, 11);
+
+        var deliveries = LiveWorldSessionForwarder.ApplyAndForwardConfirmedPlayerProps(
+            server,
+            sender,
+            [IncomingPlayerPropertyUpdate.String(PlayerPropertyId.Nickname, "Ruan")],
+            senderSupportsPreciseMovement: true,
+            AsSinks(sinks),
+            RuntimePlayerPropsOptions.Default with
+            {
+                NicknamePolicy = RuntimeNicknameUpdatePolicy.WordFilterAllowedNoGuild
+            });
+
+        var expected = new GraalBinaryWriter();
+        expected.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        expected.WriteGShort(7);
+        expected.WriteGChar((byte)PlayerPropertyId.Nickname);
+        expected.WriteGChar(4);
+        expected.WriteBytes("Ruan"u8);
+        expected.WriteByte((byte)'\n');
+
+        Assert.Equal("Ruan", sender.Nickname);
+        Assert.Equal([8, 9, 11], deliveries.Select(delivery => delivery.PlayerId));
+        Assert.Empty(sinks[7].Packets);
+        Assert.Equal(expected.ToArray(), sinks[8].Packets.Single());
+        Assert.Equal(expected.ToArray(), sinks[9].Packets.Single());
+        Assert.Empty(sinks[10].Packets);
+        Assert.Equal(expected.ToArray(), sinks[11].Packets.Single());
+    }
+
+    [Fact]
     public void TryApplyAndForwardPlayerPropsBlocksParsedButUnportedSideEffectsWithoutForwarding()
     {
         var server = new RuntimeServer();
