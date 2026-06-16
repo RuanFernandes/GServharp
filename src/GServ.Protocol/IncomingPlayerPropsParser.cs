@@ -20,6 +20,7 @@ public sealed record IncomingPlayerPropertyUpdate(
     PlayerPropertyId PropertyId,
     byte? GCharValue = null,
     ushort? GShortValue = null,
+    int? GIntValue = null,
     string? StringValue = null)
 {
     public static IncomingPlayerPropertyUpdate GChar(PlayerPropertyId propertyId, byte value) =>
@@ -27,6 +28,9 @@ public sealed record IncomingPlayerPropertyUpdate(
 
     public static IncomingPlayerPropertyUpdate GShort(PlayerPropertyId propertyId, ushort value) =>
         new(propertyId, GShortValue: value);
+
+    public static IncomingPlayerPropertyUpdate GInt(PlayerPropertyId propertyId, int value) =>
+        new(propertyId, GIntValue: value);
 
     public static IncomingPlayerPropertyUpdate String(PlayerPropertyId propertyId, string value) =>
         new(propertyId, StringValue: value);
@@ -51,13 +55,22 @@ public static class IncomingPlayerPropsParser
                 case PlayerPropertyId.Y:
                 case PlayerPropertyId.Z:
                 case PlayerPropertyId.Sprite:
+                case PlayerPropertyId.MaxPower:
+                case PlayerPropertyId.CurrentPower:
                 case PlayerPropertyId.ArrowsCount:
                 case PlayerPropertyId.BombsCount:
                 case PlayerPropertyId.GlovePower:
                 case PlayerPropertyId.BombPower:
                 case PlayerPropertyId.MagicPoints:
+                case PlayerPropertyId.Alignment:
                 case PlayerPropertyId.AdditionalFlags:
+                case PlayerPropertyId.CarrySprite:
+                case PlayerPropertyId.HorseBushes:
                     updates.Add(IncomingPlayerPropertyUpdate.GChar(propertyId, reader.ReadGChar()));
+                    break;
+
+                case PlayerPropertyId.RupeesCount:
+                    updates.Add(IncomingPlayerPropertyUpdate.GInt(propertyId, Math.Min(reader.ReadGInt(), 9_999_999)));
                     break;
 
                 case PlayerPropertyId.CurrentLevel:

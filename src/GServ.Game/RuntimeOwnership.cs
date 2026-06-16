@@ -30,13 +30,20 @@ public sealed class RuntimePlayer
     public int PixelY { get; internal set; }
     public int PixelZ { get; internal set; }
     public byte Sprite { get; internal set; }
+    public byte HeartLimit { get; set; } = 3;
+    public byte MaxPower { get; set; }
+    public float Hitpoints { get; set; }
+    public int Rupees { get; internal set; }
     public byte Arrows { get; internal set; }
     public byte Bombs { get; internal set; }
     public byte GlovePower { get; internal set; }
     public byte BombPower { get; internal set; }
     public ushort ApCounter { get; internal set; }
     public byte MagicPoints { get; internal set; }
+    public byte Alignment { get; set; }
     public byte AdditionalFlags { get; internal set; }
+    public byte CarrySprite { get; internal set; }
+    public byte HorseBombCount { get; internal set; }
     public string CurrentLevelName { get; internal set; } = string.Empty;
     public string Gani { get; internal set; } = string.Empty;
     public bool MovementUpdated { get; internal set; }
@@ -74,6 +81,24 @@ public static class RuntimePlayerPropsApplier
         {
             switch (update.PropertyId)
             {
+                case GServ.Protocol.PlayerPropertyId.MaxPower:
+                    player.MaxPower = (byte)Math.Clamp(
+                        (int)update.GCharValue.GetValueOrDefault(),
+                        0,
+                        Math.Min((int)player.HeartLimit, 20));
+                    player.Hitpoints = player.MaxPower;
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.CurrentPower:
+                    var power = update.GCharValue.GetValueOrDefault() / 2.0f;
+                    if (player.Alignment >= 40 || power <= player.Hitpoints)
+                        player.Hitpoints = Math.Clamp(power, 0.0f, player.MaxPower);
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.RupeesCount:
+                    player.Rupees = Math.Clamp(update.GIntValue.GetValueOrDefault(), 0, 9_999_999);
+                    break;
+
                 case GServ.Protocol.PlayerPropertyId.X:
                     player.PixelX = update.GCharValue.GetValueOrDefault() * 8;
                     MarkMovement(player);
@@ -118,8 +143,20 @@ public static class RuntimePlayerPropsApplier
                     player.MagicPoints = Math.Min(update.GCharValue.GetValueOrDefault(), (byte)100);
                     break;
 
+                case GServ.Protocol.PlayerPropertyId.Alignment:
+                    player.Alignment = Math.Min(update.GCharValue.GetValueOrDefault(), (byte)100);
+                    break;
+
                 case GServ.Protocol.PlayerPropertyId.AdditionalFlags:
                     player.AdditionalFlags = update.GCharValue.GetValueOrDefault();
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.CarrySprite:
+                    player.CarrySprite = update.GCharValue.GetValueOrDefault();
+                    break;
+
+                case GServ.Protocol.PlayerPropertyId.HorseBushes:
+                    player.HorseBombCount = update.GCharValue.GetValueOrDefault();
                     break;
 
                 case GServ.Protocol.PlayerPropertyId.CurrentLevel:

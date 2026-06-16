@@ -65,9 +65,9 @@ For sender client versions `>= CLVER_2_3`, C++ sends `levelBuff2` before
 | ID | C++ symbol | Read encoding | Direct mutation / behavior | Extra forwarding and side effects | C# status |
 | ---: | --- | --- | --- | --- | --- |
 | 0 | `PLPROP_NICKNAME` | `GCHAR len` + bytes | Applies word filter, defaults empty warned nickname to `unknown`, then `setNick`. | Adds global `PLO_OTHERPLPROPS`; echoes to self unless `FORWARDSELF` is set. | Blocked on word filter/name side effects. |
-| 1 | `PLPROP_MAXPOWER` | `GUChar` | Sets max power and current power to max in non-V8 path. | Adds `PLPROP_CURPOWER` to level/self buffers; V8 also adds max power. | Blocked except serialization. |
-| 2 | `PLPROP_CURPOWER` | `GUChar / 2` | Refuses healing when AP `< 40`; otherwise `setPower`. | Generic local/self forwarding only. | Blocked on AP/power state. |
-| 3 | `PLPROP_RUPEESCOUNT` | `GUInt`, capped at `9,999,999` | Sets gralats. RC path checks `normaladminscanchangegralats` or `PLPERM_SETRIGHTS`. | Generic forwarding only if `__sendLocal` permits; this prop is not local-forwarded. | Blocked on RC permission/config mutation. |
+| 1 | `PLPROP_MAXPOWER` | `GUChar` | Sets max power and current power to max in non-V8 path. | Adds `PLPROP_CURPOWER` to level/self buffers; V8 also adds max power. | Implemented as runtime mutation using explicit heart-limit input. Forwarding side packets remain blocked. |
+| 2 | `PLPROP_CURPOWER` | `GUChar / 2` | Refuses healing when AP `< 40`; otherwise `setPower`. | Generic local/self forwarding only. | Implemented as runtime mutation with AP heal gate. Forwarding remains blocked. |
+| 3 | `PLPROP_RUPEESCOUNT` | `GUInt`, capped at `9,999,999` | Sets gralats. RC path checks `normaladminscanchangegralats` or `PLPERM_SETRIGHTS`. | Generic forwarding only if `__sendLocal` permits; this prop is not local-forwarded. | Implemented for player-origin runtime mutation. RC permission/config mutation remains blocked. |
 | 4 | `PLPROP_ARROWSCOUNT` | `GUChar` | Stores arrows clipped `0..99`. | No local forwarding in `__sendLocal`. | Implemented as scalar mutation with C++ clamp. |
 | 5 | `PLPROP_BOMBSCOUNT` | `GUChar` | Stores bombs clipped `0..99`. | No local forwarding in `__sendLocal`. | Implemented as scalar mutation with C++ clamp. |
 | 6 | `PLPROP_GLOVEPOWER` | `GUChar` | Stores glove power capped at `3` in non-V8 path. | No local forwarding in `__sendLocal`. | Implemented as scalar mutation with C++ clamp. |
@@ -83,10 +83,10 @@ For sender client versions `>= CLVER_2_3`, C++ sends `levelBuff2` before
 | 16 | `PLPROP_Y` | `GUChar` | Stores `m_y = value * 8`, clears paused bit, movement timestamp/update, enables touch test. | Adds `PLPROP_Y2` mirror to `levelBuff2`; generic forwarding. | Implemented for confirmed movement subset. |
 | 17 | `PLPROP_SPRITE` | `GUChar` | Stores sprite; non-V8 enables touch test. | Generic forwarding. | Implemented for confirmed movement subset. |
 | 18 | `PLPROP_STATUS` | `GUChar` | Stores status; revive restores hearts by AP; death increments deaths/drops outside sparring; may rotate level leader. | Revive appends `PLPROP_CURPOWER`; may send `PLO_ISLEADER`. Generic forwarding. | Blocked on death/drop/leader behavior. |
-| 19 | `PLPROP_CARRYSPRITE` | `GUChar` | Stores carry sprite. | Generic forwarding. | Blocked. |
+| 19 | `PLPROP_CARRYSPRITE` | `GUChar` | Stores carry sprite. | Generic forwarding. | Implemented as state mutation. Generic forwarding remains blocked. |
 | 20 | `PLPROP_CURLEVEL` | `GCHAR len` + bytes | Non-V8 stores `m_levelName`; V8 reads/discards. | Generic forwarding. | Implemented for confirmed movement subset as state-only. |
 | 21 | `PLPROP_HORSEGIF` | `GCHAR len` + bytes, max read `219` | Stores horse image; old clients append `.gif` when extensionless. | Generic forwarding. | Blocked. |
-| 22 | `PLPROP_HORSEBUSHES` | `GUChar` | Stores horse bomb count. | No local forwarding. | Blocked. |
+| 22 | `PLPROP_HORSEBUSHES` | `GUChar` | Stores horse bomb count. | No local forwarding. | Implemented as state mutation. |
 | 23 | `PLPROP_EFFECTCOLORS` | `GCHAR len`, optional `GInt4` | Reads effect color bytes when length is positive; no visible field mutation in recovered branch. | No local forwarding. | Blocked/no-op candidate after fixture. |
 | 24 | `PLPROP_CARRYNPC` | `GUInt` | Stores carried NPC id, with duplicate-carry ownership checks unless `duplicatecanbecarried` is true. | May send self `PLO_PLAYERPROPS`, self/global `PLO_NPCDEL2`, and level `PLO_OTHERPLPROPS`. | Blocked on NPC/runtime ownership. |
 | 25 | `PLPROP_APCOUNTER` | `GUShort` | Stores AP counter. | Generic forwarding. `getProp` serializes `m_apCounter + 1`. | Implemented as scalar mutation and local forwarding using the C++ plus-one serialization. |
@@ -96,7 +96,7 @@ For sender client versions `>= CLVER_2_3`, C++ sends `levelBuff2` before
 | 29 | `PLPROP_ONLINESECS` | `GInt` | Reads and ignores. | No local forwarding. | Implemented as confirmed no-op/read-only parse. |
 | 30 | `PLPROP_IPADDR` | `GInt5` | Reads and ignores. | Generic forwarding if `__sendLocal` tail applies. | Blocked; client-originated IP forwarding risk. |
 | 31 | `PLPROP_UDPPORT` | `GInt` | Stores UDP port. | If loaded and id valid, sends `PLO_OTHERPLPROPS + id + PLPROP_UDPPORT + raw int` to any client except self. Generic tail also applies. | Blocked on UDP/forwarding. |
-| 32 | `PLPROP_ALIGNMENT` | `GUChar` | Stores AP capped at `100` in non-V8 path. | Generic forwarding. | Blocked. |
+| 32 | `PLPROP_ALIGNMENT` | `GUChar` | Stores AP capped at `100` in non-V8 path. | Generic forwarding. | Implemented as runtime mutation with C++ clamp. Generic forwarding remains blocked. |
 | 33 | `PLPROP_ADDITFLAGS` | `GUChar` | Stores additional flags. | No local forwarding. | Implemented as scalar mutation. |
 | 34 | `PLPROP_ACCOUNTNAME` | `GCHAR len` + bytes | Reads and ignores. | Generic forwarding. | Safe parse/no-op candidate with forwarding fixture. |
 | 35 | `PLPROP_BODYIMG` | `GCHAR len` + bytes | Calls `setBodyImage`. | Generic forwarding. | Blocked. |
@@ -145,6 +145,10 @@ Recommended safe slices:
    arrows, bombs, glove, bomb power, AP counter, magic points, additional flags.
    This slice is implemented with parser/applier tests. `PLPROP_APCOUNTER`
    forwarding is also implemented with the C++ `getProp` plus-one behavior.
+   A follow-up scalar/state slice also implements `MAXPOWER`, `CURPOWER`,
+   player-origin `RUPEESCOUNT`, `ALIGNMENT`, `CARRYSPRITE`, and
+   `HORSEBUSHES` runtime mutation. It deliberately keeps `STATUS` blocked
+   because the C++ branch includes death/revive/drop/leader side effects.
 3. string identity/visual props with forwarding fixtures:
    body/head/sword/shield/horse/language/community/gani attributes.
 4. movement and map props only after `testSign`, `testTouch`, GMAP level change,

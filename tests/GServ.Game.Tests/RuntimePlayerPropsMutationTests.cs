@@ -79,20 +79,35 @@ public sealed class RuntimePlayerPropsMutationTests
     [Fact]
     public void AppliesConfirmedScalarInventoryAndStatPropsWithCppClamps()
     {
-        var player = new RuntimePlayer(7, "pc:Ruan", RuntimePlayerKind.Client);
+        var player = new RuntimePlayer(7, "pc:Ruan", RuntimePlayerKind.Client)
+        {
+            Alignment = 35,
+            HeartLimit = 20,
+            Hitpoints = 4,
+            MaxPower = 10
+        };
         var updates = new[]
         {
+            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.MaxPower, 15),
+            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.CurrentPower, 40),
+            IncomingPlayerPropertyUpdate.GInt(PlayerPropertyId.RupeesCount, 12_000_000),
             IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.ArrowsCount, 150),
             IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.BombsCount, 151),
             IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.GlovePower, 9),
             IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.BombPower, 8),
             IncomingPlayerPropertyUpdate.GShort(PlayerPropertyId.ApCounter, 123),
             IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.MagicPoints, 200),
-            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.AdditionalFlags, 77)
+            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.AdditionalFlags, 77),
+            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.Alignment, 120),
+            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.CarrySprite, 12),
+            IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.HorseBushes, 6)
         };
 
         RuntimePlayerPropsApplier.ApplyConfirmed(player, updates);
 
+        Assert.Equal(15, player.MaxPower);
+        Assert.Equal(15, player.Hitpoints);
+        Assert.Equal(9_999_999, player.Rupees);
         Assert.Equal(99, player.Arrows);
         Assert.Equal(99, player.Bombs);
         Assert.Equal(3, player.GlovePower);
@@ -100,7 +115,27 @@ public sealed class RuntimePlayerPropsMutationTests
         Assert.Equal(123, player.ApCounter);
         Assert.Equal(100, player.MagicPoints);
         Assert.Equal(77, player.AdditionalFlags);
+        Assert.Equal(100, player.Alignment);
+        Assert.Equal(12, player.CarrySprite);
+        Assert.Equal(6, player.HorseBombCount);
         Assert.False(player.MovementUpdated);
         Assert.False(player.TouchTestRequested);
+    }
+
+    [Fact]
+    public void CurrentPowerIncreaseIsIgnoredWhenAlignmentIsBelowFortyLikeCpp()
+    {
+        var player = new RuntimePlayer(7, "pc:Ruan", RuntimePlayerKind.Client)
+        {
+            Alignment = 39,
+            Hitpoints = 2,
+            MaxPower = 10
+        };
+
+        RuntimePlayerPropsApplier.ApplyConfirmed(
+            player,
+            [IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.CurrentPower, 8)]);
+
+        Assert.Equal(2, player.Hitpoints);
     }
 }

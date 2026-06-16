@@ -53,20 +53,19 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
-    public void StopsOnFirstUnconfirmedPropertyLikeCppSetPropsDefaultReturn()
+    public void StopsOnFirstInvalidUnknown77PropertyLikeCppSetPropsDefaultReturn()
     {
         var body = new GraalBinaryWriter();
         body.WriteGChar((byte)PlayerPropertyId.X);
         body.WriteGChar(70);
-        body.WriteGChar((byte)PlayerPropertyId.RupeesCount);
-        body.WriteGInt(1234);
+        body.WriteGChar(77);
         body.WriteGChar((byte)PlayerPropertyId.Y);
         body.WriteGChar(71);
 
         var result = IncomingPlayerPropsParser.Parse(body.ToArray());
 
         Assert.False(result.Success);
-        Assert.Equal(PlayerPropertyId.RupeesCount, result.UnsupportedPropertyId);
+        Assert.Equal((PlayerPropertyId)77, result.UnsupportedPropertyId);
         Assert.Single(result.Updates);
         Assert.DoesNotContain(result.Updates, update => update.PropertyId == PlayerPropertyId.Y);
     }
@@ -117,6 +116,12 @@ public sealed class IncomingPlayerPropsParserTests
     public void ParsesConfirmedScalarInventoryAndStatProps()
     {
         var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.MaxPower);
+        body.WriteGChar(15);
+        body.WriteGChar((byte)PlayerPropertyId.CurrentPower);
+        body.WriteGChar(11);
+        body.WriteGChar((byte)PlayerPropertyId.RupeesCount);
+        body.WriteGInt(3_000_000);
         body.WriteGChar((byte)PlayerPropertyId.ArrowsCount);
         body.WriteGChar(150);
         body.WriteGChar((byte)PlayerPropertyId.BombsCount);
@@ -131,10 +136,19 @@ public sealed class IncomingPlayerPropsParserTests
         body.WriteGChar(200);
         body.WriteGChar((byte)PlayerPropertyId.AdditionalFlags);
         body.WriteGChar(77);
+        body.WriteGChar((byte)PlayerPropertyId.Alignment);
+        body.WriteGChar(120);
+        body.WriteGChar((byte)PlayerPropertyId.CarrySprite);
+        body.WriteGChar(12);
+        body.WriteGChar((byte)PlayerPropertyId.HorseBushes);
+        body.WriteGChar(6);
 
         var result = IncomingPlayerPropsParser.Parse(body.ToArray());
 
         Assert.True(result.Success);
+        Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.MaxPower && update.GCharValue == 15);
+        Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.CurrentPower && update.GCharValue == 11);
+        Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.RupeesCount && update.GIntValue == 3_000_000);
         Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.ArrowsCount && update.GCharValue == 150);
         Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.BombsCount && update.GCharValue == 151);
         Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.GlovePower && update.GCharValue == 9);
@@ -142,6 +156,9 @@ public sealed class IncomingPlayerPropsParserTests
         Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.ApCounter && update.GShortValue == 123);
         Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.MagicPoints && update.GCharValue == 200);
         Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.AdditionalFlags && update.GCharValue == 77);
+        Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.Alignment && update.GCharValue == 120);
+        Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.CarrySprite && update.GCharValue == 12);
+        Assert.Contains(result.Updates, update => update.PropertyId == PlayerPropertyId.HorseBushes && update.GCharValue == 6);
     }
 
     [Fact]

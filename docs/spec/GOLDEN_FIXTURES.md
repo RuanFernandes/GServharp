@@ -1455,6 +1455,9 @@ only the `PLO_OTHERPLPROPS` wrapper for player id `7` plus newline:
 Scalar inventory/stat `PLI_PLAYERPROPS` body slice:
 
 ```txt
+PLPROP_MAXPOWER GCHAR(15)
+PLPROP_CURPOWER GCHAR(11)
+PLPROP_RUPEESCOUNT GINT(3000000)
 PLPROP_ARROWSCOUNT GCHAR(150)
 PLPROP_BOMBSCOUNT GCHAR(151)
 PLPROP_GLOVEPOWER GCHAR(9)
@@ -1462,11 +1465,17 @@ PLPROP_BOMBPOWER GCHAR(8)
 PLPROP_APCOUNTER GSHORT(123)
 PLPROP_MAGICPOINTS GCHAR(200)
 PLPROP_ADDITFLAGS GCHAR(77)
+PLPROP_ALIGNMENT GCHAR(120)
+PLPROP_CARRYSPRITE GCHAR(12)
+PLPROP_HORSEBUSHES GCHAR(6)
 ```
 
 Runtime clamps:
 
 ```txt
+maxPower=15 when heartLimit=20
+hitpoints=15 after max power
+rupees=9999999 when incoming runtime value exceeds the C++ cap
 arrows=99
 bombs=99
 glovePower=3
@@ -1474,6 +1483,9 @@ bombPower=3
 apCounter=123
 magicPoints=100
 additionalFlags=77
+alignment=100
+carrySprite=12
+horseBombCount=6
 ```
 
 Forwarded `PLPROP_APCOUNTER` uses C++ `getProp` semantics, so stored `123`

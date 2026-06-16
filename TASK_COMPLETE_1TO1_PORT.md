@@ -516,6 +516,13 @@ behavior, and movement-loop invocation.
     `PLPROP_ADDITFLAGS`. The C# applier preserves the source-confirmed clamps,
     and `PLPROP_APCOUNTER` forwarding preserves C++ `getProp` plus-one
     serialization.
+  - 2026-06-16: Implemented another safe scalar/state subset:
+    `PLPROP_MAXPOWER`, `PLPROP_CURPOWER`, player-origin
+    `PLPROP_RUPEESCOUNT`, `PLPROP_ALIGNMENT`, `PLPROP_CARRYSPRITE`, and
+    `PLPROP_HORSEBUSHES`. The C# applier preserves the C++ heart-limit max
+    power gate, current-power AP healing refusal, rupee/AP clamps, and direct
+    state mutations. `PLPROP_STATUS` remains blocked because the C++ branch
+    includes death/revive/drop/level-leader side effects.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
