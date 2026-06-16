@@ -26,13 +26,13 @@ No row is currently `Certified`.
 | Warp/world entry | Partially Implemented | Existing/missing/same-level/unstick packet boundaries | Full level runtime and old `sendLevel141` fixtures pending |
 | Level board/resource transfer | Partially Implemented | `.nw` static loading and selected dynamic packet boundaries | `.graal`/`.zelda`/`.gmap`, bzip2 socket frames, runtime state pending |
 | Movement/player-prop forwarding | Partially Implemented | Confirmed inbound subset and forwarding packet builders | Full `setProps`, NPC/combat side effects, invalid-update behavior pending |
-| Chat/private messages/profile | Blocked | No full certified runtime | Needs C++ trace/captures and production session routing |
+| Source-confirmed chat/private-message/profile handlers | Blocked | No full certified runtime | Needs C++ trace/captures and production session routing for the recovered C++ handlers only |
 | File wanted/cache/update transfer | Partially Implemented | Confirmed cache/checksum/chunk packet boundaries | Uploads, package lifecycle, bzip2 frames, live client captures pending |
-| Combat | Partially Implemented | Selected packet builders/resource clamps/status transitions | Full hit/gameplay simulation and script/NPC side effects pending |
-| Inventory/items/weapons | Partially Implemented | Selected pickup/drop/weapon side effects | Durable inventory/runtime behavior pending |
-| NPC runtime | Blocked | Inert entity packet boundaries only | Script VM, NPC full props, bytecode, runtime events pending |
-| Baddy/mob runtime | Partially Implemented | Default containers/selected props | AI/combat/drop/respawn/timers pending |
-| Source-confirmed guild/chat/profile paths | Blocked | Some group-map visibility, chat/PM/profile handlers, and guild verification boundaries | Full filesystem/runtime mutation and chat/guild packet flows pending |
+| Source-confirmed combat handlers | Partially Implemented | Selected packet builders/resource clamps/status transitions | Remaining recovered C++ hit/gameplay simulation and script/NPC side effects pending |
+| Source-confirmed inventory/item/weapon handlers | Partially Implemented | Selected pickup/drop/weapon side effects | Remaining recovered C++ durable inventory/runtime behavior pending |
+| Source-confirmed NPC runtime | Blocked | Inert entity packet boundaries only | Recovered C++ script VM, NPC full props, bytecode, runtime events pending |
+| Source-confirmed baddy/mob runtime | Partially Implemented | Default containers/selected props | Recovered C++ AI/combat/drop/respawn/timers pending |
+| Source-confirmed guild/chat/profile paths | Blocked | Some group-map visibility, chat/PM/profile handlers, and guild verification boundaries | Remaining recovered C++ filesystem/runtime mutation and chat/guild packet flows pending |
 | RC admin login and packets | Partially Implemented | Rights constants, gate decisions, selected packets | Production RC sockets and mutation families pending |
 | NC login and packets | Partially Implemented | Selected packet IDs/builders | Production NC sockets, NPC/class/weapon mutation, script execution pending |
 | Timing/save loop | Harness Ready | Fake-clock tests for source-confirmed periodic gates | Concrete runtime service wiring and live long-run captures pending |

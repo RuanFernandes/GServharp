@@ -133,9 +133,11 @@ Major source-confirmed areas still missing or partial:
   behavior, and live movement-loop invocation.
 - NPC/script runtime, V8/GS2 compiler integration, bytecode, lifecycle, and
   script-visible APIs.
-- Baddy AI, combat, projectiles, hit validation, damage, drops, death, respawn.
-- Inventory, item pickup mutations, chest reward mutations, guild, chat/PM, and
-  profile systems only where the recovered C++ source has explicit handlers.
+- Source-confirmed baddy AI, combat, projectiles, hit validation, damage,
+  drops, death, and respawn paths only where recovered C++ handlers/rules exist.
+- Source-confirmed inventory, item pickup mutations, chest reward mutations,
+  guild, chat/PM, and profile paths only where the recovered C++ source has
+  explicit handlers, packet paths, persistence paths, or runtime rules.
 - RC/NC/admin production sockets and mutation commands.
 - Upload/write paths and update-package lifecycle.
 - Websocket/TLS/bzip2 blocked branches.
@@ -670,6 +672,11 @@ behavior, and movement-loop invocation.
     `GInt`; the forwarding builder now emits `PLPROP_UDPPORT + GInt(port)` like
     `getProp(PLPROP_UDPPORT)`. The loaded/id-gated direct broadcast remains
     blocked on production session recipient routing.
+  - 2026-06-16: Implemented source-confirmed live `PLPROP_ACCOUNTNAME`
+    forwarding from runtime account state. The parser still consumes and
+    discards the client-sent string exactly like C++; the live forwarding path
+    now emits `getProp(PLPROP_ACCOUNTNAME)`-equivalent bytes using the
+    authenticated/runtime account name instead of echoing untrusted input.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -737,6 +744,9 @@ behavior, and movement-loop invocation.
     the singleplayer `.singleplayer` suffix emitted by `getProp`.
   - 2026-06-16: Added source-confirmed `PLPROP_UDPPORT` generic forwarding
     fixture for `GInt(14900)` payload bytes.
+  - 2026-06-16: Added source-confirmed live `PLPROP_ACCOUNTNAME` fixture
+    proving discarded inbound bytes are not echoed; forwarding uses runtime
+    account state.
 
 Completion criteria:
 
@@ -1123,12 +1133,12 @@ feature instead of a concrete recovered C++ behavior path.
 | Live world forwarding | Partial | Phase 6 |
 | Player props/movement | Partial | Phase 7 |
 | Chest/item rewards | Partial | Phase 8 |
-| Combat/baddies/projectiles | Partial | Phase 9 |
-| NPC/scripting | Mostly missing | Phase 10 |
-| Weapons/classes/gani | Partial | Phase 11 |
+| Source-confirmed combat/baddy/projectile paths | Partial | Phase 9 |
+| Source-confirmed NPC/scripting paths | Mostly missing | Phase 10 |
+| Source-confirmed weapons/classes/gani paths | Partial | Phase 11 |
 | File upload/update packages | Partial | Phase 12 |
 | RC/NC/admin production | Partial | Phase 13 |
-| Inventory/chat/guild/profile | Mostly missing, source-confirmed paths only | Phase 14 |
+| Source-confirmed inventory/chat/guild/profile paths | Mostly missing, source-confirmed paths only | Phase 14 |
 | bzip2/websocket/TLS | Missing/partial | Phase 15 |
 | Production main loop | Partial | Phase 16 |
 | Client certification | Not certified | Phase 17 |

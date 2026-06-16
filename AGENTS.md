@@ -69,14 +69,18 @@ to:
 * Server list behavior
 * Timing behavior
 * Game loop behavior
-* Movement behavior
-* Combat behavior
+* Movement behavior where the original C++ source contains concrete handlers
+  or runtime rules
+* Combat behavior where the original C++ source contains concrete handlers or
+  runtime rules
 * Weapon/class/gani behavior where the original C++ source contains concrete
   handlers
 * Item/inventory behavior where the original C++ source contains concrete
   handlers or persistence paths
-* NPC/baddy behavior
-* Map/level behavior
+* NPC/baddy behavior where the original C++ source contains concrete handlers,
+  persistence paths, packet paths, or runtime rules
+* Map/level behavior where the original C++ source contains concrete loaders,
+  packet paths, or runtime rules
 * Guild/chat/profile behavior only where the original C++ source contains a
   concrete handler or persistence path
 * Admin/RC/NC behavior
@@ -157,7 +161,7 @@ Do:
 * Document source paths, classes, functions, constants, and line references
 * Preserve packet compatibility
 * Preserve timing compatibility
-* Preserve gameplay compatibility
+* Preserve source-confirmed gameplay compatibility
 * Preserve persistence compatibility
 * Preserve edge cases
 * Add tests for confirmed behavior
@@ -292,7 +296,7 @@ Prioritize:
 * Golden byte fixtures
 * Timing tests
 * Persistence format tests
-* Gameplay formula tests
+* Source-confirmed rule/formula tests
 * Guard tests for blocked/unknown behavior
 
 Whenever possible, tests should lock behavior proven from the C++ source.

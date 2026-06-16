@@ -1572,6 +1572,14 @@ PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_UDPPORT + GINT(14900) + "\n"
 bytes: 40 32 39 63 32 148 84 10
 ```
 
+Live `PLPROP_ACCOUNTNAME` forwarding ignores the consumed client-sent value and
+uses current runtime account state. For account `"pc:7"`:
+
+```txt
+PLO_OTHERPLPROPS + GSHORT(7) + PLPROP_ACCOUNTNAME + GCHAR(4) + "pc:7" + "\n"
+bytes: 40 32 39 66 36 112 99 58 55 10
+```
+
 ## Combat Runtime Fixtures
 
 Inbound `PLI_HURTPLAYER` fixture:

@@ -118,6 +118,30 @@ public sealed class LiveWorldSessionForwardingTests
     }
 
     [Fact]
+    public void ApplyAndForwardConfirmedAccountNameUsesRuntimeAccountNameLikeCpp()
+    {
+        var server = new RuntimeServer();
+        var level = new RuntimeLevel("start.nw");
+        var sender = Add(server, 7, RuntimePlayerKind.Client, level);
+        Add(server, 8, RuntimePlayerKind.Client, level);
+        var sinks = CreateSinks(7, 8);
+
+        var deliveries = LiveWorldSessionForwarder.ApplyAndForwardConfirmedPlayerProps(
+            server,
+            sender,
+            [IncomingPlayerPropertyUpdate.NoValue(PlayerPropertyId.AccountName)],
+            senderSupportsPreciseMovement: true,
+            AsSinks(sinks));
+
+        Assert.Equal("pc:7", sender.AccountName);
+        var delivery = Assert.Single(deliveries);
+        Assert.Equal(8, delivery.PlayerId);
+        Assert.Equal(
+            [40, 32, 39, 66, 36, 112, 99, 58, 55, 10],
+            sinks[8].Packets.Single());
+    }
+
+    [Fact]
     public void ForwardConfirmedLevelAreaPacketFiltersByGmapGroupAndDistance()
     {
         var server = new RuntimeServer();

@@ -435,6 +435,11 @@ public static class IncomingPlayerPropsForwarding
                     WriteProperty(levelBuff, PlayerPropertyId.UdpPort, writer => writer.WriteGInt(unchecked((uint)update.GIntValue.GetValueOrDefault())));
                     break;
 
+                case PlayerPropertyId.AccountName:
+                    if (state?.AccountName is { } accountName)
+                        WriteProperty(levelBuff, PlayerPropertyId.AccountName, writer => WriteGCharString(writer, accountName));
+                    break;
+
                 case PlayerPropertyId.Colors:
                     WriteProperty(levelBuff, PlayerPropertyId.Colors, writer =>
                     {
@@ -520,4 +525,5 @@ public static class IncomingPlayerPropsForwarding
 
 public sealed record IncomingPlayerPropsForwardingState(
     byte CurrentPowerRaw,
-    string? CurrentLevelName = null);
+    string? CurrentLevelName = null,
+    string? AccountName = null);
