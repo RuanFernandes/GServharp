@@ -33,8 +33,9 @@
   covers the confirmed movement subset; most property mutation branches are
   blocked until their downstream systems are fixture-confirmed.
 - Built-in shop, trade, party, quest, and mission systems are not confirmed in
-  the recovered C++ core. They are outside the C# port scope unless future
-  source/capture proof shows a client-facing C++ path.
+  the recovered C++ core. This is not a compatibility blocker. They are outside
+  the C# port scope unless future source/capture proof shows a client-facing
+  C++ path.
 - Old-version BIGMAP file-send workaround is implemented for supplied map
   snapshots through the confirmed file-transfer boundary. `flaghack_ip` is
   traced, but full duplicate flag emission is blocked on
@@ -136,4 +137,6 @@
   NPC/chest/combat side effects, and invalid-update behavior remain blocked.
 - WebSocket handling is gated by `WOLFSSL_ENABLED` code paths and needs a dedicated pass.
 - `Server::doMain()` timing branches need a dedicated timing recovery pass.
-- Gameplay systems, account persistence, RC/NC file browser, server-list protocol, and scripting bindings are not implemented.
+- Source-confirmed gameplay/runtime systems, account persistence, RC/NC file
+  browser, server-list protocol, and scripting bindings are not fully
+  implemented.

@@ -126,8 +126,8 @@ Major missing areas:
 - Inventory, item pickup mutations, chest reward mutations, guild, chat/PM, and
   profile systems only where the recovered C++ source has explicit handlers.
   Built-in shop, trade, party, quest, and mission systems are not confirmed in
-  the C++ core and are outside the port scope unless future source/capture proof
-  is recovered.
+  the C++ core. They are not missing features for this port; they are outside
+  scope unless future source/capture proof is recovered.
 - RC/NC/admin production sockets and mutation commands.
 - Upload/write paths and update-package lifecycle.
 - Websocket/TLS/bzip2 blocked branches.
@@ -810,6 +810,8 @@ Completion criteria:
 **Goal:** Port source-confirmed durable inventory, guild, chat, and profile
 systems. Do not add built-in shop, trade, party, quest, or mission systems
 unless future source/capture proof shows they exist in the original C++ server.
+Absence in the recovered C++ source is considered faithful behavior, not a
+backlog gap.
 
 **Source files to trace first:**
 
@@ -828,7 +830,8 @@ unless future source/capture proof shows they exist in the original C++ server.
 Completion criteria:
 
 - Durable inventory, guild, chat, and profile systems match C++ for confirmed
-  flows; absent systems remain absent from the port.
+  flows; absent systems remain absent from the port and are not counted as
+  remaining 1:1 work.
 
 ## Phase 15: Compression, Encryption, Websocket, TLS Remaining Branches
 
@@ -913,6 +916,8 @@ Update this matrix whenever a phase makes progress. Rows are allowed here only
 when the behavior is directly present in the recovered C++ source or gs2lib.
 Do not add generic game/MMO systems as "missing features"; if the C++ source
 does not implement a built-in system, the compatible C# behavior is to omit it.
+Rows in this matrix must be removed or reworded if they describe a broad genre
+feature instead of a concrete recovered C++ behavior path.
 
 | Area | Status | Next Required Work |
 | --- | --- | --- |

@@ -14,9 +14,10 @@ Externally visible compatibility areas:
 - Exact packet IDs, field order, Graal integer encodings, raw big-endian encodings, newline/raw framing, encryption/compression, file queue ordering, login/session behavior, disconnect messages, RC/NC/server-list packets, level/map/file loading, account persistence, timing, gameplay, and scripting.
 - Strange or bug-like C++ behavior must be preserved unless proven safe to diverge.
 - Systems not implemented by the recovered C++ source are not compatibility
-  gaps. Do not add built-in shops, trades, parties, quests, missions, social
-  systems, or other generic gameplay features unless future recovered source or
-  byte-capture evidence proves a client-facing C++ path.
+  gaps. They are out of scope for the faithful port. Do not add built-in shops,
+  trades, parties, quests, missions, social systems, or other generic gameplay
+  features unless future recovered source or byte-capture evidence proves a
+  client-facing C++ path.
 
 Implemented in this phase:
 

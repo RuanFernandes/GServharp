@@ -45,7 +45,9 @@ The closed-source client must not be able to tell the difference between the ori
 Every external behavior that exists in the original C++ server must match the
 original C++ server exactly.
 
-This includes, but is not limited to:
+This includes every client-facing behavior that is directly present in the
+original C++ source or recovered exact dependencies, including but not limited
+to:
 
 * Network protocol
 * Packet IDs/opcodes
@@ -70,10 +72,9 @@ This includes, but is not limited to:
 * Skill behavior
 * Item/inventory behavior
 * NPC/mob behavior
-* Quest/mission behavior, only if present in the original C++ source
 * Map/level behavior
-* Shop/trade behavior, only if present in the original C++ source
-* Party/guild/social behavior, only if present in the original C++ source
+* Guild/chat/profile behavior only where the original C++ source contains a
+  concrete handler or persistence path
 * Admin/RC/NC behavior
 * Database/persistence behavior
 * Constants
@@ -94,7 +95,9 @@ that the original server exposed that behavior.
 The implementation backlog must be source-derived, not genre-derived. Do not
 add or keep generic server features such as built-in shops, trades, parties,
 quests, missions, social systems, or other gameplay services unless the C++
-source or recovered dependency contains the concrete client-facing path.
+source or recovered dependency contains the concrete client-facing path. If a
+system is absent from the recovered C++ source, the faithful C# behavior is to
+leave it absent rather than adding a modern equivalent.
 
 If C++ behavior looks strange, ugly, duplicated, outdated, or bug-like, preserve it unless there is explicit proof that changing it is safe.
 
@@ -210,7 +213,7 @@ Prioritize:
 1. Correct C++ behavior
 2. Closed-source client compatibility
 3. Protocol compatibility
-4. Complete feature parity
+4. Complete source-confirmed C++ feature parity
 5. Testability
 6. Maintainable architecture
 7. Clean C# design

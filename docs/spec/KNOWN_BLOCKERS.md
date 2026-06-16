@@ -198,5 +198,6 @@
   effects. Full inventory runtime wiring, chat/PM/profile behavior, guild
   filesystem mutation, and script/content-driven behavior from the C++ runtime
   remain blocked. Dedicated built-in shop, trade, party, quest, and mission
-  runtimes were not found in the recovered C++ core and are outside scope unless
-  future source/capture proof shows a client-facing C++ path.
+  runtimes were not found in the recovered C++ core. They are not blockers or
+  missing features for the faithful port; they are outside scope unless future
+  source/capture proof shows a client-facing C++ path.

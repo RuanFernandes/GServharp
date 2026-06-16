@@ -40,9 +40,10 @@ account sources.
 
 ## Explicit Non-Goals
 
-Do not implement built-in shop, trade, party, quest, or mission systems unless a
-future source/capture pass proves those systems exist in the original C++
-server. They are not confirmed C++ core features in the recovered source.
+Built-in shop, trade, party, quest, and mission systems are outside the current
+port backlog because the recovered C++ source does not contain confirmed core
+runtime paths for them. Reopen scope only if a future source/capture pass proves
+that the original C++ server exposed a concrete client-facing path.
 
 Do not add generic "social" or "content" services to fill gaps. If a behavior
 is not implemented by the recovered C++ source, it is not part of the C# port

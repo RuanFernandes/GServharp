@@ -6,10 +6,11 @@
 - Do not invent packet IDs, field sizes, magic values, encryption behavior, timing, account defaults, or gameplay rules.
 - Do not invent feature areas. A system is in scope only when the recovered C++
   source or exact dependency source contains its concrete client-facing
-  behavior.
-- Absence in the C++ source is compatibility behavior. Do not add built-in
-  shops, trades, parties, quests, missions, social systems, or other generic
-  gameplay services to make the server feel more complete.
+  behavior. Do not treat genre/MMO expectations as requirements.
+- Absence in the C++ source is compatibility behavior. Built-in shops, trades,
+  parties, quests, missions, social systems, or other generic gameplay services
+  are outside this port unless a concrete C++ handler/persistence path or
+  byte-capture proof is recovered.
 - If behavior is unclear, document it and leave implementation guarded or absent.
 - Preserve byte order, integer clamping, signed/unsigned quirks, packet delimiters, raw length transitions, compression thresholds, and bug-compatible behavior.
 - Internal C# names may be professional, but docs and tests must trace back to original C++ names.
