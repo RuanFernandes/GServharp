@@ -6,7 +6,12 @@
   selection plus `CSettings`-compatible `serveroptions.txt` and
   `adminconfig.txt` parsing. It still stops before production sockets,
   list-server auth, full `Server::init`, filesystem runtime loaders, and
-  gameplay because those belong to later milestones.
+  gameplay because those belong to later milestones. The C++ production
+  listener/session lifecycle is documented in
+  `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md`, but the production C# listener
+  and multi-session socket manager are not implemented yet. A small
+  source-confirmed `ProductionSocketReceiveBuffer` exists for arbitrary TCP
+  chunk buffering and raw two-byte length-prefixed frame extraction.
 - Production auth now has source-confirmed list-server packet body builders for
   registration, HQ settings, allowed-version text, and `SVO_VERIACC2`, plus a
   gateway boundary that queues auth requests without fake validation. Real

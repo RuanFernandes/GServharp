@@ -150,10 +150,15 @@ production socket/session dispatch where safe.
 - `external/gs2lib/include/CEncryption.h`
 - `external/gs2lib/include/CString.h`
 
-- [ ] Trace C++ socket accept/read/write lifecycle and document it in
+- [x] Trace C++ socket accept/read/write lifecycle and document it in
   `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md`.
 - [ ] Implement a production TCP listener skeleton only for confirmed framing
   and lifecycle behavior.
+  - 2026-06-16: Added `ProductionSocketReceiveBuffer` for source-confirmed
+    arbitrary TCP chunk buffering and raw two-byte big-endian frame extraction.
+    Still blocked/not done: production accept loop, session registry,
+    receive-before-send scheduling, deferred deletion cleanup, and real
+    production auth dispatch.
 - [ ] Integrate confirmed post-login decoded packet dispatch without gameplay
   invention.
 - [ ] Keep unsupported packet ids logged/blocked, not faked.
@@ -637,4 +642,3 @@ Manual client test:
 Next unchecked item:
 - Phase N: ...
 ```
-

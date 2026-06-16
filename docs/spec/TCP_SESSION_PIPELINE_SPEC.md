@@ -7,6 +7,10 @@ Authoritative sources:
 - `external/gs2lib/src/CSocket.cpp`
 - `external/gs2lib/src/CFileQueue.cpp`
 
+See also `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md` for the recovered
+production listener/session lifecycle. This file documents the currently
+implemented dev-only diagnostic pipeline and shared decode/queue boundaries.
+
 ## Confirmed C++ Receive Behavior
 
 `Server::onRecv` accepts a TCP socket, constructs a `Player`, adds it to the
@@ -86,6 +90,11 @@ yet.
 
 ## Known Gaps
 
+- A production listener/session loop is still missing. The recovered C++ shape
+  is documented in `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md`. The C# port
+  now has `ProductionSocketReceiveBuffer` for the source-confirmed raw
+  two-byte length frame buffering portion, but it is not wired into a
+  production listener yet.
 - The TCP shell processes multiple frames for one connection and can decode
   confirmed gen5 post-login client frames before applying `PLI_PLAYERPROPS`
   movement/player-prop updates.

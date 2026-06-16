@@ -9,7 +9,12 @@
   `startupserver.txt`, or exactly one `servers/` directory, and loads
   source-confirmed `CSettings` syntax for `config/serveroptions.txt` and
   `config/adminconfig.txt`. Production runtime remains blocked before sockets,
-  list-server auth, full config loaders, filesystem scans, and gameplay.
+  list-server auth, full config loaders, filesystem scans, and gameplay. The
+  C++ production listener/session lifecycle is now documented in
+  `PRODUCTION_SOCKET_SESSION_SPEC.md`, but the production C# listener and
+  multi-session socket manager are not implemented yet. A small
+  source-confirmed `ProductionSocketReceiveBuffer` exists for arbitrary TCP
+  chunk buffering and raw two-byte length-prefixed frame extraction.
 - Old-version map-file workaround, flaghack mutation, weapons, protected weapons, classes, and zlib-fix NPC weapon branches in `sendLoginClient` are traced but not implemented.
 - The login-server-name branch is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`. Do not assume they are equivalent without source proof.
 - Exact `CString::guntokenize()` behavior for ban reasons remains blocked; current C# tests cover plain reasons and the confirmed newline-to-carriage-return replacement path only.
