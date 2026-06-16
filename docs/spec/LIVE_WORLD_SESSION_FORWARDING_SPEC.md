@@ -92,6 +92,53 @@ level membership order. Map ordering follows the current C# runtime server
 collection order; exact C++ `std::unordered_map` iteration order remains a
 compatibility risk until container behavior is golden-tested.
 
+## Unordered Map Iteration Compatibility
+
+`Server::m_playerList` is declared as:
+
+```cpp
+std::unordered_map<uint16_t, std::shared_ptr<Player>> m_playerList;
+```
+
+Several client-visible paths iterate this container directly:
+
+- `sendPacketToAll`
+- `sendPacketToLevelArea` when the source level/player is on a map
+- `sendPacketToLevelOnlyGmapArea` when the source level/player is on a non-BIGMAP map
+- `Player::leaveLevel` when sending existing same-level player props back to
+  the leaving player
+- multiple login, RC/NC, duplicate-session, and scripting-visible list paths
+
+The C++ standard does not guarantee a portable `std::unordered_map` iteration
+order. The original server's observed order may depend on compiler, standard
+library implementation, bucket count, hash implementation, insertion/erase
+history, and runtime player ids. Because the closed-source client observes
+packet order, map-area recipient order must be treated as compatibility-risky.
+
+Confirmed safe order boundaries:
+
+- Same-level/no-map forwarding uses `Level::m_players`, a `std::deque<uint16_t>`.
+  The C# port preserves this as level membership order.
+- `sendPacketToOneLevel` also uses `Level::m_players`, so its implemented C#
+  boundary preserves level membership order.
+- `LevelEntryVisibilitySelector` no-map behavior keeps the C++ distinction where
+  broadcasts are client-only but the joining player can receive props for
+  non-client same-level entries.
+
+Blocked order boundaries:
+
+- GMAP/map-area forwarding order from `m_playerList`.
+- `sendPacketToAll` order from `m_playerList`.
+- player-list scans during login, leave-level, RC/NC display, scripting
+  `server.players`, and duplicate-account/session handling.
+
+C# implementation rule: do not replace these with sorted player-id order and
+call it compatible. For now, docs and tests should state that map-area order is
+not certified. A future certification pass needs a C++ fixture/capture harness
+using the recovered original build toolchain and representative insertion/erase
+history, then either reproduce the observed order or prove that the client does
+not depend on it for that packet family.
+
 ## C++ Forwarding Function Matrix
 
 The recovered C++ exposes several related packet-routing functions. They are

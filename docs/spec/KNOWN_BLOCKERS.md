@@ -85,11 +85,12 @@
   append/remove, leader detection, deferred deletion cleanup, runtime visibility
   filtering, and live forwarding of already-confirmed level-area/player-prop
   packets to session sinks. It does not implement list-server delete side
-  effects, scripting hooks, real socket/file-queue integration,
-  `std::unordered_map` map-area iteration golden compatibility, or arbitrary
-  gameplay packet forwarding. The C++ forwarding matrix and hidden-client
-  boundaries are documented in `LIVE_WORLD_SESSION_FORWARDING_SPEC.md`, but
-  C# still needs dedicated implementation for `sendPacketToLevelOnlyGmapArea`,
+  effects, scripting hooks, real socket/file-queue integration, or arbitrary
+  gameplay packet forwarding. The C++ forwarding matrix, hidden-client
+  boundaries, and `std::unordered_map` player-list iteration compatibility risk
+  are documented in `LIVE_WORLD_SESSION_FORWARDING_SPEC.md`; map-area/global
+  player-list order remains uncertified until C++ capture evidence exists. C#
+  still needs dedicated implementation for `sendPacketToLevelOnlyGmapArea`,
   predicate-split projectile forwarding, and call-site-specific hidden-client
   behavior. The `sendPacketToOneLevel` sink boundary is implemented for already
   built source-confirmed packet bytes.

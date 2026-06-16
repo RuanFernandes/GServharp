@@ -468,8 +468,14 @@ confirmed packet families.
     `sendPacketToOneLevel` exclusions, hidden clients not being blanket-filtered
     by forwarding helpers, and deferred deleted-player visibility until cleanup
     removes the player from server/level lists.
-- [ ] Add compatibility note for any unordered-map iteration that cannot be
+- [x] Add compatibility note for any unordered-map iteration that cannot be
   guaranteed.
+  - 2026-06-16: Added an unordered-map iteration compatibility section to
+    `docs/spec/LIVE_WORLD_SESSION_FORWARDING_SPEC.md`. It identifies
+    `Server::m_playerList` as `std::unordered_map<uint16_t, shared_ptr<Player>>`,
+    lists client-visible direct iteration paths, distinguishes safe deque-based
+    level membership order from uncertified map-area/global player-list order,
+    and blocks sorted-id substitution without C++ capture evidence.
 
 Completion criteria:
 
