@@ -168,6 +168,11 @@ Compatibility implication: do not add a blanket hidden-client filter to
 site proves it. Hidden-client exclusion must be modeled at the same boundary as
 the original C++ call site.
 
+The C# runtime model exposes `RuntimePlayer.IsHiddenClient` so tests can lock
+this boundary. Current forwarding tests prove the confirmed negative behavior:
+already-built `sendPacketToOneLevel`/level-area style forwarding does not
+exclude a hidden client solely because that flag is set.
+
 ## Confirmed Call Sites
 
 `PlayerProps.cpp::setProps` forwards local property updates with:
@@ -247,6 +252,9 @@ Tests cover:
 - map/group/distance filtering
 - one-level forwarding in level membership order, with explicit exclusions,
   non-client filtering, and no map-area filtering
+- hidden clients are not blanket-filtered by the forwarding helpers
+- deleted players remain visible to forwarding until `CleanupDeletedPlayers`
+  removes them from the server and level lists
 - confirmed movement prop mutation and forwarded `PLO_OTHERPLPROPS` bytes
 
 ## Remaining Blockers

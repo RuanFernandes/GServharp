@@ -23,6 +23,7 @@ public sealed class RuntimePlayer
     public RuntimePlayerKind Kind { get; }
     public RuntimeLevel? Level { get; private set; }
     public string? Group { get; set; }
+    public bool IsHiddenClient { get; set; }
     public int MapX { get; set; }
     public int MapY { get; set; }
     public int PixelX { get; internal set; }

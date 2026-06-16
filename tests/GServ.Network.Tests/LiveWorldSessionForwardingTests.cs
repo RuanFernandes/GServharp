@@ -138,6 +138,60 @@ public sealed class LiveWorldSessionForwardingTests
         Assert.Empty(sinks[11].Packets);
     }
 
+    [Fact]
+    public void ForwardingHelpersDoNotBlanketFilterHiddenClients()
+    {
+        var server = new RuntimeServer();
+        var level = new RuntimeLevel("start.nw");
+        var sender = Add(server, 7, RuntimePlayerKind.Client, level);
+        var hidden = Add(server, 8, RuntimePlayerKind.Client, level);
+        hidden.IsHiddenClient = true;
+        var sinks = CreateSinks(7, 8);
+
+        var deliveries = LiveWorldSessionForwarder.ForwardConfirmedOneLevelPacket(
+            server,
+            level,
+            [90],
+            AsSinks(sinks),
+            new HashSet<ushort> { sender.Id });
+
+        var delivery = Assert.Single(deliveries);
+        Assert.Equal(8, delivery.PlayerId);
+        Assert.Equal([90], sinks[8].Packets.Single());
+    }
+
+    [Fact]
+    public void ForwardingIncludesDeletedPlayersUntilCleanupRuns()
+    {
+        var server = new RuntimeServer();
+        var level = new RuntimeLevel("start.nw");
+        var sender = Add(server, 7, RuntimePlayerKind.Client, level);
+        var deleted = Add(server, 8, RuntimePlayerKind.Client, level);
+        var sinks = CreateSinks(7, 8);
+
+        server.DeletePlayer(deleted);
+        var beforeCleanup = LiveWorldSessionForwarder.ForwardConfirmedOneLevelPacket(
+            server,
+            level,
+            [91],
+            AsSinks(sinks),
+            new HashSet<ushort> { sender.Id });
+
+        server.CleanupDeletedPlayers();
+        var afterCleanup = LiveWorldSessionForwarder.ForwardConfirmedOneLevelPacket(
+            server,
+            level,
+            [92],
+            AsSinks(sinks),
+            new HashSet<ushort> { sender.Id });
+
+        var delivery = Assert.Single(beforeCleanup);
+        Assert.Equal(8, delivery.PlayerId);
+        Assert.Equal([91], sinks[8].Packets.Single());
+        Assert.Empty(afterCleanup);
+        Assert.DoesNotContain((ushort)8, level.PlayerIds);
+    }
+
     private static RuntimePlayer Add(RuntimeServer server, ushort id, RuntimePlayerKind kind, RuntimeLevel level)
     {
         var player = new RuntimePlayer(id, $"pc:{id}", kind);

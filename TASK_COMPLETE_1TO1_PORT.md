@@ -461,8 +461,13 @@ confirmed packet families.
     set only, client sessions only, and no map/group/distance filtering. The
     broader predicate-split projectile and type-specific forwarding families
     remain blocked for later source-confirmed slices.
-- [ ] Add tests for same-level, nearby map, hidden client, non-client, and
+- [x] Add tests for same-level, nearby map, hidden client, non-client, and
   deletion cleanup behavior.
+  - 2026-06-16: Existing and new forwarding tests now cover no-map same-level
+    order, GMAP nearby/group filtering, non-client filtering, explicit
+    `sendPacketToOneLevel` exclusions, hidden clients not being blanket-filtered
+    by forwarding helpers, and deferred deleted-player visibility until cleanup
+    removes the player from server/level lists.
 - [ ] Add compatibility note for any unordered-map iteration that cannot be
   guaranteed.
 
