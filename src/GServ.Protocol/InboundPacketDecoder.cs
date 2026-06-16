@@ -2,7 +2,8 @@ using System.IO.Compression;
 
 namespace GServ.Protocol;
 
-public sealed record InboundPacketDecodeResult(IReadOnlyList<byte[]> Packets);
+public sealed record InboundFrameDecodeResult(byte[] DecodedPayload, IReadOnlyList<string> Warnings);
+public sealed record InboundPacketDecodeResult(byte[] DecodedPayload, IReadOnlyList<byte[]> Packets, IReadOnlyList<string> Warnings);
 
 public sealed class InboundPacketDecoder
 {
@@ -18,33 +19,48 @@ public sealed class InboundPacketDecoder
 
     public InboundPacketDecodeResult DecodeSocketFramePayload(ReadOnlySpan<byte> framePayload)
     {
+        var decodedFrame = DecodeSocketFrame(framePayload);
+        var decoded = decodedFrame.DecodedPayload;
+
+        var packets = SplitNewlinePackets(decoded);
+        if (_generation == EncryptionGeneration.Gen3)
+            packets = packets.Select(packet => _codec.Decrypt(packet)).ToArray();
+
+        return new InboundPacketDecodeResult(decoded, packets, decodedFrame.Warnings);
+    }
+
+    public InboundFrameDecodeResult DecodeSocketFrame(ReadOnlySpan<byte> framePayload)
+    {
+        var warnings = new List<string>();
         var decoded = _generation switch
         {
             EncryptionGeneration.Gen1 or EncryptionGeneration.Gen6 => framePayload.ToArray(),
             EncryptionGeneration.Gen2 => ZlibDecompress(framePayload),
             EncryptionGeneration.Gen3 => ZlibDecompress(framePayload),
             EncryptionGeneration.Gen4 => throw new NotSupportedException("Inbound gen4 bzip2 decrypt/decompress is not implemented yet."),
-            EncryptionGeneration.Gen5 => DecodeGen5(framePayload),
+            EncryptionGeneration.Gen5 => DecodeGen5(framePayload, warnings),
             _ => throw new NotSupportedException($"Inbound generation {_generation} is not source-confirmed.")
         };
 
-        var packets = SplitNewlinePackets(decoded);
-        if (_generation == EncryptionGeneration.Gen3)
-            packets = packets.Select(packet => _codec.Decrypt(packet)).ToArray();
-
-        return new InboundPacketDecodeResult(packets);
+        return new InboundFrameDecodeResult(decoded, warnings);
     }
 
-    private byte[] DecodeGen5(ReadOnlySpan<byte> framePayload)
+    private byte[] DecodeGen5(ReadOnlySpan<byte> framePayload, List<string> warnings)
     {
         if (framePayload.IsEmpty)
             return [];
 
-        var compressionType = (CompressionType)framePayload[0];
-        if (!_codec.LimitFromCompressionType(compressionType))
-            throw new NotSupportedException($"Inbound gen5 compression type 0x{framePayload[0]:X2} is not source-confirmed.");
+        var compressionTypeByte = framePayload[0];
+        var compressionType = (CompressionType)compressionTypeByte;
+        var knownCompressionType = _codec.LimitFromCompressionType(compressionType);
 
         var decrypted = _codec.Decrypt(framePayload[1..]);
+        if (!knownCompressionType)
+        {
+            warnings.Add($"Client gave incorrect packet compression type 0x{compressionTypeByte:X2}; C++ logs this and continues without decompression.");
+            return decrypted;
+        }
+
         return compressionType switch
         {
             CompressionType.Uncompressed => decrypted,

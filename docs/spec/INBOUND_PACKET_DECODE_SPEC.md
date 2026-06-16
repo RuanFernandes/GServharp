@@ -35,7 +35,20 @@ COMPRESS_BZ2 = 0x06
 
 After frame decode, `parsePacket` splits normal packets by newline. `PLI_RAWDATA`
 sets `m_nextIsRaw` and the next packet is read by exact byte length instead of
-newline. Bundle handling remains a separate parser boundary.
+newline. `m_nextIsRaw` and `m_rawPacketSize` are fields on `Player`, so the raw
+length transition is session state, not a local one-shot helper.
+
+For gen3, `parsePacket` decrypts each extracted packet after line/raw extraction
+and before reading the packet id. For gen4/gen5+, `decryptPacket` runs before
+`parsePacket` and packet extraction operates on already-decrypted/decompressed
+combined payload bytes.
+
+`PLI_BUNDLE = 253` is confirmed in `IEnums.h`, but this source snapshot does not
+assign `TPLFunc[PLI_BUNDLE]` in `Player.cpp`; unassigned packet ids use
+`msgPLI_NULL`. The existing C# raw big-endian bundle reader remains a utility
+for the confirmed length-prefix shape, but the dev shell does not expand inbound
+bundles as gameplay/session behavior because the authoritative C++ server does
+not show a bound handler in this snapshot.
 
 ## Captured Inbound Fixtures
 
@@ -71,13 +84,21 @@ decoded=61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61
 Implemented:
 
 - `InboundPacketDecoder`
+- decoded-frame API that exposes raw decoded payload bytes before client packet
+  framing
 - gen1/gen6 passthrough
 - gen2 zlib frame decode
 - gen3 zlib frame decode plus per-packet gen3 decrypt after newline splitting
 - gen5 uncompressed frame decode
 - gen5 zlib frame decode
+- gen5 invalid compression type behavior: `CEncryption::limitFromType` leaves
+  the prior encryption limit unchanged, C++ logs
+  `Client gave incorrect packet compression type`, and continues without
+  decompression; C# returns the decrypted payload plus a warning
 - explicit blocked exceptions for gen4 and gen5 bzip2
 - newline splitting into inner packets without the trailing newline
+- `ClientPacketStreamFramer` statefully preserves the confirmed `PLI_RAWDATA`
+  next-packet length transition across decoded payload calls
 - dev-only TCP shell integration after login using the session's inbound
   generation and login encryption key
 
@@ -89,7 +110,6 @@ runtime dispatch.
 
 - gen4 bzip2 inbound decode
 - gen5 bzip2 inbound decode
-- malformed compression-type compatibility beyond explicit blocked logging
-- exact `PLI_RAWDATA` state integration after encrypted frame decode
-- inbound `PLI_BUNDLE` expansion in the dev shell
+- inbound `PLI_BUNDLE` expansion in the dev shell remains blocked because this
+  C++ snapshot does not assign a handler for `PLI_BUNDLE`
 - production socket buffering, multi-session forwarding, and gameplay handlers

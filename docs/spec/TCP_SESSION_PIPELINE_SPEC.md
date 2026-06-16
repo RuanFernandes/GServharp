@@ -37,6 +37,12 @@ Implemented:
   - stops at `DynamicLevelPayloadSent` before live world simulation
   - decodes post-login inbound frames for confirmed gen1/gen2/gen3/gen5
     uncompressed/zlib branches
+  - for gen1/gen2/gen5/gen6 decoded post-login bytes, preserves the
+    source-confirmed stateful `PLI_RAWDATA` length transition through
+    `ClientPacketStreamFramer`
+  - for gen5 invalid compression types, logs the compatibility warning exposed
+    by the protocol decoder and continues with decrypted bytes, matching the
+    C++ log-and-continue branch
   - accepts decoded post-login `PLI_PLAYERPROPS` packets for the confirmed
     movement/player-prop subset and applies local runtime state mutation only
 - `DevOnlyLocalTcpServer`
@@ -86,6 +92,8 @@ yet.
 - Unsupported post-login packet ids still stop before gameplay/runtime
   dispatch.
 - Inbound gen4 and gen5 bzip2 frame payloads are explicitly blocked.
+- Inbound `PLI_BUNDLE` expansion is not wired into the shell because the
+  authoritative C++ `Player.cpp` snapshot does not bind `TPLFunc[PLI_BUNDLE]`.
 - Outbound bzip2 socket framing for gen4 and gen5 payloads over `0x2000` bytes
   is still blocked.
 - Websocket wrapping is not implemented.

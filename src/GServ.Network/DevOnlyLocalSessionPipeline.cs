@@ -49,6 +49,7 @@ public sealed class DevOnlyLocalSessionPipeline(
         ClientSessionSkeleton session,
         RuntimePlayer runtimePlayer,
         InboundPacketDecoder? inboundDecoder,
+        ClientPacketStreamFramer? inboundFramer,
         List<string> log,
         ReadOnlySpan<byte> input)
     {
@@ -66,14 +67,27 @@ public sealed class DevOnlyLocalSessionPipeline(
                 return Finish(session, session.Lifecycle == SessionLifecycle.DynamicLevelPayloadSent, ToStopPoint(session), log);
             }
 
-            IReadOnlyList<byte[]> packets;
+            IReadOnlyList<FramedPacket> packets;
             try
             {
                 if (inboundDecoder is null)
                     throw new NotSupportedException("Inbound decoder is not initialized for this post-login frame.");
 
-                var decoded = inboundDecoder.DecodeSocketFramePayload(frame.Span);
-                packets = decoded.Packets;
+                if (session.InboundEncryptionGeneration == EncryptionGeneration.Gen3)
+                {
+                    var decoded = inboundDecoder.DecodeSocketFramePayload(frame.Span);
+                    packets = decoded.Packets.Select(packet => new FramedPacket(null, packet)).ToArray();
+                }
+                else
+                {
+                    if (inboundFramer is null)
+                        throw new NotSupportedException("Inbound client packet framer is not initialized for this post-login frame.");
+
+                    var decoded = inboundDecoder.DecodeSocketFrame(frame.Span);
+                    foreach (var warning in decoded.Warnings)
+                        log.Add(warning);
+                    packets = inboundFramer.Parse(decoded.DecodedPayload);
+                }
                 log.Add($"Decoded inbound {session.InboundEncryptionGeneration.ToString().ToLowerInvariant()} frame into {packets.Count} packet(s).");
             }
             catch (NotSupportedException ex)
@@ -85,7 +99,7 @@ public sealed class DevOnlyLocalSessionPipeline(
 
             foreach (var packet in packets)
             {
-                if (TryProcessDecodedPostLoginPacket(session, runtimePlayer, log, packet))
+                if (TryProcessDecodedPostLoginPacket(session, runtimePlayer, log, packet.Payload.Span))
                     continue;
 
                 log.Add("Unsupported post-login frame received by dev-only shell; continuous loop stopped before gameplay/runtime packet handling.");
@@ -377,6 +391,7 @@ public sealed class DevOnlyLocalSessionConnection
     private readonly RuntimePlayer _runtimePlayer;
     private readonly List<string> _log = [];
     private InboundPacketDecoder? _inboundDecoder;
+    private ClientPacketStreamFramer? _inboundFramer;
 
     internal DevOnlyLocalSessionConnection(DevOnlyLocalSessionPipeline pipeline, ushort playerId)
     {
@@ -387,9 +402,12 @@ public sealed class DevOnlyLocalSessionConnection
 
     public DevOnlyLocalSessionResult ProcessLengthPrefixedInput(ReadOnlySpan<byte> input)
     {
-        var result = _pipeline.ProcessConnectionInput(_session, _runtimePlayer, _inboundDecoder, _log, input);
+        var result = _pipeline.ProcessConnectionInput(_session, _runtimePlayer, _inboundDecoder, _inboundFramer, _log, input);
         if (_inboundDecoder is null && _session.LoginPacket is { } login)
+        {
             _inboundDecoder = new InboundPacketDecoder(_session.InboundEncryptionGeneration, login.EncryptionKey ?? 0);
+            _inboundFramer = new ClientPacketStreamFramer(new ClientPacketParseOptions(StripRawDataTrailingNewline: true));
+        }
         return result;
     }
 }

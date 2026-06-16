@@ -81,6 +81,25 @@ public sealed class PacketFramingTests
     }
 
     [Fact]
+    public void StatefulClientFramerCarriesRawDataLengthToNextDecodedPayload()
+    {
+        var header = new GraalBinaryWriter();
+        header.WriteGChar((byte)PlayerToServerPacketId.RawData);
+        header.WriteGInt(4);
+        header.WriteByte((byte)'\n');
+        var framer = new ClientPacketStreamFramer(new ClientPacketParseOptions(StripRawDataTrailingNewline: true));
+
+        var first = framer.Parse(header.ToArray());
+        var second = framer.Parse("abc\n"u8);
+
+        var firstPacket = Assert.Single(first);
+        Assert.Equal(PlayerToServerPacketId.RawData, firstPacket.Id);
+        var rawPacket = Assert.Single(second);
+        Assert.Null(rawPacket.Id);
+        Assert.Equal("abc", Encoding.ASCII.GetString(rawPacket.Payload.Span));
+    }
+
+    [Fact]
     public void BundleUsesRawBigEndianShortLengthPrefixes()
     {
         var payload = new byte[] { 0, 3, 1, 2, 3, 0, 2, 4, 5 };

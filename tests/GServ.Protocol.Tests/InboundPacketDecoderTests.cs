@@ -43,4 +43,53 @@ public sealed class InboundPacketDecoderTests
         var packet = Assert.Single(result.Packets);
         Assert.Equal("abc", Encoding.ASCII.GetString(packet));
     }
+
+    [Fact]
+    public void DecodeSocketFrameExposesRawDecodedPayloadBeforePacketFraming()
+    {
+        var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen5, key: 0);
+
+        var result = decoder.DecodeSocketFrame([0x02, 0x79, 0x7A, 0xB2, 0xDC]);
+
+        Assert.Equal("abc\n", Encoding.ASCII.GetString(result.DecodedPayload));
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Gen5InvalidCompressionTypeDecryptsAndContinuesWithWarningLikeCpp()
+    {
+        var codec = new GraalEncryption(EncryptionGeneration.Gen5);
+        codec.Reset(0);
+        var encrypted = codec.Encrypt("abc\n"u8);
+        var framePayload = new byte[encrypted.Length + 1];
+        framePayload[0] = 0x08;
+        encrypted.CopyTo(framePayload.AsSpan(1));
+        var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen5, key: 0);
+
+        var result = decoder.DecodeSocketFramePayload(framePayload);
+
+        var packet = Assert.Single(result.Packets);
+        Assert.Equal("abc", Encoding.ASCII.GetString(packet));
+        Assert.Contains(result.Warnings, warning => warning.Contains("incorrect packet compression type 0x08", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Gen4InboundBzip2BranchRemainsExplicitlyBlocked()
+    {
+        var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen4, key: 0);
+
+        var ex = Assert.Throws<NotSupportedException>(() => decoder.DecodeSocketFramePayload([1, 2, 3]));
+
+        Assert.Equal("Inbound gen4 bzip2 decrypt/decompress is not implemented yet.", ex.Message);
+    }
+
+    [Fact]
+    public void Gen5InboundBzip2BranchRemainsExplicitlyBlocked()
+    {
+        var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen5, key: 0);
+
+        var ex = Assert.Throws<NotSupportedException>(() => decoder.DecodeSocketFramePayload([0x06, 1, 2, 3]));
+
+        Assert.Equal("Inbound gen5 bzip2 decrypt/decompress is not implemented yet.", ex.Message);
+    }
 }

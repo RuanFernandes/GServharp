@@ -64,8 +64,10 @@
   for the confirmed X/Y/Z, X2/Y2/Z2, sprite, current-level, and gani subset.
   Safe local runtime mutation and a packet builder for confirmed movement
   `PLO_OTHERPLPROPS` forwarding bytes exist. Confirmed inbound gen1/gen2/gen3
-  and gen5 uncompressed/zlib frame decode exists, and the dev-only TCP shell can
-  decode gen5 movement frames after login. Inbound bzip2 branches, live
-  multi-session forwarding, full `setProps`, touch/link traversal,
+  and gen5 uncompressed/zlib frame decode exists, gen5 invalid compression
+  type now follows the C++ log-and-continue decrypted-payload behavior, and the
+  dev-only TCP shell preserves source-confirmed `PLI_RAWDATA` state for decoded
+  gen1/gen2/gen5/gen6 post-login payloads. Inbound bzip2 branches, inbound
+  bundle dispatch, live multi-session forwarding, full `setProps`, touch/link traversal,
   NPC/chest/combat side effects, and invalid-update behavior remain blocked.
 - Server-list connection lifecycle, reconnect backoff, registration, and text/listserver side channels need a dedicated milestone.

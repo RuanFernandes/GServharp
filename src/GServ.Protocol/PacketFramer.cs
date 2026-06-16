@@ -3,6 +3,40 @@ namespace GServ.Protocol;
 public readonly record struct FramedPacket(PlayerToServerPacketId? Id, ReadOnlyMemory<byte> Payload);
 public readonly record struct ClientPacketParseOptions(bool StripRawDataTrailingNewline);
 
+public sealed class ClientPacketStreamFramer(ClientPacketParseOptions options)
+{
+    private int _nextRawSize = -1;
+
+    public IReadOnlyList<FramedPacket> Parse(ReadOnlySpan<byte> payload)
+    {
+        var packets = new List<FramedPacket>();
+        var reader = new GraalBinaryReader(payload);
+
+        while (reader.BytesLeft > 0)
+        {
+            if (_nextRawSize >= 0)
+            {
+                var raw = reader.ReadBytes(_nextRawSize);
+                if (options.StripRawDataTrailingNewline && raw.Length > 0 && raw[^1] == (byte)'\n')
+                    raw = raw[..^1];
+                packets.Add(new FramedPacket(null, raw));
+                _nextRawSize = -1;
+                continue;
+            }
+
+            var line = PacketFramer.ReadLine(reader);
+            if (line.Length == 0) continue;
+            var lineReader = new GraalBinaryReader(line);
+            var id = (PlayerToServerPacketId)lineReader.ReadGChar();
+            packets.Add(new FramedPacket(id, line));
+            if (id == PlayerToServerPacketId.RawData)
+                _nextRawSize = lineReader.ReadGInt();
+        }
+
+        return packets;
+    }
+}
+
 public static class PacketFramer
 {
     public static IReadOnlyList<FramedPacket> SplitNewlinePackets(ReadOnlySpan<byte> payload)
@@ -85,7 +119,7 @@ public static class PacketFramer
         return packets;
     }
 
-    private static byte[] ReadLine(GraalBinaryReader reader)
+    internal static byte[] ReadLine(GraalBinaryReader reader)
     {
         var bytes = new List<byte>();
         while (reader.BytesLeft > 0)

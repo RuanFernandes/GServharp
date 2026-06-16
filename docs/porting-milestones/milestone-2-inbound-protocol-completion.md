@@ -20,17 +20,17 @@
 
 ## Required Work
 
-- [ ] Re-trace `Player::parsePacket`, `Player::doMain`, encryption generation selection, `PLI_RAWDATA`, and bundle handling.
-- [ ] Update `docs/spec/INBOUND_PACKET_DECODE_SPEC.md` with exact source references and remaining unsupported branches.
-- [ ] Generate or extend gs2lib fixture harness tests for any newly confirmed inbound frame branch.
-- [ ] Add failing xUnit tests for confirmed gen4 bzip2, gen5 bzip2, raw-data transition, bundle expansion, and malformed packet behavior when exact bytes are available.
-- [ ] Implement only branches with source-confirmed byte layout.
-- [ ] Keep unsupported branches throwing documented compatibility exceptions instead of guessing.
-- [ ] Integrate confirmed branches into the TCP dev shell without adding gameplay dispatch.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Complete confirmed inbound protocol decoding`.
+- [x] Re-trace `Player::parsePacket`, `Player::doMain`, encryption generation selection, `PLI_RAWDATA`, and bundle handling.
+- [x] Update `docs/spec/INBOUND_PACKET_DECODE_SPEC.md` with exact source references and remaining unsupported branches.
+- [x] Generate or extend gs2lib fixture harness tests for any newly confirmed inbound frame branch.
+- [x] Add failing xUnit tests for confirmed gen4 bzip2, gen5 bzip2, raw-data transition, bundle expansion, and malformed packet behavior when exact bytes are available.
+- [x] Implement only branches with source-confirmed byte layout.
+- [x] Keep unsupported branches throwing documented compatibility exceptions instead of guessing.
+- [x] Integrate confirmed branches into the TCP dev shell without adding gameplay dispatch.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Complete confirmed inbound protocol decoding`.
 
 ## Compatibility Constraints
 
@@ -42,3 +42,11 @@
 
 - Every source-confirmed inbound generation and framing path has tests.
 - Every blocked branch has a documented reason and a guard test.
+
+## Completion Notes
+
+- No new bzip2 fixture was generated because gen4/gen5 bzip2 byte output is
+  still blocked pending exact compression fixture proof.
+- No inbound bundle expansion was implemented because `PLI_BUNDLE` is defined in
+  `IEnums.h`, but this C++ snapshot does not assign `TPLFunc[PLI_BUNDLE]`; the
+  existing length-prefix utility remains tested only as a packet utility.
