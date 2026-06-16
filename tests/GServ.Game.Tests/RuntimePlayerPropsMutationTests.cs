@@ -330,4 +330,44 @@ public sealed class RuntimePlayerPropsMutationTests
         Assert.Equal(2, player.ShieldPower);
         Assert.Equal("shield2.png", player.ShieldImage);
     }
+
+    [Fact]
+    public void OldClientGaniBowPowerMutatesBowStateWithoutChangingModernGani()
+    {
+        var player = new RuntimePlayer(7, "pc:Ruan", RuntimePlayerKind.Client)
+        {
+            BowPower = 9,
+            BowImage = "bow9.png"
+        };
+        var options = new RuntimePlayerPropsOptions(ClientVersion: ClientVersionId.Client1411);
+
+        RuntimePlayerPropsApplier.ApplyConfirmed(
+            player,
+            [IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.Gani, 4)],
+            options);
+
+        Assert.Equal(4, player.BowPower);
+        Assert.Equal(string.Empty, player.BowImage);
+        Assert.Equal(string.Empty, player.Gani);
+        Assert.False(player.MovementUpdated);
+        Assert.False(player.TouchTestRequested);
+    }
+
+    [Fact]
+    public void OldClientGaniBowImageMutatesBowImageWithoutChangingModernGani()
+    {
+        var player = new RuntimePlayer(7, "pc:Ruan", RuntimePlayerKind.Client);
+        var options = new RuntimePlayerPropsOptions(ClientVersion: ClientVersionId.Client1411);
+
+        RuntimePlayerPropsApplier.ApplyConfirmed(
+            player,
+            [new IncomingPlayerPropertyUpdate(PlayerPropertyId.Gani, GCharValue: 10, StringValue: "bow1.gif")],
+            options);
+
+        Assert.Equal(10, player.BowPower);
+        Assert.Equal("bow1.gif", player.BowImage);
+        Assert.Equal(string.Empty, player.Gani);
+        Assert.False(player.MovementUpdated);
+        Assert.False(player.TouchTestRequested);
+    }
 }

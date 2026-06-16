@@ -762,4 +762,71 @@ public sealed class IncomingPlayerPropsParserTests
             ],
             packet);
     }
+
+    [Fact]
+    public void OldClientGaniParsesBowPowerInsteadOfModernString()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.Gani);
+        body.WriteGChar(4);
+        body.WriteGChar((byte)PlayerPropertyId.X);
+        body.WriteGChar(70);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray(), ClientVersionId.Client1411);
+
+        Assert.True(result.Success);
+        Assert.Equal([PlayerPropertyId.Gani, PlayerPropertyId.X], result.Updates.Select(update => update.PropertyId));
+        Assert.Equal((byte)4, result.Updates[0].GCharValue);
+        Assert.Null(result.Updates[0].StringValue);
+        Assert.Equal((byte)70, result.Updates[1].GCharValue);
+    }
+
+    [Fact]
+    public void OldClientGaniParsesBowImageAndAddsGifWhenExtensionless()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.Gani);
+        body.WriteGChar(14);
+        body.WriteBytes("bow1"u8);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray(), ClientVersionId.Client1411);
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.Gani, update.PropertyId);
+        Assert.Equal((byte)10, update.GCharValue);
+        Assert.Equal("bow1.gif", update.StringValue);
+    }
+
+    [Fact]
+    public void OldClientGaniForwardsBowPowerPayload()
+    {
+        var packet = IncomingPlayerPropsForwarding.BuildOtherPlayerPropsPacket(
+            playerId: 7,
+            pixelX: 0,
+            pixelY: 0,
+            pixelZ: 0,
+            [IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.Gani, 4)],
+            senderSupportsPreciseMovement: true,
+            appendNewline: true,
+            senderClientVersion: ClientVersionId.Client1411);
+
+        Assert.Equal([40, 32, 39, 42, 36, 10], packet);
+    }
+
+    [Fact]
+    public void OldClientGaniForwardsBowImageWithLengthOffset()
+    {
+        var packet = IncomingPlayerPropsForwarding.BuildOtherPlayerPropsPacket(
+            playerId: 7,
+            pixelX: 0,
+            pixelY: 0,
+            pixelZ: 0,
+            [new IncomingPlayerPropertyUpdate(PlayerPropertyId.Gani, GCharValue: 10, StringValue: "bow1.gif")],
+            senderSupportsPreciseMovement: true,
+            appendNewline: true,
+            senderClientVersion: ClientVersionId.Client1411);
+
+        Assert.Equal([40, 32, 39, 42, 50, 98, 111, 119, 49, 46, 103, 105, 102, 10], packet);
+    }
 }

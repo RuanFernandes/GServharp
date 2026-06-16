@@ -89,11 +89,14 @@ public static class IncomingPlayerPropsParser
                     break;
 
                 case PlayerPropertyId.CurrentLevel:
-                case PlayerPropertyId.Gani:
                 case PlayerPropertyId.BodyImage:
                 case PlayerPropertyId.PlayerLanguage:
                 case PlayerPropertyId.OsType:
                     updates.Add(IncomingPlayerPropertyUpdate.String(propertyId, ReadGCharString(reader)));
+                    break;
+
+                case PlayerPropertyId.Gani:
+                    updates.Add(ReadGani(reader, clientVersion));
                     break;
 
                 case PlayerPropertyId.HeadGif:
@@ -192,6 +195,25 @@ public static class IncomingPlayerPropsParser
     {
         var length = reader.ReadGChar();
         return Encoding.ASCII.GetString(reader.ReadBytes(length));
+    }
+
+    private static IncomingPlayerPropertyUpdate ReadGani(
+        GraalBinaryReader reader,
+        ClientVersionId clientVersion)
+    {
+        if (clientVersion >= ClientVersionId.Client21)
+            return IncomingPlayerPropertyUpdate.String(PlayerPropertyId.Gani, ReadGCharString(reader));
+
+        var sp = reader.ReadGChar();
+        if (sp < 10)
+            return IncomingPlayerPropertyUpdate.GChar(PlayerPropertyId.Gani, sp);
+
+        var imageLength = sp - 10;
+        var image = Encoding.ASCII.GetString(reader.ReadBytes(imageLength));
+        if (image.Length != 0 && HasNoExtension(image))
+            image += ".gif";
+
+        return new IncomingPlayerPropertyUpdate(PlayerPropertyId.Gani, GCharValue: 10, StringValue: image);
     }
 
     private static IncomingPlayerPropertyUpdate ReadHeadImage(
@@ -303,7 +325,8 @@ public static class IncomingPlayerPropsForwarding
         int pixelZ,
         IEnumerable<IncomingPlayerPropertyUpdate> updates,
         bool senderSupportsPreciseMovement,
-        bool appendNewline = false)
+        bool appendNewline = false,
+        ClientVersionId senderClientVersion = ClientVersionId.Client21)
     {
         var levelBuff = new GraalBinaryWriter();
         var levelBuff2 = new GraalBinaryWriter();
@@ -359,7 +382,7 @@ public static class IncomingPlayerPropsForwarding
                     break;
 
                 case PlayerPropertyId.Gani:
-                    WriteProperty(levelBuff, PlayerPropertyId.Gani, writer => WriteGCharString(writer, update.StringValue ?? string.Empty));
+                    WriteProperty(levelBuff, PlayerPropertyId.Gani, writer => WriteGani(writer, update, senderClientVersion));
                     break;
 
                 case PlayerPropertyId.BodyImage:
@@ -431,6 +454,28 @@ public static class IncomingPlayerPropsForwarding
     {
         writer.WriteGChar((byte)value.Length);
         writer.WriteBytes(Encoding.ASCII.GetBytes(value));
+    }
+
+    private static void WriteGani(
+        GraalBinaryWriter writer,
+        IncomingPlayerPropertyUpdate update,
+        ClientVersionId clientVersion)
+    {
+        if (clientVersion >= ClientVersionId.Client21)
+        {
+            WriteGCharString(writer, update.StringValue ?? string.Empty);
+            return;
+        }
+
+        var image = update.StringValue ?? string.Empty;
+        if (image.Length > 0)
+        {
+            writer.WriteGChar((byte)(10 + image.Length));
+            writer.WriteBytes(Encoding.ASCII.GetBytes(image));
+            return;
+        }
+
+        writer.WriteGChar(update.GCharValue.GetValueOrDefault());
     }
 
     private static void WriteHeadImage(GraalBinaryWriter writer, string value)

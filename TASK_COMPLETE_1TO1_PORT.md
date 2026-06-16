@@ -634,6 +634,14 @@ behavior, and movement-loop invocation.
     and generic forwarding uses the C++ `getProp` offset/string payloads.
     `healswords=true` negative-power wrap behavior and loaded/global recipient
     routing remain blocked until fixture-confirmed.
+  - 2026-06-16: Implemented the source-confirmed old-client
+    `PLPROP_GANI`/`PLPROP_BOWGIF` runtime branch for incoming player props.
+    For clients older than `CLVER_2_1`, the parser now treats the value as
+    `GUChar bowPower` when below `10`, or `GUChar(10 + image.length) + image`
+    with extensionless `.gif` suffixing. Runtime mutation updates bow
+    power/image without changing modern `gani`, and generic forwarding emits
+    the C++ old-client bow payload shape. Modern `gani == "spin"`
+    `PLO_HITOBJECTS` side effects remain blocked.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -686,6 +694,9 @@ behavior, and movement-loop invocation.
     `PLPROP_SHIELDPOWER` fixtures for custom image parsing, old-client `.gif`
     suffixes, default-image settings clamps, the old shield no-change bug,
     223-char image truncation, and generic forwarding bytes.
+  - 2026-06-16: Added source-confirmed old-client `PLPROP_GANI` fixtures for
+    bow-power parsing, extensionless bow-image `.gif` suffixing, runtime
+    bow-state mutation, and old-client generic forwarding bytes.
 
 Completion criteria:
 

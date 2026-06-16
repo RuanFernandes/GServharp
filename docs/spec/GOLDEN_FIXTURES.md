@@ -434,6 +434,32 @@ Bow image `"bow.gif"`:
 [42, 49, 98, 111, 119, 46, 103, 105, 102]
 ```
 
+Incoming old-client `PLI_PLAYERPROPS` `PLPROP_GANI` bow power payload:
+
+```txt
+[42, 36]
+```
+
+Incoming old-client `PLI_PLAYERPROPS` `PLPROP_GANI` extensionless bow image
+payload `"bow1"` mutates to runtime image `"bow1.gif"`:
+
+```txt
+[42, 46, 98, 111, 119, 49]
+```
+
+Forwarded `PLO_OTHERPLPROPS` for player id `7`, old-client bow power `4`:
+
+```txt
+[40, 32, 39, 42, 36, 10]
+```
+
+Forwarded `PLO_OTHERPLPROPS` for player id `7`, old-client bow image
+`"bow1.gif"`:
+
+```txt
+[40, 32, 39, 42, 50, 98, 111, 119, 49, 46, 103, 105, 102, 10]
+```
+
 Old-client pre-warp login boundary with only `PLPROP_GANI`/bow power followed
 by the confirmed fixed pre-warp packets:
 

@@ -42,6 +42,8 @@ public sealed class RuntimePlayer
     public string SwordImage { get; set; } = "sword1.png";
     public byte ShieldPower { get; set; }
     public string ShieldImage { get; set; } = "shield1.png";
+    public byte BowPower { get; set; } = 1;
+    public string BowImage { get; set; } = "bow1.png";
     public ushort ApCounter { get; internal set; }
     public byte MagicPoints { get; internal set; }
     public byte Alignment { get; set; }
@@ -211,6 +213,12 @@ public static class RuntimePlayerPropsApplier
                     break;
 
                 case GServ.Protocol.PlayerPropertyId.Gani:
+                    if (options.ClientVersion < GServ.Protocol.ClientVersionId.Client21)
+                    {
+                        ApplyLegacyBowGani(player, update);
+                        break;
+                    }
+
                     player.Gani = update.StringValue ?? string.Empty;
                     break;
 
@@ -349,6 +357,21 @@ public static class RuntimePlayerPropsApplier
 
         player.ShieldPower = (byte)Math.Clamp(power, 0, options.ShieldLimit);
         player.ShieldImage = LimitString(image, 223);
+    }
+
+    private static void ApplyLegacyBowGani(
+        RuntimePlayer player,
+        GServ.Protocol.IncomingPlayerPropertyUpdate update)
+    {
+        if (update.StringValue is { Length: > 0 } image)
+        {
+            player.BowPower = 10;
+            player.BowImage = image;
+            return;
+        }
+
+        player.BowPower = update.GCharValue.GetValueOrDefault();
+        player.BowImage = string.Empty;
     }
 
     private static string LimitString(string value, int length) =>

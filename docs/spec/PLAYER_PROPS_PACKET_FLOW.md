@@ -73,4 +73,4 @@ requires real account/player values rather than invented defaults.
 
 The pre-warp login boundary now calls `PlayerPropertySerializer.SerializeConfirmedLoginSubset` instead of accepting arbitrary login prop bytes for the tested path.
 
-Full production `__sendLogin` emission still requires real account/default-account values, but the source-confirmed old-client `PLPROP_GANI`/`PLPROP_BOWGIF` branch is implemented.
+Full production `__sendLogin` emission still requires real account/default-account values, but the source-confirmed old-client `PLPROP_GANI`/`PLPROP_BOWGIF` branch is implemented for login serialization and incoming player-prop parse/mutation/forwarding.
