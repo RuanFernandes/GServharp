@@ -1264,7 +1264,10 @@ Prerequisites:
 - Packet capture tooling.
 - C# production server with enough runtime parity for the target test path.
 
-- [ ] Create `docs/spec/CLIENT_CERTIFICATION_RUNBOOK.md`.
+- [x] Create `docs/spec/CLIENT_CERTIFICATION_RUNBOOK.md`.
+  - 2026-06-16: Added the certification runbook with required inputs,
+    baseline/C# capture steps, raw-byte comparison rules, scenario order,
+    failure-handling loop, evidence log template, and matrix update gate.
 - [ ] Capture original C++ login, movement, file, level, RC/NC, and gameplay
   sessions.
 - [ ] Capture equivalent C# sessions.
