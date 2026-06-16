@@ -75,6 +75,13 @@ unsupported instead of being guessed.
 Implemented:
 
 - `IndexedServerFileSystem` read-only file index.
+- `ServerFileSystemKind` for the confirmed `FS_ALL`, `FS_FILE`, `FS_LEVEL`,
+  `FS_HEAD`, `FS_BODY`, `FS_SWORD`, and `FS_SHIELD` buckets.
+- `ServerResourceFileSystems.LoadAllFolders(...)` for source-confirmed
+  `nofoldersconfig=true` world/sharefolder indexing into `FS_ALL`.
+- `ServerResourceFileSystems.LoadFolderConfig(...)` for source-confirmed
+  `config/foldersconfig.txt` parsing, type mapping, `world/` prefixing, and
+  `FS_ALL` mirroring.
 - exact `Find` lookup by filename with ordinal case-sensitive keys.
 - `FindInsensitive` and `FileExistsAs` helpers matching source-confirmed
   `findi`/`fileExistsAs` semantics for future callers.
@@ -86,10 +93,11 @@ Implemented:
 
 Not implemented:
 
-- production parsing of `foldersconfig.txt`.
 - production default server path discovery.
 - `loadAbsolute` mutation from `Level::findLevel`.
 - `.graal` and `.zelda` parsing.
 - level cache insertion/map attachment from `Level::findLevel`.
 - filesystem writes, `setModTime`, and RC file-browser mutation behavior.
 
+See `docs/spec/FILESYSTEM_RESOURCE_LOADING_SPEC.md` for the dedicated filesystem
+resource loading spec.

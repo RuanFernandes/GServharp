@@ -55,12 +55,13 @@
   list-server side effects, scripting hooks, player-id generation, production
   server player-list iteration compatibility, movement, or live forwarding.
 - Level format detection is implemented for the exact C++ extension checks and
-  eight-byte signatures. A read-only indexed filesystem boundary and
+  eight-byte signatures. A read-only indexed filesystem boundary,
+  source-confirmed `loadAllFolders`/`loadFolderConfig` bucket setup, and
   filesystem-backed `.nw` loading path now exist for static
   board/layer/link/sign/chest payloads. Full production `Level::findLevel`
-  cache/map ownership, `foldersconfig.txt` parsing, `.graal`/`.zelda` parsing,
-  horse/baddy/NPC runtime construction, and file-transfer behavior remain
-  blocked.
+  cache/map ownership, `.graal`/`.zelda`/`.gmap` parsing, horse/baddy/NPC
+  runtime construction, write/delete filesystem mutation, and file-transfer
+  behavior remain blocked.
 - Pure `.nw` parsing is implemented for confirmed `BOARD`, `LINK`, `SIGN`,
   `CHEST`, `NPC`, and `BADDY` source-line behavior, plus board/layer/link/sign
   and chest packet builders. Player sign translation, NPC runtime creation,

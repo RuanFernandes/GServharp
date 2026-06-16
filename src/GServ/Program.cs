@@ -39,8 +39,8 @@ Console.WriteLine($"Root: {config.RootPath}");
 Console.WriteLine($"Level: {config.LevelName}");
 Console.WriteLine($"Port: {config.Port}");
 
-var fileSystem = new IndexedServerFileSystem(config.RootPath);
-fileSystem.AddDirectory("world", "*.nw", forceRecursive: true);
+var fileSystems = ServerResourceFileSystems.LoadAllFolders(config.RootPath, shareFolder: string.Empty);
+var fileSystem = fileSystems.Get(ServerFileSystemKind.All);
 var pipeline = new DevOnlyLocalSessionPipeline(
     new DevOnlyLocalServerOptions(EnableDevOnlyAuth: true, LevelName: config.LevelName),
     new NwLevelFileLoader(fileSystem));

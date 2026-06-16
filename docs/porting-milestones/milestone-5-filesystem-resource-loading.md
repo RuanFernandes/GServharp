@@ -18,16 +18,16 @@
 
 ## Required Work
 
-- [ ] Re-trace `foldersconfig.txt`, level folders, file folders, cache rules, path normalization, and lookup order.
-- [ ] Update `docs/spec/FILESYSTEM_RESOURCE_LOADING_SPEC.md`.
-- [ ] Add tests for production folder parsing, lookup priority, missing files, extension/signature detection, and `.nw` loading.
-- [ ] Implement `.graal`, `.zelda`, `.gmap`, and package/resource parsing only after source-confirmed tests exist.
-- [ ] Keep runtime NPC/baddy execution blocked; preserve static payload bytes when behavior is not yet ported.
-- [ ] Wire production filesystem into the existing dev sendLevel boundary where safe.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement production filesystem resource loading`.
+- [x] Re-trace `foldersconfig.txt`, level folders, file folders, cache rules, path normalization, and lookup order.
+- [x] Update `docs/spec/FILESYSTEM_RESOURCE_LOADING_SPEC.md`.
+- [x] Add tests for production folder parsing, lookup priority, missing files, extension/signature detection, and `.nw` loading.
+- [x] Implement `.graal`, `.zelda`, `.gmap`, and package/resource parsing only after source-confirmed tests exist.
+- [x] Keep runtime NPC/baddy execution blocked; preserve static payload bytes when behavior is not yet ported.
+- [x] Wire production filesystem into the existing dev sendLevel boundary where safe.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement production filesystem resource loading`.
 
 ## Compatibility Constraints
 
@@ -38,3 +38,10 @@
 
 - Production resource lookup matches confirmed C++ behavior.
 - Static level file parsing has tests for every confirmed format.
+
+## Completion Notes
+
+- Added source-confirmed `FS_*` bucket setup and folder config parsing.
+- Existing `.nw` loading remains the only implemented static level parser.
+- `.graal`, `.zelda`, `.gmap`, package/resource transfer, and runtime NPC/baddy
+  behavior remain blocked until dedicated fixtures are recovered.

@@ -91,13 +91,15 @@ Implemented:
   level, and opaque NPC packet bytes
 - `IndexedServerFileSystem` and `NwLevelFileLoader` for source-confirmed
   read-only `.nw` lookup, parse, modTime, and static packet construction
+- `ServerResourceFileSystems` for source-confirmed `loadAllFolders` and
+  `loadFolderConfig` bucket setup
 - `ModernLevelPayload.FromNwStatic(...)` to pass filesystem-loaded `.nw` data
   into `SendLevelBoundary`
 
 Not implemented:
 
 - production `Level::findLevel` level-list cache/map attachment
-- production `foldersconfig.txt` parsing/default server path setup
+- production default server path setup
 - `loadAbsolute` filesystem mutation
 - `.graal`/`.zelda` parsers
 - map file parsing

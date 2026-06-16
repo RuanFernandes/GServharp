@@ -9,6 +9,17 @@ public interface IServerFileSystem
     long GetModTime(string file);
 }
 
+public enum ServerFileSystemKind
+{
+    All = 0,
+    File = 1,
+    Level = 2,
+    Head = 3,
+    Body = 4,
+    Sword = 5,
+    Shield = 6,
+}
+
 public sealed class IndexedServerFileSystem : IServerFileSystem
 {
     private readonly string _serverPath;
@@ -104,7 +115,7 @@ public sealed class IndexedServerFileSystem : IServerFileSystem
             return;
 
         foreach (var child in Directory.EnumerateDirectories(directory))
-            LoadAllDirectories(child, wildcard, recursive: true);
+            LoadAllDirectories(child, "*", recursive: true);
     }
 
     private static string FixPathSeparators(string path) =>
@@ -118,4 +129,104 @@ public sealed class IndexedServerFileSystem : IServerFileSystem
         var pattern = "^" + Regex.Escape(wildcard).Replace("\\*", ".*").Replace("\\?", ".") + "$";
         return Regex.IsMatch(filename, pattern, RegexOptions.CultureInvariant);
     }
+}
+
+public sealed class ServerResourceFileSystems
+{
+    private readonly Dictionary<ServerFileSystemKind, IndexedServerFileSystem> _fileSystems;
+
+    private ServerResourceFileSystems(string serverPath)
+    {
+        _fileSystems = Enum.GetValues<ServerFileSystemKind>()
+            .ToDictionary(kind => kind, _ => new IndexedServerFileSystem(serverPath));
+    }
+
+    public IndexedServerFileSystem Get(ServerFileSystemKind kind) =>
+        _fileSystems[kind];
+
+    public static ServerResourceFileSystems LoadAllFolders(string serverPath, string shareFolder)
+    {
+        var fileSystems = new ServerResourceFileSystems(serverPath);
+        var all = fileSystems.Get(ServerFileSystemKind.All);
+        all.AddDirectory("world", noFoldersConfig: true);
+
+        if (shareFolder.Length > 0)
+        {
+            foreach (var folder in shareFolder.Split(','))
+                all.AddDirectory(folder.Trim(), noFoldersConfig: true);
+        }
+
+        return fileSystems;
+    }
+
+    public static ServerResourceFileSystems LoadFolderConfig(string serverPath, string foldersConfigText)
+    {
+        var fileSystems = new ServerResourceFileSystems(serverPath);
+
+        foreach (var rawLine in foldersConfigText.Split('\n'))
+        {
+            var line = StripComment(rawLine).Trim();
+            if (line.Length == 0)
+                continue;
+
+            var separator = line.IndexOf(' ');
+            var type = separator == -1 ? line : line[..separator].Trim();
+            var config = separator == -1 ? string.Empty : line[(separator + 1)..].Trim();
+            config = FixConfigPathSeparators(config);
+
+            var (directory, wildcard) = SplitFolderConfig(config);
+            var kind = TryGetFileSystemKind(type);
+
+            if (kind is not null)
+                fileSystems.Get(kind.Value).AddDirectory(directory, wildcard);
+
+            fileSystems.Get(ServerFileSystemKind.All).AddDirectory(directory, wildcard);
+        }
+
+        return fileSystems;
+    }
+
+    private static string StripComment(string line)
+    {
+        var comment = line.IndexOf('#');
+        return comment == -1 ? line : line[..comment];
+    }
+
+    private static (string Directory, string Wildcard) SplitFolderConfig(string config)
+    {
+        var separator = config.LastIndexOf(Path.DirectorySeparatorChar);
+        if (separator == -1)
+            return ("world", config);
+
+        var directoryWithoutWildcard = config[..(separator + 1)];
+        var wildcard = config[directoryWithoutWildcard.Length..];
+        return ("world/" + directoryWithoutWildcard, wildcard);
+    }
+
+    private static ServerFileSystemKind? TryGetFileSystemKind(string type)
+    {
+        foreach (var kind in Enum.GetValues<ServerFileSystemKind>())
+        {
+            if (string.Equals(type, ToCppFilesystemType(kind), StringComparison.OrdinalIgnoreCase))
+                return kind;
+        }
+
+        return null;
+    }
+
+    private static string ToCppFilesystemType(ServerFileSystemKind kind) =>
+        kind switch
+        {
+            ServerFileSystemKind.All => "all",
+            ServerFileSystemKind.File => "file",
+            ServerFileSystemKind.Level => "level",
+            ServerFileSystemKind.Head => "head",
+            ServerFileSystemKind.Body => "body",
+            ServerFileSystemKind.Sword => "sword",
+            ServerFileSystemKind.Shield => "shield",
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        };
+
+    private static string FixConfigPathSeparators(string path) =>
+        path.Replace(Path.DirectorySeparatorChar == '\\' ? '/' : '\\', Path.DirectorySeparatorChar);
 }

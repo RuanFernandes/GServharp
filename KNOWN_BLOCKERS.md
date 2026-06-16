@@ -51,11 +51,12 @@
   side effects, scripting hooks, player-id generation, and live multi-session
   forwarding remain blocked.
 - Level file format detection is implemented for confirmed extension and
-  signature selection. A source-confirmed read-only indexed filesystem boundary
-  and filesystem-backed `.nw` loading path now feed static
-  board/layer/link/sign/chest payloads into `sendLevel`. Production
-  `foldersconfig.txt` parsing, full `Level::findLevel` cache/map ownership,
-  `.graal`/`.zelda` parsing, and file/resource transfer remain blocked.
+  signature selection. A source-confirmed read-only indexed filesystem boundary,
+  `loadAllFolders`/`loadFolderConfig` bucket setup, and filesystem-backed `.nw`
+  loading path now feed static board/layer/link/sign/chest payloads into
+  `sendLevel`. Full `Level::findLevel` cache/map ownership, `.graal`/`.zelda`/
+  `.gmap` parsing, write/delete filesystem mutation, and file/resource transfer
+  remain blocked.
 - Pure `.nw` parsing is implemented for confirmed board tiles, links with an
   explicit target resolver, signs, chests with source-confirmed item names, NPC
   payload preservation, and baddy verse payload preservation. Board/layer/link/
