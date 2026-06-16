@@ -282,7 +282,7 @@ public sealed class LiveWorldSessionForwardingTests
     }
 
     [Fact]
-    public void ApplyAndForwardConfirmedNicknameSendsGlobalPacketToAllExceptSelfAndNpcServer()
+    public void ApplyAndForwardConfirmedNicknameSendsExpectedPacketTypesToPeersAndNotNpcServer()
     {
         var server = new RuntimeServer();
         var level = new RuntimeLevel("start.nw");
@@ -313,14 +313,59 @@ public sealed class LiveWorldSessionForwardingTests
         expected.WriteByte((byte)'\n');
 
         Assert.Equal("Ruan", sender.Nickname);
-        Assert.Equal([8, 9, 11], deliveries.Select(delivery => delivery.PlayerId));
-        Assert.Empty(sinks[7].Packets);
+        Assert.Equal([8, 9, 11, 7], deliveries.Select(delivery => delivery.PlayerId));
         Assert.Equal(expected.ToArray(), sinks[8].Packets.Single());
         Assert.Equal(expected.ToArray(), sinks[9].Packets.Single());
         Assert.Empty(sinks[10].Packets);
         Assert.Equal(expected.ToArray(), sinks[11].Packets.Single());
     }
 
+    [Fact]
+    public void ApplyAndForwardConfirmedNicknameAlsoSendsSelfPlayerPropsPacket()
+    {
+        var server = new RuntimeServer();
+        var level = new RuntimeLevel("start.nw");
+        var sender = Add(server, 7, RuntimePlayerKind.Client, level);
+        Add(server, 8, RuntimePlayerKind.Client, level);
+        Add(server, 9, RuntimePlayerKind.RemoteControl, level);
+        Add(server, 10, RuntimePlayerKind.NpcServer, level);
+        Add(server, 11, RuntimePlayerKind.Client, new RuntimeLevel("other.nw"));
+        var sinks = CreateSinks(7, 8, 9, 10, 11);
+
+        var deliveries = LiveWorldSessionForwarder.ApplyAndForwardConfirmedPlayerProps(
+            server,
+            sender,
+            [IncomingPlayerPropertyUpdate.String(PlayerPropertyId.Nickname, "Ruan")],
+            senderSupportsPreciseMovement: true,
+            AsSinks(sinks),
+            RuntimePlayerPropsOptions.Default with
+            {
+                NicknamePolicy = RuntimeNicknameUpdatePolicy.WordFilterAllowedNoGuild
+            });
+
+        var expectedGlobal = new GraalBinaryWriter();
+        expectedGlobal.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        expectedGlobal.WriteGShort(7);
+        expectedGlobal.WriteGChar((byte)PlayerPropertyId.Nickname);
+        expectedGlobal.WriteGChar(4);
+        expectedGlobal.WriteBytes("Ruan"u8);
+        expectedGlobal.WriteByte((byte)'\n');
+
+        var expectedSelf = new GraalBinaryWriter();
+        expectedSelf.WriteGChar((byte)ServerToPlayerPacketId.PlayerProps);
+        expectedSelf.WriteGChar((byte)PlayerPropertyId.Nickname);
+        expectedSelf.WriteGChar(4);
+        expectedSelf.WriteBytes("Ruan"u8);
+        expectedSelf.WriteByte((byte)'\n');
+
+        Assert.Equal("Ruan", sender.Nickname);
+        Assert.Equal([8, 9, 11, 7], deliveries.Select(delivery => delivery.PlayerId));
+        Assert.Equal(expectedGlobal.ToArray(), sinks[8].Packets.Single());
+        Assert.Equal(expectedGlobal.ToArray(), sinks[9].Packets.Single());
+        Assert.Equal(expectedGlobal.ToArray(), sinks[11].Packets.Single());
+        Assert.Empty(sinks[10].Packets);
+        Assert.Equal(expectedSelf.ToArray(), sinks[7].Packets.Single());
+    }
     [Fact]
     public void TryApplyAndForwardPlayerPropsBlocksParsedButUnportedSideEffectsWithoutForwarding()
     {
@@ -495,3 +540,4 @@ public sealed class LiveWorldSessionForwardingTests
             Packets.Add(packet);
     }
 }
+

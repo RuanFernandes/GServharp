@@ -2503,6 +2503,18 @@ Exact bytes:
 
 ## Runtime Player Props
 
+Source-confirmed `PLPROP_NICKNAME` player-origin echo under `PLSETPROPS_SETBYPLAYER | PLSETPROPS_FORWARD`:
+
+For player id `7`, runtime nickname `Ruan`, sender id `7`:
+
+```txt
+PLO_PLAYERPROPS + PLPROP_NICKNAME + GCHAR(4) + "Ruan" + "\n"
+[41, 0, 4, 82, 117, 97, 110, 10]
+```
+
+This payload is sent after the global broadcast for the same property and is
+sent to sender via `PLO_PLAYERPROPS` in the same packet flow.
+
 Source-confirmed `PLPROP_GATTRIB1` generic forwarding from
 `Player::setProps`, player id `7`, value `sword`, newline appended by
 `sendPacket`:
@@ -2868,3 +2880,4 @@ may broadcast `PLO_OTHERPLPROPS`, and finally stores `m_carryNpcId`. C# covers
 only the source-confirmed byte-consumption boundary here; mutation and
 client-visible side effects remain blocked until NPC/runtime ownership is
 ported.
+

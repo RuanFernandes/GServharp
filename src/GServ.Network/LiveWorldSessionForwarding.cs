@@ -94,6 +94,7 @@ public static class LiveWorldSessionForwarder
         options ??= RuntimePlayerPropsOptions.Default;
         var updateArray = updates.ToArray();
         var directDeliveries = new List<LiveWorldForwardingDelivery>();
+        var selfDeliveries = new List<LiveWorldForwardingDelivery>();
         foreach (var update in updateArray)
         {
             try
@@ -107,6 +108,7 @@ public static class LiveWorldSessionForwarder
             }
 
             directDeliveries.AddRange(BuildAndDeliverDirectPlayerPropPackets(server, sender, update, sinks));
+            selfDeliveries.AddRange(BuildAndDeliverSelfPlayerPropPackets(server, sender, update, sinks));
         }
 
         var packet = IncomingPlayerPropsForwarding.BuildOtherPlayerPropsPacket(
@@ -135,9 +137,10 @@ public static class LiveWorldSessionForwarder
                 new HashSet<ushort> { sender.Id })
             : [];
 
-        var deliveries = new List<LiveWorldForwardingDelivery>(directDeliveries.Count + levelDeliveries.Count);
+        var deliveries = new List<LiveWorldForwardingDelivery>(directDeliveries.Count + levelDeliveries.Count + selfDeliveries.Count);
         deliveries.AddRange(directDeliveries);
         deliveries.AddRange(levelDeliveries);
+        deliveries.AddRange(selfDeliveries);
 
         return LiveWorldPlayerPropsForwardingResult.Delivered(deliveries);
     }
@@ -173,6 +176,27 @@ public static class LiveWorldSessionForwarder
         return Deliver(packet: BuildPacket(sender.Id, payload), SelectAnyClientExceptSelf(server, sender), sinks);
     }
 
+    private static IReadOnlyList<LiveWorldForwardingDelivery> BuildAndDeliverSelfPlayerPropPackets(
+        RuntimeServer server,
+        RuntimePlayer sender,
+        IncomingPlayerPropertyUpdate update,
+        IReadOnlyDictionary<ushort, ILiveWorldSessionSink> sinks)
+    {
+        var payload = new GraalBinaryWriter();
+        switch (update.PropertyId)
+        {
+            case PlayerPropertyId.Nickname:
+                payload.WriteGChar((byte)PlayerPropertyId.Nickname);
+                WriteGCharString(payload, sender.Nickname);
+                return Deliver(
+                    packet: PlayerPropertySerializer.BuildPlayerPropsPacket(payload.ToArray(), appendNewline: true),
+                    recipients: new[] { sender.Id },
+                    sinks);
+
+            default:
+                return [];
+        }
+    }
     private static byte[] BuildPacket(ushort playerId, GraalBinaryWriter payload) =>
         PlayerPropertySerializer.BuildOtherPlayerPropsPacket(
             playerId,
@@ -260,3 +284,4 @@ public static class LiveWorldSessionForwarder
             _ => $"PLPROP_{(byte)propertyId}"
         };
 }
+

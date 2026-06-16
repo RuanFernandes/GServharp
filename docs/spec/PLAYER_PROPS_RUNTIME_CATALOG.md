@@ -64,7 +64,7 @@ For sender client versions `>= CLVER_2_3`, C++ sends `levelBuff2` before
 
 | ID | C++ symbol | Read encoding | Direct mutation / behavior | Extra forwarding and side effects | C# status |
 | ---: | --- | --- | --- | --- | --- |
-| 0 | `PLPROP_NICKNAME` | `GCHAR len` + bytes, clamped to packet bytes remaining | Applies word filter, defaults empty warned nickname to `unknown`, then `setNick`. For no-guild nicknames, `setNick` limits to 223 bytes, trims, removes leading `*`, substitutes `unknown` when empty, and prefixes `*` when the nickname equals the account name. Guild nicknames enter filesystem/list-server validation. | Adds global `PLO_OTHERPLPROPS`; echoes to self unless `FORWARDSELF` is set. | Parser consumes the confirmed string bytes, including terminal truncated payloads through `CString::readChars` semantics. Runtime mutation and global forwarding are implemented only for the explicit `WordFilterAllowedNoGuild` boundary. Default dispatch still blocks until the real word filter is ported, and guild validation, self echo, and nickname persistence side effects remain blocked. |
+| 0 | `PLPROP_NICKNAME` | `GCHAR len` + bytes, clamped to packet bytes remaining | Applies word filter, defaults empty warned nickname to `unknown`, then `setNick`. For no-guild nicknames, `setNick` limits to 223 bytes, trims, removes leading `*`, substitutes `unknown` when empty, and prefixes `*` when the nickname equals the account name. Guild nicknames enter filesystem/list-server validation. | Adds global `PLO_OTHERPLPROPS`; echoes to self unless `FORWARDSELF` is set. | Parser consumes the confirmed string bytes, including terminal truncated payloads through `CString::readChars` semantics. Runtime mutation and global forwarding are implemented only for the explicit `WordFilterAllowedNoGuild` boundary. Default dispatch still blocks until the real word filter is ported, and guild validation and nickname persistence side effects remain blocked. |
 | 1 | `PLPROP_MAXPOWER` | `GUChar` | Sets max power and current power to max in non-V8 path. | Adds `PLPROP_CURPOWER` to level/self buffers; V8 also adds max power. | Implemented as runtime mutation using explicit heart-limit input. Non-V8 generic level forwarding emits the confirmed `PLPROP_CURPOWER` payload. Self-buffer and V8 max-power forwarding remain blocked. |
 | 2 | `PLPROP_CURPOWER` | `GUChar / 2` | Refuses healing when AP `< 40`; otherwise `setPower`. | Generic local/self forwarding only. | Implemented as runtime mutation with AP heal gate. Live forwarding emits the post-mutation current-power byte when runtime state is available; stateless forwarding remains blocked. |
 | 3 | `PLPROP_RUPEESCOUNT` | `GUInt`, capped at `9,999,999` | Sets gralats. RC path checks `normaladminscanchangegralats` or `PLPERM_SETRIGHTS`. Terminal truncated scalar reads zero-filled bytes through `CString::readGUInt()`, producing a large unsigned value that clamps to `9,999,999`. | Generic forwarding only if `__sendLocal` permits; this prop is not local-forwarded. | Implemented for player-origin runtime mutation and source-confirmed unsigned clamp. RC permission/config mutation remains blocked. |
@@ -172,7 +172,7 @@ closely as the current guarded boundary allows.
 
 This is not a substitute implementation for the blocked C++ branch. For
 example, `PLPROP_NICKNAME` remains blocked until word-filter behavior,
-`setNick`, global `PLO_OTHERPLPROPS`, self echo, and persistence side effects
+`setNick`, global `PLO_OTHERPLPROPS`, and persistence side effects
 are ported together from `PlayerProps.cpp`. `PLPROP_CARRYNPC` remains blocked
 until NPC ownership, duplicate carry checks, `PLO_PLAYERPROPS`, `PLO_NPCDEL2`,
 `PLO_OTHERPLPROPS`, and `m_carryNpcId` mutation are ported from the same file.
@@ -193,3 +193,4 @@ The throwing `ApplyAndForwardConfirmedPlayerProps` entry point remains strict
 for callers that only pass fully ported properties. Production or diagnostic
 callers that may receive parsed-but-unported properties should use the `Try*`
 entry point and surface the blocked result.
+
