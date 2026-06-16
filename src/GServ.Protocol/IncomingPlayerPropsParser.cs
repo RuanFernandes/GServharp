@@ -85,6 +85,11 @@ public static class IncomingPlayerPropsParser
                     updates.Add(IncomingPlayerPropertyUpdate.String(propertyId, ReadGCharString(reader)));
                     break;
 
+                case PlayerPropertyId.AccountName:
+                    ReadGCharString(reader);
+                    updates.Add(IncomingPlayerPropertyUpdate.NoValue(propertyId));
+                    break;
+
                 case PlayerPropertyId.Colors:
                     updates.Add(IncomingPlayerPropertyUpdate.Bytes(
                         propertyId,

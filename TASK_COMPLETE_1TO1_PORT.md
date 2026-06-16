@@ -560,6 +560,12 @@ behavior, and movement-loop invocation.
     commented out. Generic forwarding for rating remains blocked until the
     current `getProp(PLPROP_RATING)` ELO/deviation state is wired without
     inventing defaults.
+  - 2026-06-16: Implemented the source-confirmed `PLPROP_ACCOUNTNAME`
+    consume-only mutation boundary. The parser consumes `GCHAR len + bytes`,
+    and the runtime applier ignores the incoming value exactly because C++
+    `setProps` reads and discards it. Generic forwarding remains blocked until
+    forwarding can serialize the current account name through the C++ `getProp`
+    state path instead of echoing the untrusted incoming bytes.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -579,6 +585,10 @@ behavior, and movement-loop invocation.
     separate and must not be copied into player movement.
 - [ ] Add golden tests for property order, forwarding version differences,
   blocked updates, and malformed values.
+  - 2026-06-16: Added source-confirmed blocked/update boundary fixtures for
+    `PLPROP_ACCOUNTNAME`: exact inbound byte consumption, no invented mutation
+    value, and no runtime account-name change. Broader malformed-value fixtures
+    and full state-backed forwarding order remain open.
 
 Completion criteria:
 

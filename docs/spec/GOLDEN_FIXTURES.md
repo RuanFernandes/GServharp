@@ -2142,3 +2142,14 @@ The incoming value is consumed, but the recovered C++ runtime mutation is
 commented out. Full generic forwarding for this property must use the current
 `getProp(PLPROP_RATING)` ELO/deviation state and remains blocked until that
 state is wired without invented defaults.
+
+Source-confirmed `PLPROP_ACCOUNTNAME` consume-only update:
+
+```txt
+PLPROP_ACCOUNTNAME + GCHAR(4) + "Ruan"
+```
+
+The incoming account-name bytes are consumed, but C++ `setProps` discards them.
+Full generic forwarding for this property must use the current
+`getProp(PLPROP_ACCOUNTNAME)` account state and remains blocked until that
+state-backed forwarding path exists.

@@ -221,6 +221,7 @@ public static class RuntimePlayerPropsApplier
                 case GServ.Protocol.PlayerPropertyId.KillsCount:
                 case GServ.Protocol.PlayerPropertyId.DeathsCount:
                 case GServ.Protocol.PlayerPropertyId.OnlineSeconds:
+                case GServ.Protocol.PlayerPropertyId.AccountName:
                 case GServ.Protocol.PlayerPropertyId.Rating:
                 case GServ.Protocol.PlayerPropertyId.JoinLeaveLevel:
                 case GServ.Protocol.PlayerPropertyId.PlayerConnected:
