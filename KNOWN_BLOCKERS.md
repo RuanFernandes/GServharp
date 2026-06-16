@@ -32,10 +32,11 @@
   `docs/spec/PLAYER_PROPS_RUNTIME_CATALOG.md`. The C# implementation still only
   covers the confirmed movement subset; most property mutation branches are
   blocked until their downstream systems are fixture-confirmed.
-- Built-in shop, trade, party, quest, and mission systems are not confirmed in
-  the recovered C++ core. This is not a compatibility blocker. They are outside
-  the C# port scope unless future recovered original C++ source or exact
-  dependency source shows a client-facing C++ path.
+- Built-in shop, trade, party, quest, and mission systems are not in the active
+  port scope because the recovered C++ core does not contain confirmed
+  client-facing paths for them. This is not a compatibility blocker or missing
+  work item; absence is the faithful behavior unless future recovered original
+  C++ source or exact dependency source proves otherwise.
 - Old-version BIGMAP file-send workaround is implemented for supplied map
   snapshots through the confirmed file-transfer boundary. `flaghack_ip` is
   traced, but full duplicate flag emission is blocked on

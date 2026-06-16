@@ -43,7 +43,9 @@ This project is a **100% faithful 1:1 port** of the original C++ server.
 The closed-source client must not be able to tell the difference between the original C++ server and the new C# server.
 
 Every external behavior that exists in the original C++ server must match the
-original C++ server exactly.
+original C++ server exactly. The examples below are not a feature wishlist or a
+generic MMO checklist; each area is in scope only when the recovered C++ source
+or exact recovered dependency contains a concrete client-facing path.
 
 This includes every client-facing behavior that is directly present in the
 original C++ source or recovered exact dependencies, including but not limited
@@ -95,11 +97,13 @@ shows that the original server exposed that behavior.
 The implementation backlog must be source-derived, not genre-derived. Do not
 add or keep generic server features such as built-in shops, trades, parties,
 quests, missions, social systems, or other gameplay services unless the C++
-source or recovered dependency contains the concrete client-facing path. Packet
-captures may certify already source-confirmed behavior, but they do not expand
-the implementation scope beyond the recovered original source. If a system is
-absent from the recovered C++ source, the faithful C# behavior is to leave it
-absent rather than adding a modern equivalent.
+source or recovered dependency contains the concrete client-facing path. When a
+previous plan or checklist contains a non-source-derived feature, remove it from
+the active implementation scope instead of implementing it. Packet captures may
+certify already source-confirmed behavior, but they do not expand the
+implementation scope beyond the recovered original source. If a system is absent
+from the recovered C++ source, the faithful C# behavior is to leave it absent
+rather than adding a modern equivalent.
 
 If C++ behavior looks strange, ugly, duplicated, outdated, or bug-like, preserve it unless there is explicit proof that changing it is safe.
 

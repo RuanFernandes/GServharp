@@ -22,6 +22,8 @@ certifying and debugging source-confirmed behavior; they must not be used to add
 features that the recovered C++ source does not implement. Built-in shops,
 trades, parties, quests, missions, generic social systems, or other genre
 features remain absent unless recovered original source proves otherwise.
+If any unchecked item is discovered to be non-source-derived, mark that item as
+removed from scope with a dated note and continue; do not implement it.
 
 **Tech Stack:** C#/.NET, xUnit, PowerShell, C++ source tracing, recovered
 `gs2lib`, optional fixture harnesses under `tools/`.
@@ -134,10 +136,9 @@ Major missing areas:
 - Baddy AI, combat, projectiles, hit validation, damage, drops, death, respawn.
 - Inventory, item pickup mutations, chest reward mutations, guild, chat/PM, and
   profile systems only where the recovered C++ source has explicit handlers.
-  Built-in shop, trade, party, quest, and mission systems are not confirmed in
-  the C++ core. They are not missing features for this port; they are outside
-  scope unless future recovered original C++ source or exact dependency source
-  proves otherwise.
+  Built-in shop, trade, party, quest, and mission systems are outside the active
+  port scope because the recovered C++ core has no confirmed client-facing paths
+  for them. They are not missing features for this port.
 - RC/NC/admin production sockets and mutation commands.
 - Upload/write paths and update-package lifecycle.
 - Websocket/TLS/bzip2 blocked branches.

@@ -7,6 +7,9 @@
 - Do not invent feature areas. A system is in scope only when the recovered C++
   source or exact dependency source contains its concrete client-facing
   behavior. Do not treat genre/MMO expectations as requirements.
+- If a milestone, backlog, or compatibility matrix row names a feature area
+  that has no recovered C++ source path, treat the row as a scope cleanup item,
+  not implementation work.
 - Absence in the C++ source is compatibility behavior. Built-in shops, trades,
   parties, quests, missions, social systems, or other generic gameplay services
   are outside this port unless a concrete C++ handler/persistence path or
