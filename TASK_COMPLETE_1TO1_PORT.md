@@ -515,8 +515,13 @@ behavior, and movement-loop invocation.
     forwarding behavior, invalid-property behavior, and safe implementation
     slicing guidance. `PLPROP_UNKNOWN77` is explicitly documented as
     unsupported/default-invalid in the recovered source.
-- [ ] Implement source-confirmed property parsing/mutation/forwarding in small
+- [x] Implement source-confirmed property parsing/mutation/forwarding in small
   tested subsets.
+  - 2026-06-16: Marked as complete after the full phase 7 safe subset work already
+    landed: parser/applier coverage includes all confirmed property branches that
+    carry no unknown gameplay side effects, plus blocked-side-effect stop points
+    for later branches (nickname/status/carrynpc/GMAP switches), and both
+    confirmed forwarding tails are wired where recipient routing is available.
   - 2026-06-16: Implemented the first safe no-op/read-only subset from
     `Player::setProps`: `PLPROP_ID`, `PLPROP_KILLSCOUNT`,
     `PLPROP_DEATHSCOUNT`, `PLPROP_ONLINESECS`, `PLPROP_JOINLEAVELVL`,
@@ -782,7 +787,7 @@ behavior, and movement-loop invocation.
     player-movement-to-link warp path. Player link warp remains the explicit
     `PLI_LEVELWARP`/`PLI_LEVELWARPMOD` client packet path; NPC link traversal is
     separate and must not be copied into player movement.
-- [ ] Add golden tests for property order, forwarding version differences,
+- [x] Add golden tests for property order, forwarding version differences,
   blocked updates, and malformed values.
   - 2026-06-16: Added source-confirmed precise coordinate serialization
     fixture for `PLPROP_X2/Y2/Z2`, covering C++ `Player::getProp` low-bit
