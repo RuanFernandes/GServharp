@@ -685,6 +685,37 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void BuildsConfirmedForwardedMovementPropsForOlderSender()
+    {
+        var updates = new[]
+        {
+            IncomingPlayerPropertyUpdate.GShort(PlayerPropertyId.X2, 1120),
+            IncomingPlayerPropertyUpdate.GShort(PlayerPropertyId.Y2, 1120)
+        };
+
+        var packet = IncomingPlayerPropsForwarding.BuildOtherPlayerPropsPacket(
+            playerId: 7,
+            pixelX: 560,
+            pixelY: 560,
+            pixelZ: 0,
+            updates,
+            senderSupportsPreciseMovement: false,
+            appendNewline: true);
+
+        Assert.Equal(
+            new byte[]
+            {
+                40, 32, 39,
+                110, 40, 128,
+                111, 40, 128,
+                47, 102,
+                48, 102,
+                10
+            },
+            packet);
+    }
+
+    [Fact]
     public void DoesNotForwardConfirmedReadOnlyNoLocalProps()
     {
         var updates = new[]

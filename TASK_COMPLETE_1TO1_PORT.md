@@ -776,6 +776,10 @@ behavior, and movement-loop invocation.
     the scalar `__sendLocal` table subset: carry sprite and clamped alignment
     are forwarded, while magic points, additional flags, and horse bushes are
     not forwarded.
+  - 2026-06-16: Added source-confirmed old-sender movement forwarding order
+    coverage. For senders older than `CLVER_2_3`, precise incoming movement
+    props are emitted from `levelBuff` before the legacy mirror props in
+    `levelBuff2`, the inverse of the modern sender order.
   - 2026-06-16: Added source-confirmed non-V8 `PLPROP_MAXPOWER` forwarding
     fixture showing the emitted `PLPROP_CURPOWER + GCHAR(maxPower * 2)` bytes.
   - 2026-06-16: Added source-confirmed live `PLPROP_CURPOWER` fixture covering

@@ -1770,6 +1770,27 @@ PLPROP_Y2 GSHORT(1120)
     10]
 ```
 
+For sender versions older than `CLVER_2_3`, C++ writes `levelBuff` before
+`levelBuff2`, so the same precise input emits the precise props before the
+legacy mirrors:
+
+```txt
+PLO_OTHERPLPROPS
+GSHORT 7
+PLPROP_X2 GSHORT(1120)
+PLPROP_Y2 GSHORT(1120)
+PLPROP_X GCHAR(70)
+PLPROP_Y GCHAR(70)
+"\n"
+
+=> [40, 32, 39,
+    110, 40, 128,
+    111, 40, 128,
+    47, 102,
+    48, 102,
+    10]
+```
+
 Confirmed precise movement runtime decode:
 
 ```txt
