@@ -1489,6 +1489,37 @@ Default baddy type `2`, id `1`, x `10`, y `11`:
 [65, 36, 84, 111, 111, 108, 32, 40, 116, 111, 111, 108, 46, 112, 110, 103, 33, 32, 32, 10]
 ```
 
+### `sendLoginClient` Weapon/Class Boundary
+
+For a modern `CLVER_4_0211` client with no login props/flags, one player
+weapon packet `Tool`, one missing protected default weapon `bow`, and one
+already-built class packet `[229, "class", "\n"]`, the C# boundary locks the
+source-confirmed ordering:
+
+```txt
+PLO_PLAYERPROPS "\n"
+PLO_CLEARWEAPONS "\n"
+PLO_NPCWEAPONDEL "Bomb" "\n"
+PLO_NPCWEAPONDEL "Bow" "\n"
+PLO_NPCWEAPONADD Tool/tool.png empty-script "\n"
+PLO_DEFAULTWEAPON bow "\n"
+PLO_LOADSCRIPT/UNKNOWN197 opaque fixture "\n"
+PLO_SERVERLISTCONNECTED "\n"
+```
+
+Exact bytes:
+
+```txt
+[41, 10,
+ 226, 10,
+ 66, 66, 111, 109, 98, 10,
+ 66, 66, 111, 119, 10,
+ 65, 36, 84, 111, 111, 108, 32, 40, 116, 111, 111, 108, 46, 112, 110, 103, 33, 32, 32, 10,
+ 75, 39, 10,
+ 229, 99, 108, 97, 115, 115, 10,
+ 222, 10]
+```
+
 `PLO_NPCDEL`, npc id `7`:
 
 ```txt

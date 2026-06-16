@@ -107,6 +107,45 @@ public sealed class PostLoginWorldEntryBoundaryTests
             session.TakeOutboundBytes());
     }
 
+    [Fact]
+    public void WeaponProtectedWeaponAndClassPacketsKeepConfirmedSendLoginClientOrder()
+    {
+        var session = ReadyForWorldEntrySession("G3D28095");
+        var snapshot = BaseSnapshot();
+        var playerWeapon = EntityPackets.NpcWeaponAdd("Tool", "tool.png", "");
+        var protectedWeapon = EntityPackets.DefaultWeapon(7);
+        var classPacket = new byte[] { 229, (byte)'c', (byte)'l', (byte)'a', (byte)'s', (byte)'s', 10 };
+
+        _ = PostLoginWorldEntryBoundary.BeginClient(
+            session,
+            snapshot,
+            new PostLoginClientOptions(
+                ResourceFileSystem: null,
+                Maps: [],
+                PlayerWeapons: [new LoginWeaponPacket("Tool", playerWeapon)],
+                ProtectedWeaponNames: ["Tool", "bow"],
+                ProtectedWeaponPackets: new Dictionary<string, byte[]>
+                {
+                    ["bow"] = protectedWeapon
+                },
+                OrderedClassPackets: [classPacket]));
+
+        Assert.Equal(
+            new byte[] { 41, 10 }
+                .Concat(new byte[]
+                {
+                    226, 10,
+                    66, (byte)'B', (byte)'o', (byte)'m', (byte)'b', 10,
+                    66, (byte)'B', (byte)'o', (byte)'w', 10
+                })
+                .Concat(playerWeapon)
+                .Concat(protectedWeapon)
+                .Concat(classPacket)
+                .Concat(new byte[] { 222, 10 })
+                .ToArray(),
+            session.TakeOutboundBytes());
+    }
+
     private static PostLoginPlayerSnapshot BaseSnapshot()
     {
         var account = new GraalBinaryWriter();

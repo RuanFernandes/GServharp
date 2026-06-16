@@ -13,9 +13,15 @@ public enum LoginMapType
 
 public sealed record LoginMapFile(string MapName, LoginMapType Type);
 
+public sealed record LoginWeaponPacket(string Name, byte[] Packet);
+
 public sealed record PostLoginClientOptions(
     IResourceFileSystem? ResourceFileSystem,
-    IReadOnlyList<LoginMapFile> Maps);
+    IReadOnlyList<LoginMapFile> Maps,
+    IReadOnlyList<LoginWeaponPacket>? PlayerWeapons = null,
+    IReadOnlyList<string>? ProtectedWeaponNames = null,
+    IReadOnlyDictionary<string, byte[]>? ProtectedWeaponPackets = null,
+    IReadOnlyList<byte[]>? OrderedClassPackets = null);
 
 public sealed record PostLoginPlayerSnapshot(
     ushort PlayerId,
@@ -71,6 +77,7 @@ public static class PostLoginWorldEntryBoundary
 
         session.QueuePacket(NpcWeaponDelete("Bomb", appendNewline: true));
         session.QueuePacket(NpcWeaponDelete("Bow", appendNewline: true));
+        SendLoginWeaponsAndClasses(session, options);
         session.QueuePacket(BlankPacket(ServerToPlayerPacketId.ServerListConnected, appendNewline: true));
         session.MarkReadyForLevelWarp();
 
@@ -101,6 +108,40 @@ public static class PostLoginWorldEntryBoundary
                 map.MapName,
                 session.LoginPacket.VersionId);
         }
+    }
+
+    private static void SendLoginWeaponsAndClasses(
+        ClientSessionSkeleton session,
+        PostLoginClientOptions? options)
+    {
+        if (options is null)
+            return;
+
+        var ownedWeapons = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var weapon in options.PlayerWeapons ?? [])
+        {
+            ownedWeapons.Add(weapon.Name);
+            session.QueuePacket(EnsureNewline(weapon.Packet));
+        }
+
+        foreach (var weaponName in options.ProtectedWeaponNames ?? [])
+        {
+            if (ownedWeapons.Contains(weaponName))
+                continue;
+
+            if (options.ProtectedWeaponPackets?.TryGetValue(weaponName, out var packet) == true)
+            {
+                ownedWeapons.Add(weaponName);
+                session.QueuePacket(EnsureNewline(packet));
+            }
+        }
+
+        if (session.LoginPacket?.VersionId < ClientVersionId.Client40211)
+            return;
+
+        foreach (var classPacket in options.OrderedClassPackets ?? [])
+            session.QueuePacket(EnsureNewline(classPacket));
     }
 
     public static byte[] BuildServerListAddPlayerPacket(PostLoginPlayerSnapshot snapshot)
@@ -146,6 +187,17 @@ public static class PostLoginWorldEntryBoundary
         if (appendNewline)
             writer.WriteByte((byte)'\n');
         return writer.ToArray();
+    }
+
+    private static byte[] EnsureNewline(byte[] packet)
+    {
+        if (packet.Length > 0 && packet[^1] == (byte)'\n')
+            return packet;
+
+        var withNewline = new byte[packet.Length + 1];
+        Buffer.BlockCopy(packet, 0, withNewline, 0, packet.Length);
+        withNewline[^1] = (byte)'\n';
+        return withNewline;
     }
 
     private static void WriteProperty(GraalBinaryWriter writer, byte propertyId, ReadOnlySpan<byte> payload)

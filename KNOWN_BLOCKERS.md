@@ -31,9 +31,12 @@
 - Old-version BIGMAP file-send workaround is implemented for supplied map
   snapshots through the confirmed file-transfer boundary. `flaghack_ip` is
   traced, but full duplicate flag emission is blocked on
-  `std::unordered_map` ordering. Weapons, protected weapons, classes, and
-  zlib-fix NPC weapon branches in `sendLoginClient` are traced but not
-  implemented.
+  `std::unordered_map` ordering. `sendLoginClient` can now queue supplied
+  source-confirmed player weapon, missing protected weapon, and modern class
+  packets in the traced C++ order. Production live weapon lookup, default weapon
+  conversion through `msgPLI_WEAPONADD`, script/bytecode compilation, class
+  `time(0)` packet construction, concrete class-list ordering, and zlib-fix NPC
+  weapon remain blocked.
 - The login-server-name branch in `Player::sendLogin` is blocked because C++ references `PLO_FULLSTOP`, but recovered `IEnums.h` only defines `PLO_FULLSTOP2 = 177`.
 - `CFileQueue` queue selection, gen1/gen6 socket passthrough, gen2/gen3 zlib
   framing, gen5 uncompressed socket framing for payloads up to 55 bytes, and

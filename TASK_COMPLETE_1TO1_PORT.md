@@ -326,8 +326,15 @@ safe world-entry boundaries.
     sends `PLO_FLAGSET gr.ip=<remote-ip>`, then later sends all flags from
     `std::unordered_map`. Full C# emission is blocked until the duplicate flag
     ordering is resolved by source/capture evidence.
-- [ ] Trace and implement confirmed weapon/protected-weapon/class login packet
+- [x] Trace and implement confirmed weapon/protected-weapon/class login packet
   branches.
+  - 2026-06-16: Documented the C++ `m_weaponList`,
+    `protectedweapons`, and `getClassList()` branches. Implemented C# emission
+    for supplied source-confirmed player weapon, missing protected weapon, and
+    modern class packet bytes in the exact traced position after Bomb/Bow
+    deletion and before `PLO_SERVERLISTCONNECTED`. Production live lookup,
+    default conversion, bytecode/time construction, and class-list ordering
+    remain blocked.
 - [ ] Resolve or permanently block `PLO_FULLSTOP` vs `PLO_FULLSTOP2` with source
   proof.
 - [ ] Implement old-client `PLPROP_GANI` behavior if confirmed.

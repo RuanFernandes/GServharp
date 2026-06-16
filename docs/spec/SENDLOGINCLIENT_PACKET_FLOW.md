@@ -17,6 +17,9 @@ player flags as PLO_FLAGSET
 server flags as PLO_FLAGSET
 PLO_NPCWEAPONDEL "Bomb"
 PLO_NPCWEAPONDEL "Bow"
+player weapon packets in m_weaponList order
+protected weapon auto-add packets for missing protectedweapons entries
+class packets from getClassList() when version >= CLVER_4_0211
 PLO_SERVERLISTCONNECTED / C++ symbol PLO_UNKNOWN190
 STOP before warp(m_levelName, getX(), getY())
 ```
@@ -40,6 +43,25 @@ workaround. When the parsed login version is exactly `CLVER_2_31` or
 the C++ position of the side effect immediately after `sendProps(__sendLogin)`
 and before `PLO_CLEARWEAPONS`. GMAP entries are skipped.
 
+`PostLoginClientOptions` also accepts source-confirmed login weapon/class packet
+snapshots:
+
+- `PlayerWeapons` are queued in supplied order after `PLO_NPCWEAPONDEL "Bow"`.
+  This maps to the C++ `for (auto& weaponName: m_weaponList)` loop and queues
+  only already-built `Weapon::getWeaponPacket(...)` bytes.
+- `ProtectedWeaponNames` are evaluated in supplied setting-token order. Entries
+  already present in `PlayerWeapons` are skipped, matching the C++ erase step
+  before `addWeapon`.
+- `ProtectedWeaponPackets` supplies the already-confirmed packet bytes for
+  protected names that are missing from the player list.
+- `OrderedClassPackets` are queued only when the parsed client version is
+  `CLVER_4_0211` or newer, matching the C++ class branch.
+
+This is a boundary implementation, not a complete production weapon/class
+loader. It deliberately does not invent missing weapon lookups, default weapon
+conversion, script compilation, bytecode headers, or unordered class-list
+iteration order.
+
 It marks the session:
 
 ```txt
@@ -53,8 +75,11 @@ ReadyForWorldEntry -> ReadyForLevelWarp
 - `PLO_PLAYERPROPS = 9`
 - `PLO_FLAGSET = 28`
 - `PLO_NPCWEAPONDEL = 34`
+- `PLO_DEFAULTWEAPON = 43`
 - `PLO_SERVERLISTCONNECTED = 190`; C++ source calls this `PLO_UNKNOWN190`
 - `PLO_CLEARWEAPONS = 194`
+- `PLO_LOADSCRIPT = 197`; C++ source calls this `PLO_UNKNOWN197` in
+  `ScriptClass::getClassPacket`
 
 ## Old-Version Map Workaround
 
@@ -93,15 +118,57 @@ Because `m_flagList` is a C++ `std::unordered_map`, the second occurrence of
 future capture proves the concrete compiled/runtime order. The C# port does not
 invent that ordering yet.
 
+## Weapon, Protected Weapon, And Class Branches
+
+Source:
+
+```cpp
+for (auto& weaponName: m_weaponList)
+{
+    auto weapon = m_server->getWeapon(weaponName.toString());
+    if (weapon == nullptr)
+    {
+        if (auto itemType = LevelItem::getItemId(weaponName.toString()); itemType != LevelItemType::INVALID)
+        {
+            CString defWeapPacket = CString() >> (char)PLI_WEAPONADD >> (char)0 >> (char)LevelItem::getItemTypeId(itemType);
+            defWeapPacket.readGChar();
+            msgPLI_WEAPONADD(defWeapPacket);
+            continue;
+        }
+        continue;
+    }
+    sendPacket(weapon->getWeaponPacket(m_versionId));
+}
+```
+
+`Weapon::getWeaponPacket` confirms:
+
+- default weapons send `PLO_DEFAULTWEAPON + GCHAR(default item id)`
+- non-default weapons begin with `PLO_NPCWEAPONADD`, `GCHAR(name length)`,
+  name bytes, `GCHAR(NPCPROP_IMAGE)`, `GCHAR(image length)`, image bytes
+- GS1 script payload uses `GCHAR(NPCPROP_SCRIPT)`, `GSHORT(script length)`,
+  script bytes unless a newer/bytecode branch returns earlier
+
+Protected weapons are read from the `protectedweapons` setting with
+`gCommaStrTokens()`, remove names already present in `m_weaponList`, then call
+`addWeapon(name)` for each remaining token. `addWeapon` mutates `m_weaponList`
+and sends `weapon->getWeaponPacket(m_versionId)` only when the weapon exists
+and was not already present.
+
+Class packets are sent only for `m_versionId >= CLVER_4_0211`.
+`ScriptClass::getClassPacket` emits a `PLO_LOADSCRIPT`/C++ `PLO_UNKNOWN197`
+line when bytecode exists, using the bytecode header followed by `,` and a
+tokenized `time(0)` value. Empty class bytecode returns an empty packet.
+
 ## Deferred Branches Before Warp
 
 These are traced but not implemented yet:
 
 - spar deviation recalculation mutates account/player state
 - `flaghack_ip` full duplicate flag emission order after unordered-map mutation
-- weapon list emission and default weapon conversion through `msgPLI_WEAPONADD`
-- protected weapon auto-add
-- class packet emission for `m_versionId >= CLVER_4_0211`
+- production weapon list lookup/default conversion through `msgPLI_WEAPONADD`
+- production protected weapon lookup/mutation when packet bytes are not supplied
+- production class-list ordering and dynamic bytecode/time packet generation
 - zlib-fix NPC weapon for client versions 2.21 through 2.31
 
 The C# boundary only emits packets whose bytes are directly confirmed. Full `__sendLogin` is still blocked, so callers provide the explicit confirmed property IDs to serialize.
