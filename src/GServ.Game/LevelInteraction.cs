@@ -1,5 +1,6 @@
 using GServ.Protocol;
 using System.Globalization;
+using System.Text;
 
 namespace GServ.Game;
 
@@ -61,6 +62,26 @@ public static class LevelInteraction
         return LevelChestOpenResult.NotOpened;
     }
 
+    public static byte[] BuildTouchedSignPackets(
+        NwLevelSnapshot level,
+        bool serverside,
+        int sprite,
+        float x,
+        float y)
+    {
+        if (!serverside || sprite % 4 != 0)
+            return [];
+
+        var output = new List<byte>();
+        foreach (var sign in level.Signs)
+        {
+            if (y == sign.Y && x >= sign.X - 1.5f && x <= sign.X + 0.5f)
+                output.AddRange(BuildSay2Packet(sign.Text.Replace("\n", "#b", StringComparison.Ordinal)));
+        }
+
+        return output.ToArray();
+    }
+
     private static byte[] BuildOpenedChestPacket(byte x, byte y)
     {
         var writer = new GraalBinaryWriter();
@@ -68,6 +89,15 @@ public static class LevelInteraction
         writer.WriteGChar(1);
         writer.WriteGChar(x);
         writer.WriteGChar(y);
+        writer.WriteByte((byte)'\n');
+        return writer.ToArray();
+    }
+
+    private static byte[] BuildSay2Packet(string text)
+    {
+        var writer = new GraalBinaryWriter();
+        writer.WriteGChar((byte)ServerToPlayerPacketId.Say2);
+        writer.WriteBytes(Encoding.ASCII.GetBytes(text));
         writer.WriteByte((byte)'\n');
         return writer.ToArray();
     }

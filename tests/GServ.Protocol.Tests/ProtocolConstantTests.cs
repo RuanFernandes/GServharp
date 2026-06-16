@@ -34,6 +34,7 @@ public sealed class ProtocolConstantTests
         Assert.Equal(105, (int)ServerToPlayerPacketId.UpdatePackageSize);
         Assert.Equal(106, (int)ServerToPlayerPacketId.UpdatePackageDone);
         Assert.Equal(107, (int)ServerToPlayerPacketId.BoardLayer);
+        Assert.Equal(153, (int)ServerToPlayerPacketId.Say2);
         Assert.Equal(156, (int)ServerToPlayerPacketId.SetActiveLevel);
         Assert.Equal(187, (int)ServerToPlayerPacketId.UpdatePackageIsUpdated);
         Assert.Equal(174, (int)ServerToPlayerPacketId.GhostIcon);

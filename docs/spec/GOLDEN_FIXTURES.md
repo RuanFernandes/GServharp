@@ -1250,6 +1250,18 @@ PLO_LEVELSIGN, x=4, y=5, "#K(64)", encoded newline, "\n"
 => [37, 36, 37, 118, 42, 101, 90, 88, 102, 128, 10]
 ```
 
+Runtime sign touch response for unformatted sign text `"First\nLine\n"`:
+
+```txt
+PLO_SAY2 "First#bLine#b" "\n"
+=> [185, 70, 105, 114, 115, 116, 35, 98, 76, 105, 110, 101, 35, 98, 10]
+```
+
+`Player::testSign` sends one `PLO_SAY2` packet for each matching sign. It only
+runs when `serverside=true` and `sprite % 4 == 0`; the X range
+`[sign.x - 1.5, sign.x + 0.5]` is inclusive and Y must exactly equal
+`sign.y`.
+
 ## Server-List Auth
 
 ### SVO_VERIACC2

@@ -75,4 +75,45 @@ public sealed class LevelInteractionBoundaryTests
         Assert.Empty(missing.Packet);
         Assert.Single(opened);
     }
+
+    [Fact]
+    public void BuildTouchedSignPacketsRequiresServersideAndFacingUpSprite()
+    {
+        var level = LevelWithSigns(new NwLevelSign(10, 11, "Hello\n"));
+
+        Assert.Empty(LevelInteraction.BuildTouchedSignPackets(level, serverside: false, sprite: 0, x: 10, y: 11));
+        Assert.Empty(LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 1, x: 10, y: 11));
+    }
+
+    [Fact]
+    public void BuildTouchedSignPacketsUsesCppInclusiveXRangeAndExactY()
+    {
+        var level = LevelWithSigns(new NwLevelSign(10, 11, "Hello\n"));
+
+        Assert.Equal([185, 72, 101, 108, 108, 111, 35, 98, 10], LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 4, x: 8.5f, y: 11));
+        Assert.Equal([185, 72, 101, 108, 108, 111, 35, 98, 10], LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 0, x: 10.5f, y: 11));
+        Assert.Empty(LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 0, x: 8.49f, y: 11));
+        Assert.Empty(LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 0, x: 10.51f, y: 11));
+        Assert.Empty(LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 0, x: 10, y: 11.01f));
+    }
+
+    [Fact]
+    public void BuildTouchedSignPacketsSendsEveryMatchingSignWithNewlinesReplacedByHashB()
+    {
+        var level = LevelWithSigns(
+            new NwLevelSign(10, 11, "First\nLine\n"),
+            new NwLevelSign(11, 11, "Second"));
+
+        var packets = LevelInteraction.BuildTouchedSignPackets(level, serverside: true, sprite: 0, x: 10.0f, y: 11);
+
+        Assert.Equal(
+            [
+                185, 70, 105, 114, 115, 116, 35, 98, 76, 105, 110, 101, 35, 98, 10,
+                185, 83, 101, 99, 111, 110, 100, 10
+            ],
+            packets);
+    }
+
+    private static NwLevelSnapshot LevelWithSigns(params NwLevelSign[] signs) =>
+        new("GLEVNW01", [], signs, [], [], []);
 }

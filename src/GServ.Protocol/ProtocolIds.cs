@@ -153,6 +153,7 @@ public enum ServerToPlayerPacketId : byte
     NpcBytecode = 131,
     NpcWeaponScript = 140,
     NpcDelete2 = 150,
+    Say2 = 153,
     SetActiveLevel = 156,
     NcNpcAttributes = 157,
     NcNpcAdd = 158,

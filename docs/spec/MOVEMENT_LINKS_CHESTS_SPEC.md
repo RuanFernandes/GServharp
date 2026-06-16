@@ -79,8 +79,14 @@ followed by the line's encoded newline.
 - The response is `PLO_SAY2` with unformatted sign text and newlines replaced
   by `#b`.
 
-`PLO_SAY2` and player translation/runtime sign touch responses are not yet
-implemented in C#.
+The range check uses `inrange`, which is inclusive at both ends. C++ iterates
+all signs and sends one `PLO_SAY2` packet for every matching sign; it does not
+stop after the first match.
+
+The C# port implements the source-confirmed runtime sign-touch packet builder
+as `LevelInteraction.BuildTouchedSignPackets`. Production wiring from the live
+player movement path is still separate because server setting plumbing and the
+broader runtime dispatch loop are not complete.
 
 ## Confirmed Link Behavior
 
@@ -188,8 +194,10 @@ weapon, status, and stat mutation behavior.
   inclusive `Level::getLink` lookup and the client-triggered
   `PLI_LEVELWARP`/`PLI_LEVELWARPMOD` path, but did not find a direct player
   movement-to-link warp path.
-- `Player::testSign` runtime responses are blocked on server-side setting
-  plumbing, `PLO_SAY2`, and player translation behavior.
+- `Player::testSign` packet construction is implemented for the confirmed
+  `PLO_SAY2` response. Live runtime invocation is blocked on server-side setting
+  plumbing and the broader movement dispatch loop. Player translation remains
+  blocked for static `Level::getSignsPacket(player)` serialization.
 - Chest item reward mutation is blocked on a dedicated `LevelItem`/player stat
   mutation milestone.
 - Chest persistence save timing remains blocked beyond recording the in-memory
