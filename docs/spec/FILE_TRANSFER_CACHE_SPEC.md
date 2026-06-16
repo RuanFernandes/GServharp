@@ -130,9 +130,10 @@ For clients older than `CLVER_2_1`, if the requested file has no extension,
 C++ appends `.gif` after reading the filename and before default-file checks.
 
 C++ then scans `__defaultfiles` and sets `isDefault = true` when
-`file.match(defaultFile)` succeeds. The recovered source does not define this
-array in `Player.cpp`; the exact default-file pattern list remains a source
-recovery/blocker item.
+`file.match(defaultFile)` succeeds. The recovered `Player.cpp` defines the
+default-file patterns at file scope. Confirmed patterns include core ganis,
+`sword?.png`/`sword?.gif`, `shield?.png`/`shield?.gif`, default bodies,
+default sound effects, and `pics1.png`.
 
 If the file is not default and `std::difftime(modTime, fModTime) != 0`, C++
 resets the `CString` read cursor to zero and calls `msgPLI_WANTFILE(file)`,
@@ -220,7 +221,8 @@ Implemented:
 - modern large-file start/size/chunk/end sequencing
 - `.gupd` checksum-ignore behavior for verify-want-send
 - `PLI_UPDATEFILE` behavior is documented but not implemented as a production
-  boundary yet
+  socket handler yet; the C# boundary implements the source-confirmed decision
+  logic and packet outcomes for supplied filesystem snapshots
 - update package request lifecycle over an explicitly supplied package snapshot:
   checksum comparison in entry order, reinstall checksum clearing, total
   download size, missing-file sends through the confirmed `sendFile` boundary,
@@ -230,7 +232,8 @@ Implemented:
 
 Blocked:
 
-- production `PLI_UPDATEFILE` runtime integration and exact default-file list
+- production `PLI_UPDATEFILE` socket/runtime integration and C++ capture
+  certification for wildcard `CString::match` edge cases beyond `?`
 - upload/write paths and overwrite behavior
 - update package manager/resource parsing implementation and production
   registration

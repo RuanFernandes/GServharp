@@ -29,6 +29,21 @@ public sealed record UpdatePackageTransferResult(int TotalDownloadSize, IReadOnl
 
 public static class FileTransferBoundary
 {
+    private static readonly string[] DefaultFiles =
+    [
+        "carried.gani", "carry.gani", "carrystill.gani", "carrypeople.gani", "dead.gani", "def.gani", "ghostani.gani",
+        "grab.gani", "gralats.gani", "hatoff.gani", "haton.gani", "hidden.gani", "hiddenstill.gani", "hurt.gani",
+        "idle.gani", "kick.gani", "lava.gani", "lift.gani", "maps1.gani", "maps2.gani", "maps3.gani", "pull.gani",
+        "push.gani", "ride.gani", "rideeat.gani", "ridefire.gani", "ridehurt.gani", "ridejump.gani", "ridestill.gani",
+        "ridesword.gani", "shoot.gani", "sit.gani", "skip.gani", "sleep.gani", "spin.gani", "swim.gani", "sword.gani",
+        "walk.gani", "walkslow.gani", "sword?.png", "sword?.gif", "shield?.png", "shield?.gif", "body.png",
+        "body2.png", "body3.png", "arrow.wav", "arrowon.wav", "axe.wav", "bomb.wav", "chest.wav", "compudead.wav",
+        "crush.wav", "dead.wav", "extra.wav", "fire.wav", "frog.wav", "frog2.wav", "goal.wav", "horse.wav",
+        "horse2.wav", "item.wav", "item2.wav", "jump.wav", "lift.wav", "lift2.wav", "nextpage.wav", "put.wav",
+        "sign.wav", "steps.wav", "steps2.wav", "stonemove.wav", "sword.wav", "swordon.wav", "thunder.wav",
+        "water.wav", "pics1.png"
+    ];
+
     public static FileTransferResult HandleWantFile(
         ClientSessionSkeleton session,
         IResourceFileSystem fileSystem,
@@ -55,6 +70,31 @@ public static class FileTransferBoundary
         }
 
         return SendFile(session, fileSystem, fileName, clientVersion);
+    }
+
+    public static FileTransferResult HandleUpdateFile(
+        ClientSessionSkeleton session,
+        IResourceFileSystem fileSystem,
+        long clientModTime,
+        string fileName,
+        ClientVersionId clientVersion)
+    {
+        var serverModTime = fileSystem.Find(fileName)?.ModTime ?? 0;
+
+        if (clientVersion < ClientVersionId.Client21 && Path.GetExtension(fileName).Length == 0)
+            fileName += ".gif";
+
+        if (!IsDefaultFile(fileName) && clientModTime != serverModTime)
+            return SendFile(session, fileSystem, fileName, clientVersion);
+
+        if (clientVersion < ClientVersionId.Client21)
+        {
+            session.QueuePacket(FileTransferPackets.FileSendFailed(fileName));
+            return new FileTransferResult(FileTransferDecision.FileMissing, Sent: false, KnownFiles: []);
+        }
+
+        session.QueuePacket(FileTransferPackets.FileUpToDate(fileName));
+        return new FileTransferResult(FileTransferDecision.UpToDate, Sent: false, KnownFiles: []);
     }
 
     public static UpdatePackageTransferResult HandleUpdatePackageRequest(
@@ -152,5 +192,22 @@ public static class FileTransferBoundary
         if (clientVersion < ClientVersionId.Client21 && Path.GetExtension(fileName).Length == 0)
             return fileName + ".gif";
         return fileName;
+    }
+
+    private static bool IsDefaultFile(string fileName) =>
+        DefaultFiles.Any(pattern => MatchesDefaultPattern(fileName, pattern));
+
+    private static bool MatchesDefaultPattern(string value, string pattern)
+    {
+        if (value.Length != pattern.Length)
+            return false;
+
+        for (var i = 0; i < pattern.Length; i++)
+        {
+            if (pattern[i] != '?' && pattern[i] != value[i])
+                return false;
+        }
+
+        return true;
     }
 }

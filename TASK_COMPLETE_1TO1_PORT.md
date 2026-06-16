@@ -767,8 +767,14 @@ lifecycle.
     manager parsing and unordered-map iteration certification remain blocked.
 - [ ] Implement upload/write paths only after exact rights/path behavior is
   confirmed.
-- [ ] Add tests for checksums, package done/size, failed/up-to-date, and path
+- [x] Add tests for checksums, package done/size, failed/up-to-date, and path
   guards.
+  - 2026-06-16: Existing and new tests cover CRC match `PLO_FILEUPTODATE`,
+    `.gupd` checksum bypass, update package size/done packet order, partial
+    install checksums, reinstall checksum clearing, missing/default old-client
+    failure packets, modern up-to-date packets, and non-default changed-file
+    sends. Upload/write path guards remain blocked under the dedicated
+    rights/path behavior item.
 
 Completion criteria:
 

@@ -78,6 +78,78 @@ public sealed class FileTransferBoundaryTests
     }
 
     [Fact]
+    public void UpdateFileQueuesUpToDateWhenModernModTimeMatches()
+    {
+        var fileSystem = new MemoryResourceFileSystem();
+        fileSystem.Add("script.txt", Encoding.ASCII.GetBytes("abc"), modTime: 7);
+        var session = new ClientSessionSkeleton(7);
+
+        var result = FileTransferBoundary.HandleUpdateFile(
+            session,
+            fileSystem,
+            clientModTime: 7,
+            fileName: "script.txt",
+            ClientVersionId.Client6037);
+
+        Assert.Equal(FileTransferDecision.UpToDate, result.Decision);
+        Assert.Equal([77, 115, 99, 114, 105, 112, 116, 46, 116, 120, 116, 10], session.TakeOutboundBytes());
+    }
+
+    [Fact]
+    public void UpdateFileSendsNonDefaultFileWhenModTimeDiffers()
+    {
+        var fileSystem = new MemoryResourceFileSystem();
+        fileSystem.Add("script.txt", Encoding.ASCII.GetBytes("abc"), modTime: 8);
+        var session = new ClientSessionSkeleton(7);
+
+        var result = FileTransferBoundary.HandleUpdateFile(
+            session,
+            fileSystem,
+            clientModTime: 7,
+            fileName: "script.txt",
+            ClientVersionId.Client6037);
+
+        Assert.Equal(FileTransferDecision.SentFile, result.Decision);
+        Assert.Equal(2, session.TakeOutboundBytes().Count(value => value == 10));
+    }
+
+    [Fact]
+    public void UpdateFileDoesNotSendModernDefaultFileEvenWhenModTimeDiffers()
+    {
+        var fileSystem = new MemoryResourceFileSystem();
+        fileSystem.Add("walk.gani", Encoding.ASCII.GetBytes("abc"), modTime: 8);
+        var session = new ClientSessionSkeleton(7);
+
+        var result = FileTransferBoundary.HandleUpdateFile(
+            session,
+            fileSystem,
+            clientModTime: 7,
+            fileName: "walk.gani",
+            ClientVersionId.Client6037);
+
+        Assert.Equal(FileTransferDecision.UpToDate, result.Decision);
+        Assert.Equal([77, 119, 97, 108, 107, 46, 103, 97, 110, 105, 10], session.TakeOutboundBytes());
+    }
+
+    [Fact]
+    public void UpdateFileOldClientAppendsGifBeforeDefaultCheckAndSendsFailedForDefault()
+    {
+        var fileSystem = new MemoryResourceFileSystem();
+        fileSystem.Add("sword1.gif", Encoding.ASCII.GetBytes("abc"), modTime: 8);
+        var session = new ClientSessionSkeleton(7);
+
+        var result = FileTransferBoundary.HandleUpdateFile(
+            session,
+            fileSystem,
+            clientModTime: 7,
+            fileName: "sword1",
+            ClientVersionId.Client1411);
+
+        Assert.Equal(FileTransferDecision.FileMissing, result.Decision);
+        Assert.Equal([62, 115, 119, 111, 114, 100, 49, 46, 103, 105, 102, 10], session.TakeOutboundBytes());
+    }
+
+    [Fact]
     public void UpdatePackageRequestSendsOnlyFilesWithMissingOrDifferentChecksums()
     {
         var fileSystem = new MemoryResourceFileSystem();
