@@ -42,7 +42,8 @@ This project is a **100% faithful 1:1 port** of the original C++ server.
 
 The closed-source client must not be able to tell the difference between the original C++ server and the new C# server.
 
-Every external behavior must match the original C++ server exactly.
+Every external behavior that exists in the original C++ server must match the
+original C++ server exactly.
 
 This includes, but is not limited to:
 
@@ -69,10 +70,10 @@ This includes, but is not limited to:
 * Skill behavior
 * Item/inventory behavior
 * NPC/mob behavior
-* Quest/mission behavior
+* Quest/mission behavior, only if present in the original C++ source
 * Map/level behavior
-* Shop/trade behavior
-* Party/guild/social behavior
+* Shop/trade behavior, only if present in the original C++ source
+* Party/guild/social behavior, only if present in the original C++ source
 * Admin/RC/NC behavior
 * Database/persistence behavior
 * Constants
@@ -83,6 +84,12 @@ This includes, but is not limited to:
 * Bug-compatible behavior required by the client
 
 Do not remove, simplify, approximate, reinterpret, rename, rebalance, or redesign any client-facing behavior unless explicitly instructed.
+
+Absence is also compatibility behavior. If a gameplay or service system is not
+present in the original C++ source, do not add it as a C# built-in and do not
+keep it as a feature-parity backlog item. Document the absence and leave it out
+of scope unless future recovered C++ source or byte-level capture proof shows
+that the original server exposed that behavior.
 
 If C++ behavior looks strange, ugly, duplicated, outdated, or bug-like, preserve it unless there is explicit proof that changing it is safe.
 

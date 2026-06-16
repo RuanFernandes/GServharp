@@ -574,8 +574,11 @@ Completion criteria:
     heart/equipment/spinattack payloads and mutations, default weapon empty
     payload side effects, invalid catalog IDs/names, and invalid item reward
     empty payload behavior.
-- [ ] Keep shop/trade/party/quest/mission behavior out of scope unless future
+- [x] Keep shop/trade/party/quest/mission behavior out of scope unless future
   source/capture proof shows a built-in C++ server path.
+  - 2026-06-16: Removed these as future implementation scope. The port now
+    treats them as absent from the recovered C++ core unless future source or
+    byte-capture proof shows a client-facing original server path.
 
 Completion criteria:
 
@@ -719,8 +722,10 @@ unless future source/capture proof shows they exist in the original C++ server.
 - [ ] Inventory durable runtime and save/load behavior.
 - [ ] Guild filesystem mutation and display behavior.
 - [ ] Chat/PM/profile packets.
-- [ ] Verify shop/trade/party/quest/mission absence or future source proof; do
-  not implement built-in behavior without proof.
+- [x] Remove built-in shop/trade/party/quest/mission systems from feature scope
+  unless future recovered C++ source or byte-capture proof shows the original
+  server exposed them. Current source pass found no dedicated C++ core runtime
+  for these systems, so absence is the compatible behavior.
 - [ ] Add golden tests for every confirmed packet/rule branch.
 
 Completion criteria:
