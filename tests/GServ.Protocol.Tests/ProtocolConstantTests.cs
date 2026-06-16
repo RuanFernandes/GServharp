@@ -59,6 +59,15 @@ public sealed class ProtocolConstantTests
         Assert.Equal(52, (int)PlayerToServerPacketId.RcServerOptionsSet);
         Assert.Equal(53, (int)PlayerToServerPacketId.RcFolderConfigGet);
         Assert.Equal(54, (int)PlayerToServerPacketId.RcFolderConfigSet);
+        Assert.Equal(55, (int)PlayerToServerPacketId.RcRespawnSet);
+        Assert.Equal(56, (int)PlayerToServerPacketId.RcHorseLifeSet);
+        Assert.Equal(57, (int)PlayerToServerPacketId.RcApIncrementSet);
+        Assert.Equal(58, (int)PlayerToServerPacketId.RcBaddyRespawnSet);
+        Assert.Equal(67, (int)PlayerToServerPacketId.RcApplyReason);
+        Assert.Equal(73, (int)PlayerToServerPacketId.RcPlayerPropsGetById);
+        Assert.Equal(74, (int)PlayerToServerPacketId.RcPlayerPropsGetByAccount);
+        Assert.Equal(75, (int)PlayerToServerPacketId.RcPlayerPropsReset);
+        Assert.Equal(76, (int)PlayerToServerPacketId.RcPlayerPropsSetById);
         Assert.Equal(83, (int)PlayerToServerPacketId.RcPlayerRightsGet);
         Assert.Equal(84, (int)PlayerToServerPacketId.RcPlayerRightsSet);
         Assert.Equal(89, (int)PlayerToServerPacketId.RcFileBrowserStart);

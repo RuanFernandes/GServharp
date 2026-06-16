@@ -1164,6 +1164,11 @@ Completion criteria:
 - `server/src/NPC.cpp`
 
 - [ ] Document every RC/NC packet id, rights check, and response packet.
+  - 2026-06-16: Expanded the source-confirmed RC client-to-server packet ID
+    catalog from recovered `IEnums.h` and added C# enum constant tests for the
+    previously missing RC settings/player-props/account/admin-message IDs
+    (`55..58`, `67`, `73..76`). Full rights-check and response-packet coverage
+    remains open.
 - [ ] Implement production RC/NC login/session sockets.
 - [ ] Implement file browser mutations with exact path/right behavior.
 - [ ] Implement account/admin-IP mutation commands.
