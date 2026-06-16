@@ -26,10 +26,21 @@ if (!config.Enabled)
     else
     {
         Console.WriteLine(snapshot.Resolution.Diagnostic);
+        return;
     }
 
-    Console.WriteLine(snapshot.BlockedReason);
-    Console.WriteLine("Dev-only local shell is disabled. Pass --dev-only-local --dev-root <path> --dev-level <level.nw> to run the diagnostic shell.");
+    var runtime = new ProductionHostRuntime(new RuntimeServer());
+    var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, TimeSpan.Zero);
+
+    using var productionCts = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) =>
+    {
+        e.Cancel = true;
+        productionCts.Cancel();
+    };
+
+    Console.WriteLine("Production startup resolved. Running host loop skeleton. Press Ctrl+C to stop.");
+    hostLoop.Run(TimeSpan.FromMilliseconds(5), productionCts.Token);
     return;
 }
 

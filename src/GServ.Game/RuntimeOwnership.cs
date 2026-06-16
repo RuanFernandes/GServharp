@@ -602,14 +602,21 @@ public sealed class RuntimeServer
 
     public void CleanupDeletedPlayers()
     {
-        foreach (var player in _deletedPlayers)
+        CleanupDeletedPlayers(isScriptObjectReferenced: null);
+    }
+
+    public void CleanupDeletedPlayers(Func<RuntimePlayer, bool>? isScriptObjectReferenced)
+    {
+        foreach (var player in _deletedPlayers.ToArray())
         {
+            if (isScriptObjectReferenced?.Invoke(player) == true)
+                continue;
+
             player.LeaveLevel();
             _players.Remove(player.Id);
             _playerIds.FreeId(player.Id);
+            _deletedPlayers.Remove(player);
         }
-
-        _deletedPlayers.Clear();
     }
 }
 
