@@ -244,6 +244,8 @@ Implemented:
 - dependency status constants
 - `SourceCodeSlices` classification
 - explicit blocked compiler/runtime adapters
+- `ScriptVisibleApiCatalog`, listing recovered V8 binding groups as explicitly
+  unimplemented until each API is ported from C++
 - tests that verify runtime execution remains blocked
 
 Not implemented:

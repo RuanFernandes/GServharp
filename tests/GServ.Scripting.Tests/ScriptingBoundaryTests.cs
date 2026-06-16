@@ -72,4 +72,18 @@ public sealed class ScriptingBoundaryTests
         Assert.Contains("gs2compiler", compileError.Message);
         Assert.Contains("V8NPCSERVER", executeError.Message);
     }
+
+    [Fact]
+    public void ScriptVisibleApiCatalogKeepsRecoveredV8BindingGroupsBlocked()
+    {
+        var apis = ScriptVisibleApiCatalog.All;
+
+        Assert.Contains(apis, api => api.Name == "server" && api.SourceFile == "V8ServerImpl.cpp");
+        Assert.Contains(apis, api => api.Name == "player" && api.SourceFile == "V8PlayerImpl.cpp");
+        Assert.Contains(apis, api => api.Name == "npc" && api.SourceFile == "V8NPCImpl.cpp");
+        Assert.Contains(apis, api => api.Name == "level" && api.SourceFile == "V8LevelImpl.cpp");
+        Assert.Contains(apis, api => api.Name == "weapon" && api.SourceFile == "V8WeaponImpl.cpp");
+        Assert.Contains(apis, api => api.Name == "environment" && api.SourceFile == "V8EnvironmentImpl.cpp");
+        Assert.All(apis, api => Assert.False(api.IsImplemented));
+    }
 }

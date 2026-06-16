@@ -666,7 +666,11 @@ server-side behavior.
     `BlockedGs2CompilerAdapter` and tests intentionally reject compilation
     until canonical bytecode/header/error behavior is proven.
 - [ ] Implement NPC lifecycle, events, props, and packet forwarding in slices.
-- [ ] Add explicit guards for all unimplemented script-visible APIs.
+- [x] Add explicit guards for all unimplemented script-visible APIs.
+  - 2026-06-16: Added `ScriptVisibleApiCatalog` and tests covering the
+    recovered V8 binding groups (`server`, `player`, `npc`, `level`, `weapon`,
+    `environment`, and nested constructor groups). Every entry is explicitly
+    marked unimplemented until function-by-function C++ behavior is ported.
 - [ ] Add golden bytecode/packet fixtures where possible.
 
 Completion criteria:
