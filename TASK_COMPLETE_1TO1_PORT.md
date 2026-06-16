@@ -703,6 +703,11 @@ behavior, and movement-loop invocation.
     client-sent `GInt` exactly like C++; the live forwarding path now emits
     `getProp(PLPROP_RATING)`-equivalent bytes using
     `((rating & 0xFFF) << 9) | (deviation & 0x1FF)`.
+  - 2026-06-16: Implemented the source-confirmed `PLPROP_STATUS` parser
+    boundary. The parser consumes the exact `GUChar` status byte and can
+    continue to following props, while production dispatch blocks at the
+    runtime side-effect boundary until death/revive/drop/leader packet behavior
+    is ported from C++.
 - [x] Wire live `testSign` invocation through confirmed movement branches.
   - 2026-06-16: Added a source-confirmed movement sign-touch helper that runs
     only after movement requested touch testing, converts internal pixels to
@@ -793,6 +798,9 @@ behavior, and movement-loop invocation.
     `PLI_PLAYERPROPS` packet are applied in order, then properties such as
     `PLPROP_CARRYNPC` return a blocked dispatch result instead of crashing or
     pretending NPC ownership/deletion/forwarding is implemented.
+  - 2026-06-16: Added source-confirmed `PLPROP_STATUS` fixtures for exact
+    one-byte parsing and production blocked-dispatch behavior. Runtime
+    death/revive/drop/leader effects remain blocked.
 
 Completion criteria:
 

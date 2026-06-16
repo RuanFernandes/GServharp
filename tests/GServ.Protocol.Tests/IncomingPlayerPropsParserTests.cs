@@ -29,6 +29,23 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedStatusByteWithoutApplyingDeathOrReviveSideEffects()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.Status);
+        body.WriteGChar(4);
+        body.WriteGChar((byte)PlayerPropertyId.X);
+        body.WriteGChar(70);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray());
+
+        Assert.True(result.Success);
+        Assert.Equal([PlayerPropertyId.Status, PlayerPropertyId.X], result.Updates.Select(update => update.PropertyId));
+        Assert.Equal((byte)4, result.Updates[0].GCharValue);
+        Assert.Equal((byte)70, result.Updates[1].GCharValue);
+    }
+
+    [Fact]
     public void ParsesConfirmedStringAndPreciseCoordinateProps()
     {
         var body = new GraalBinaryWriter();

@@ -61,6 +61,7 @@ public static class IncomingPlayerPropsParser
                 case PlayerPropertyId.Y:
                 case PlayerPropertyId.Z:
                 case PlayerPropertyId.Sprite:
+                case PlayerPropertyId.Status:
                 case PlayerPropertyId.MaxPower:
                 case PlayerPropertyId.CurrentPower:
                 case PlayerPropertyId.ArrowsCount:

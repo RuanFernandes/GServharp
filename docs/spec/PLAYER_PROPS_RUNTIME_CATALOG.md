@@ -82,7 +82,7 @@ For sender client versions `>= CLVER_2_3`, C++ sends `levelBuff2` before
 | 15 | `PLPROP_X` | `GUChar` | Stores `m_x = value * 8`, clears paused bit, movement timestamp/update, enables touch test. | Adds `PLPROP_X2` mirror to `levelBuff2`; generic forwarding. | Implemented for confirmed movement subset. |
 | 16 | `PLPROP_Y` | `GUChar` | Stores `m_y = value * 8`, clears paused bit, movement timestamp/update, enables touch test. | Adds `PLPROP_Y2` mirror to `levelBuff2`; generic forwarding. | Implemented for confirmed movement subset. |
 | 17 | `PLPROP_SPRITE` | `GUChar` | Stores sprite; non-V8 enables touch test. | Generic forwarding. | Implemented for confirmed movement subset. |
-| 18 | `PLPROP_STATUS` | `GUChar` | Stores status; revive restores hearts by AP; death increments deaths/drops outside sparring; may rotate level leader. | Revive appends `PLPROP_CURPOWER`; may send `PLO_ISLEADER`. Generic forwarding. | Blocked on death/drop/leader behavior. |
+| 18 | `PLPROP_STATUS` | `GUChar` | Stores status; revive restores hearts by AP; death increments deaths/drops outside sparring; may rotate level leader. | Revive appends `PLPROP_CURPOWER`; may send `PLO_ISLEADER`. Generic forwarding. | Parser consumes the confirmed `GUChar` status byte. Runtime mutation, death/revive/drop/leader side effects, and forwarding remain blocked. |
 | 19 | `PLPROP_CARRYSPRITE` | `GUChar` | Stores carry sprite. | Generic forwarding. | Implemented as state mutation and generic local forwarding. |
 | 20 | `PLPROP_CURLEVEL` | `GCHAR len` + bytes | Non-V8 stores `m_levelName`; V8 reads/discards. | Generic forwarding via `getProp`: GMAP clients receive map name, singleplayer levels append `.singleplayer`, otherwise level name. | Implemented for parser/runtime mutation plus live forwarding for normal and singleplayer level names. GMAP map-name forwarding remains blocked until the live GMAP state path is fixture-confirmed. |
 | 21 | `PLPROP_HORSEGIF` | `GCHAR len` + bytes, max read `219` | Stores horse image; old clients append `.gif` when extensionless. If `len > 219`, C++ reads only 219 bytes and leaves any remaining bytes to be parsed as following properties. | Generic forwarding via `getProp`: `GCHAR(horseImage.length)`, image bytes. | Implemented for modern/old parse, 219-byte read cap, runtime mutation, and generic local forwarding. Loaded/global recipient routing remains blocked. |
@@ -173,4 +173,7 @@ closely as the current guarded boundary allows.
 This is not a substitute implementation for the blocked C++ branch. For
 example, `PLPROP_CARRYNPC` remains blocked until NPC ownership, duplicate carry
 checks, `PLO_PLAYERPROPS`, `PLO_NPCDEL2`, `PLO_OTHERPLPROPS`, and
-`m_carryNpcId` mutation are ported together from `PlayerProps.cpp`.
+`m_carryNpcId` mutation are ported together from `PlayerProps.cpp`. Likewise,
+`PLPROP_STATUS` remains blocked after byte parsing until the C++
+death/revive/drop/leader side effects and related packet order are ported from
+the same function.
