@@ -18,17 +18,17 @@
 
 ## Required Work
 
-- [ ] Re-trace `Player::setProps` side effects for movement-related properties.
-- [ ] Update `docs/spec/MOVEMENT_LINKS_CHESTS_SPEC.md`.
-- [ ] Add tests for X/Y/Z/X2/Y2/Z2, level-name changes, link touch bounds, sign text translation, chest item names, and blocked side effects.
-- [ ] Implement source-confirmed property mutation and forwarding behavior.
+- [x] Re-trace `Player::setProps` side effects for movement-related properties.
+- [x] Update `docs/spec/MOVEMENT_LINKS_CHESTS_SPEC.md`.
+- [x] Add tests for X/Y/Z/X2/Y2/Z2, level-name changes, link touch bounds, sign text translation, chest item names, and blocked side effects.
+- [x] Implement source-confirmed property mutation and forwarding behavior.
 - [ ] Implement link-triggered warp only after exact branch conditions are proven.
-- [ ] Implement chest/sign packet responses only where bytes and state changes are confirmed.
-- [ ] Keep combat/NPC/script triggers blocked unless explicitly confirmed in this milestone.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement movement links chests boundary`.
+- [x] Implement chest/sign packet responses only where bytes and state changes are confirmed.
+- [x] Keep combat/NPC/script triggers blocked unless explicitly confirmed in this milestone.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement movement links chests boundary`.
 
 ## Compatibility Constraints
 

@@ -18,17 +18,17 @@
 
 ## Required Work
 
-- [ ] Locate and catalog every source file for these systems.
-- [ ] Split `docs/spec/INVENTORY_SHOPS_SOCIAL_QUESTS_SPEC.md` into sub-sections with exact C++ references.
-- [ ] Add compatibility tests per system before implementation.
-- [ ] Implement inventory/item add/remove/use/equip behavior only where source-confirmed.
+- [x] Locate and catalog every source file for these systems.
+- [x] Split `docs/spec/INVENTORY_SHOPS_SOCIAL_QUESTS_SPEC.md` into sub-sections with exact C++ references.
+- [x] Add compatibility tests per system before implementation.
+- [x] Implement inventory/item add/remove/use/equip behavior only where source-confirmed.
 - [ ] Implement shop/trade/party/guild/chat/quest behavior only after packet and persistence formats are confirmed.
 - [ ] Preserve account save/load side effects and ordering.
-- [ ] Keep unclear systems blocked with explicit docs and guard tests.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement inventory shops social quests systems`.
+- [x] Keep unclear systems blocked with explicit docs and guard tests.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement inventory shops social quests systems`.
 
 ## Compatibility Constraints
 

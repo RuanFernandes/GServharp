@@ -18,17 +18,17 @@
 
 ## Required Work
 
-- [ ] Re-inspect CMake/submodule/package references for exact `gs2compiler` URL and commit.
-- [ ] Recover the exact dependency outside `ai_resources/`, or document the failed recovery evidence.
-- [ ] Update `docs/spec/SCRIPTING_RUNTIME_SPEC.md` and `docs/research/scripting-system.md`.
-- [ ] Add tests that assert scripting remains blocked until exact dependency behavior is known.
+- [x] Re-inspect CMake/submodule/package references for exact `gs2compiler` URL and commit.
+- [x] Recover the exact dependency outside `ai_resources/`, or document the failed recovery evidence.
+- [x] Update `docs/spec/SCRIPTING_RUNTIME_SPEC.md` and `docs/research/scripting-system.md`.
+- [x] Add tests that assert scripting remains blocked until exact dependency behavior is known.
 - [ ] After dependency recovery, add tests for script parse/load errors, event hooks, exposed APIs, and lifecycle order.
-- [ ] Implement only source-confirmed compiler/runtime adapter behavior.
-- [ ] Keep gameplay effects blocked until both script API and affected gameplay system are confirmed.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Recover scripting runtime boundary`.
+- [x] Implement only source-confirmed compiler/runtime adapter behavior.
+- [x] Keep gameplay effects blocked until both script API and affected gameplay system are confirmed.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Recover scripting runtime boundary`.
 
 ## Compatibility Constraints
 

@@ -17,17 +17,17 @@
 
 ## Required Work
 
-- [ ] Build or document how to run the original C++ server with the same test content used by the C# server.
-- [ ] Create `docs/spec/CLIENT_CERTIFICATION_SPEC.md`.
-- [ ] Add packet capture harnesses that compare C++ and C# byte sequences for identical client actions.
+- [x] Build or document how to run the original C++ server with the same test content used by the C# server.
+- [x] Create `docs/spec/CLIENT_CERTIFICATION_SPEC.md`.
+- [x] Add packet capture harnesses that compare C++ and C# byte sequences for identical client actions.
 - [ ] Add integration tests for login, warp, movement, chat, file transfer, combat, inventory, NPCs, quests, RC/NC, and shutdown.
-- [ ] Add a compatibility matrix in `docs/spec/CLIENT_COMPATIBILITY_MATRIX.md`.
+- [x] Add a compatibility matrix in `docs/spec/CLIENT_COMPATIBILITY_MATRIX.md`.
 - [ ] Fix any mismatches by returning to the relevant earlier milestone source files.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
 - [ ] Run manual closed-source client certification and document exact client version/date used.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Certify client compatibility harness`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Certify client compatibility harness`.
 
 ## Compatibility Constraints
 

@@ -19,16 +19,16 @@
 
 ## Required Work
 
-- [ ] Re-trace `Server::doMain()` timing branches, periodic jobs, save intervals, list-server heartbeats, and shutdown behavior.
-- [ ] Update `docs/spec/TIMING_SAVE_LOOP_SPEC.md`.
-- [ ] Add fake-clock tests for every confirmed periodic branch.
-- [ ] Implement source-confirmed autosave, heartbeat, cleanup, idle timeout, and shutdown order.
-- [ ] Recover websocket/TLS behavior only from C++/gs2lib; keep it blocked if dependencies or byte behavior are unclear.
+- [x] Re-trace `Server::doMain()` timing branches, periodic jobs, save intervals, list-server heartbeats, and shutdown behavior.
+- [x] Update `docs/spec/TIMING_SAVE_LOOP_SPEC.md`.
+- [x] Add fake-clock tests for every confirmed periodic branch.
+- [x] Implement source-confirmed autosave, heartbeat, cleanup, idle timeout, and shutdown order.
+- [x] Recover websocket/TLS behavior only from C++/gs2lib; keep it blocked if dependencies or byte behavior are unclear.
 - [ ] Add production logging messages only where they do not change client-facing behavior.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement timing save loop hardening`.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement timing save loop hardening`.
 
 ## Compatibility Constraints
 

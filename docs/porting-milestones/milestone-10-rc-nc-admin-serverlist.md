@@ -19,15 +19,15 @@
 
 ## Required Work
 
-- [ ] Locate and re-read all RC/NC/admin source files.
-- [ ] Update `docs/spec/RC_NC_ADMIN_SPEC.md` with packet IDs, permissions, rights files, and command flows.
-- [ ] Add tests for rights parsing, RC login rejection/success boundary, NC packet construction, file browser packets, and server-list side effects where confirmed.
-- [ ] Implement source-confirmed RC/NC session states and packet builders.
-- [ ] Keep scripting execution, NPC editing execution, and unsafe filesystem writes blocked until exact behavior is confirmed.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement rc nc admin boundary`.
+- [x] Locate and re-read all RC/NC/admin source files.
+- [x] Update `docs/spec/RC_NC_ADMIN_SPEC.md` with packet IDs, permissions, rights files, and command flows.
+- [x] Add tests for rights parsing, RC login rejection/success boundary, NC packet construction, file browser packets, and server-list side effects where confirmed.
+- [x] Implement source-confirmed RC/NC session states and packet builders.
+- [x] Keep scripting execution, NPC editing execution, and unsafe filesystem writes blocked until exact behavior is confirmed.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement rc nc admin boundary`.
 
 ## Compatibility Constraints
 

@@ -17,16 +17,16 @@
 
 ## Required Work
 
-- [ ] Locate and re-read all entity runtime source files.
-- [ ] Update `docs/spec/ENTITY_RUNTIME_SPEC.md`.
-- [ ] Add tests for source-confirmed entity ID allocation, spawn order, serialization bytes, deletion bytes, and level ownership.
-- [ ] Implement inert NPC/baddy/item/weapon runtime state only where C++ behavior is confirmed.
-- [ ] Implement packet builders for confirmed add/remove/update packets.
-- [ ] Keep script execution, AI behavior, combat effects, and inventory rewards blocked unless proven in this milestone.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement npc baddy item weapon runtime boundary`.
+- [x] Locate and re-read all entity runtime source files.
+- [x] Update `docs/spec/ENTITY_RUNTIME_SPEC.md`.
+- [x] Add tests for source-confirmed entity ID allocation, spawn order, serialization bytes, deletion bytes, and level ownership.
+- [x] Implement inert NPC/baddy/item/weapon runtime state only where C++ behavior is confirmed.
+- [x] Implement packet builders for confirmed add/remove/update packets.
+- [x] Keep script execution, AI behavior, combat effects, and inventory rewards blocked unless proven in this milestone.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement npc baddy item weapon runtime boundary`.
 
 ## Compatibility Constraints
 

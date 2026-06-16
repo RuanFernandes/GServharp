@@ -18,16 +18,16 @@
 
 ## Required Work
 
-- [ ] Re-trace `PLI_WANTFILE`, `PLI_RAWDATA` file receive/send, package update behavior, and cache-modtime comparisons.
-- [ ] Update `docs/spec/FILE_TRANSFER_CACHE_SPEC.md`.
-- [ ] Add fixtures for small, medium, large, compressed, and blocked bzip2 resource transfers.
-- [ ] Add tests for queue ordering, raw-data boundaries, file-not-found behavior, and client cache response packets.
-- [ ] Implement confirmed file transfer packet builders and session state transitions.
-- [ ] Keep upload/write paths blocked until exact C++ security and overwrite behavior is confirmed.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement file transfer cache boundary`.
+- [x] Re-trace `PLI_WANTFILE`, `PLI_RAWDATA` file receive/send, package update behavior, and cache-modtime comparisons.
+- [x] Update `docs/spec/FILE_TRANSFER_CACHE_SPEC.md`.
+- [x] Add fixtures for small, medium, large, compressed, and blocked bzip2 resource transfers.
+- [x] Add tests for queue ordering, raw-data boundaries, file-not-found behavior, and client cache response packets.
+- [x] Implement confirmed file transfer packet builders and session state transitions.
+- [x] Keep upload/write paths blocked until exact C++ security and overwrite behavior is confirmed.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement file transfer cache boundary`.
 
 ## Compatibility Constraints
 

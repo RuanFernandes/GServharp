@@ -18,16 +18,16 @@
 
 ## Required Work
 
-- [ ] Locate and re-read all combat/player gameplay handlers and packets.
-- [ ] Update `docs/spec/COMBAT_PLAYER_GAMEPLAY_SPEC.md`.
-- [ ] Add tests for every confirmed formula, clamp, default, flag, packet, and edge case before implementation.
-- [ ] Implement health/hearts, hurt/death, AP, bombs/arrows, hit detection, and spar behavior only where C++ is confirmed.
-- [ ] Wire persistence changes only if account save behavior is already confirmed.
-- [ ] Keep NPC/script side effects blocked if their source-confirmed dependencies are missing.
-- [ ] Run `dotnet build GServharp.sln`.
-- [ ] Run `dotnet test GServharp.sln`.
-- [ ] Confirm `git status --short ai_resources` is empty.
-- [ ] Commit with message `Implement combat player gameplay rules`.
+- [x] Locate and re-read all combat/player gameplay handlers and packets.
+- [x] Update `docs/spec/COMBAT_PLAYER_GAMEPLAY_SPEC.md`.
+- [x] Add tests for every confirmed formula, clamp, default, flag, packet, and edge case before implementation.
+- [x] Implement health/hearts, hurt/death, AP, bombs/arrows, hit detection, and spar behavior only where C++ is confirmed.
+- [x] Wire persistence changes only if account save behavior is already confirmed.
+- [x] Keep NPC/script side effects blocked if their source-confirmed dependencies are missing.
+- [x] Run `dotnet build GServharp.sln`.
+- [x] Run `dotnet test GServharp.sln`.
+- [x] Confirm `git status --short ai_resources` is empty.
+- [x] Commit with message `Implement combat player gameplay rules`.
 
 ## Compatibility Constraints
 
