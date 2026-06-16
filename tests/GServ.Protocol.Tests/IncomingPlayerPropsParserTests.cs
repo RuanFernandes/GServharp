@@ -494,6 +494,22 @@ public sealed class IncomingPlayerPropsParserTests
     }
 
     [Fact]
+    public void ParsesConfirmedTerminalAttachNpcWithoutPayloadAsEofObjectTypeAndUnsignedNpcId()
+    {
+        var body = new GraalBinaryWriter();
+        body.WriteGChar((byte)PlayerPropertyId.AttachNpc);
+
+        var result = IncomingPlayerPropsParser.Parse(body.ToArray(), ClientVersionId.Client21);
+
+        Assert.True(result.Success);
+        var update = Assert.Single(result.Updates);
+        Assert.Equal(PlayerPropertyId.AttachNpc, update.PropertyId);
+        Assert.Equal((byte)224, update.GCharValue);
+        Assert.Equal(4_294_438_880u, update.GUIntValue);
+        Assert.Null(update.GIntValue);
+    }
+
+    [Fact]
     public void ParsesConfirmedCarryNpcByReadingGUIntWithoutApplyingOwnershipRules()
     {
         var body = new GraalBinaryWriter();

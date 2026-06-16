@@ -1186,6 +1186,15 @@ decoded value instead of a signed negative fallback:
 PLPROP_CARRYNPC => 4294438880
 ```
 
+Inbound `PLPROP_ATTACHNPC` reads `GUChar object_type` followed by
+`GUInt npcID`. With no payload bytes, recovered `CString` EOF behavior makes
+the object type decode to `224` and the NPC id decode to the same unsigned
+zero-filled scalar value:
+
+```txt
+PLPROP_ATTACHNPC => object_type 224, npcID 4294438880
+```
+
 Modern `sendLevel` no-map visibility tail fixture:
 
 ```txt
