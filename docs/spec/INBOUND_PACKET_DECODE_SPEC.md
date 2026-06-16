@@ -65,6 +65,14 @@ decoded=61 62 63 0A
 ```
 
 ```txt
+inbound-gen4-short-abc-newline
+framePayload=5A 42 B9 E7 49 99 18 A5 0B 43 0A 60 ED 35
+             98 E2 00 C1 00 00 10 38 00 20 00 21 9A 68
+             33 4D 13 3C 5D C9 14 E1 42 42 B5 9D 57 58
+decoded=61 62 63 0A
+```
+
+```txt
 inbound-gen5-short-abc-newline
 framePayload=02 79 7A B2 DC
 decoded=61 62 63 0A
@@ -89,6 +97,8 @@ Implemented:
 - gen1/gen6 passthrough
 - gen2 zlib frame decode
 - gen3 zlib frame decode plus per-packet gen3 decrypt after newline splitting
+- gen4 bzip2 frame decode from the source-confirmed
+  `inbound-gen4-short-abc-newline` fixture
 - gen5 uncompressed frame decode
 - gen5 zlib frame decode
 - gen5 bzip2 frame decode from the source-confirmed
@@ -97,7 +107,6 @@ Implemented:
   the prior encryption limit unchanged, C++ logs
   `Client gave incorrect packet compression type`, and continues without
   decompression; C# returns the decrypted payload plus a warning
-- explicit blocked exception for gen4 bzip2
 - newline splitting into inner packets without the trailing newline
 - `ClientPacketStreamFramer` statefully preserves the confirmed `PLI_RAWDATA`
   next-packet length transition across decoded payload calls
@@ -110,7 +119,6 @@ runtime dispatch.
 
 ## Blockers
 
-- gen4 bzip2 inbound decode
 - inbound `PLI_BUNDLE` expansion in the dev shell remains blocked because this
   C++ snapshot does not assign a handler for `PLI_BUNDLE`
 - production socket buffering, multi-session forwarding, and gameplay handlers

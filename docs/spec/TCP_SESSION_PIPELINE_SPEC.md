@@ -89,9 +89,8 @@ passthrough behavior.
 
 The shell deliberately asks the send-level boundary for the source-confirmed
 "client already has this level modtime" branch. That keeps small diagnostic
-`.nw` payloads in the gen5 zlib range and avoids the still-blocked bzip2 branch.
-It also means a fresh closed-source client may not receive a full board payload
-yet.
+`.nw` payloads in the gen5 zlib range. It also means a fresh closed-source
+client may not receive a full board payload yet.
 
 ## Known Gaps
 
@@ -111,14 +110,13 @@ yet.
   packet were applied.
 - Unsupported post-login packet ids still stop before gameplay/runtime
   dispatch.
-- Inbound gen4 bzip2 frame payloads are explicitly blocked. Inbound gen5
-  bzip2 frame payloads are implemented at the protocol decoder boundary from
-  the source-confirmed fixture.
+- Inbound gen4 and gen5 bzip2 frame payloads are implemented at the protocol
+  decoder boundary from source-confirmed fixtures.
 - Inbound `PLI_BUNDLE` expansion is not wired into the shell because the
   authoritative C++ `Player.cpp` snapshot does not bind `TPLFunc[PLI_BUNDLE]`.
-- Outbound gen4 bzip2 socket framing is still blocked. Outbound gen5 bzip2
-  socket framing is implemented at the protocol queue boundary but is not yet
-  certified through full production level/file transfer flows.
+- Outbound gen4 and gen5 bzip2 socket framing is implemented at the protocol
+  queue boundary but is not yet certified through full production level/file
+  transfer flows.
 - Websocket wrapping is not implemented.
 - Touch/link traversal, reconnect cleanup, and live multi-session forwarding
   are not implemented.
@@ -137,5 +135,5 @@ Current compatibility tests cover:
   packet id
 - assigned-but-unimplemented packet ids returning/logging blocked status
 - confirmed `GraalFileQueue.FlushSocket` queue flush branches for gen1, gen2,
-  gen3, gen5 uncompressed, gen5 zlib, bzip2-blocked preservation, and
-  partial-send buffering
+  gen3, gen4 bzip2, gen5 uncompressed, gen5 zlib, gen5 bzip2, and partial-send
+  buffering

@@ -95,16 +95,13 @@ Implemented C# boundary:
   serializes the stored counter plus one.
 - The dev-only TCP shell accepts decoded `PLI_PLAYERPROPS` frames after the
   login/level boundary and applies the local mutation. It now decodes confirmed
-  gen5 uncompressed/zlib post-login frame payloads before this parser. It still
-  does not decode inbound bzip2 branches or send live multi-session movement
-  broadcasts.
+  gen4 bzip2 and gen5 uncompressed/zlib/bzip2 post-login frame payloads before
+  this parser. It still does not send live multi-session movement broadcasts.
 
 ## Required Recovery Before Implementation
 
 Still blocked:
 
-- inbound gen4/gen5 bzip2 decrypt/decompress for real post-login client frames
-  in the dev shell
 - full `Player::setProps` implementation for all property ids. The runtime
   branch catalog now lives in
   `docs/spec/PLAYER_PROPS_RUNTIME_CATALOG.md`, but most branches remain

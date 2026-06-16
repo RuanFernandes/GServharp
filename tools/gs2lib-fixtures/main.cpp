@@ -236,11 +236,13 @@ int main()
         emitFixture("gen2-long-100a-newline", ENCRYPT_GEN_2, 0, std::string(100, 'a') + "\n");
         emitFixture("gen3-short-abc-newline", ENCRYPT_GEN_3, 0, "abc\n");
         emitFixture("gen3-long-100a-newline", ENCRYPT_GEN_3, 0, std::string(100, 'a') + "\n");
+        emitFixture("gen4-short-abc-newline", ENCRYPT_GEN_4, 0, "abc\n");
         emitFixture("gen5-short-abc-newline", ENCRYPT_GEN_5, 0, "abc\n");
         emitFixture("gen5-threshold-55a-newline", ENCRYPT_GEN_5, 0, std::string(54, 'a') + "\n");
         emitFixture("gen5-zlib-56a-newline", ENCRYPT_GEN_5, 0, std::string(55, 'a') + "\n");
         emitFixture("gen5-bz2-8193a-newline", ENCRYPT_GEN_5, 0, std::string(8192, 'a') + "\n");
         emitInboundFixture("gen2-short-abc-newline", ENCRYPT_GEN_2, 0, "abc\n");
+        emitInboundFixture("gen4-short-abc-newline", ENCRYPT_GEN_4, 0, "abc\n");
         emitInboundFixture("gen5-short-abc-newline", ENCRYPT_GEN_5, 0, "abc\n");
         emitInboundFixture("gen5-zlib-56a-newline", ENCRYPT_GEN_5, 0, std::string(55, 'a') + "\n");
     }

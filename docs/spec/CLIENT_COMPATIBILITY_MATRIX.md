@@ -17,17 +17,17 @@ No row is currently `Certified`.
 | --- | --- | --- | --- |
 | Packet capture comparison harness | Harness Ready | Exact step/flow byte comparison with mismatch offsets | Needs real C++ and C# capture inputs |
 | Login prelude | Partially Implemented | Source-confirmed parser/tests | Needs live closed-client capture against C++ and C# |
-| Encryption negotiation | Partially Implemented | Confirmed primitive coverage through existing protocol tests | Needs full session capture, gen4/bzip2/websocket branches blocked |
+| Encryption negotiation | Partially Implemented | Confirmed primitive coverage through existing protocol tests, including gen4/gen5 bzip2 | Needs full session capture and websocket branch implementation |
 | Rejected login | Partially Implemented | Golden packet tests for known rejection messages | Needs C++ baseline capture with selected client version |
 | Valid login through pre-world auth | Partially Implemented | Boundaries through server-list/auth and `ReadyForWorldEntry` | Real server-list auth and production account validation not wired |
 | `Player::sendLogin` pre-world continuation | Partially Implemented | Signature/unknown168/rejection boundaries | Full account/default loading and all branch captures pending |
 | `Server::playerLoggedIn` / `sendLoginClient` beginning | Partially Implemented | Pre-warp packet order through `ReadyForLevelWarp` | Real world entry/runtime still incomplete |
 | Player property serialization | Partially Implemented | Login prop order/constants and explicit serializer subset | Runtime/default property values and old-client branches pending |
 | Warp/world entry | Partially Implemented | Existing/missing/same-level/unstick packet boundaries | Full level runtime and old `sendLevel141` fixtures pending |
-| Level board/resource transfer | Partially Implemented | `.nw` static loading and selected dynamic packet boundaries | `.graal`/`.zelda`/`.gmap`, bzip2 socket frames, runtime state pending |
+| Level board/resource transfer | Partially Implemented | `.nw` static loading, `.graal`/`.zelda`/`.gmap` parsers, selected dynamic packet boundaries, and bzip2 socket frames | Runtime state and live client captures pending |
 | Movement/player-prop forwarding | Partially Implemented | Confirmed inbound subset and forwarding packet builders | Full `setProps`, NPC/combat side effects, invalid-update behavior pending |
 | Source-confirmed chat/private-message/profile handlers | Blocked | No full certified runtime | Needs C++ trace/captures and production session routing for the recovered C++ handlers only |
-| File wanted/cache/update transfer | Partially Implemented | Confirmed cache/checksum/chunk packet boundaries | Uploads, package lifecycle, bzip2 frames, live client captures pending |
+| File wanted/cache/update transfer | Partially Implemented | Confirmed cache/checksum/chunk packet boundaries and bzip2 socket frames | Uploads, package lifecycle, live client captures pending |
 | Source-confirmed combat handlers | Partially Implemented | Selected packet builders/resource clamps/status transitions | Remaining recovered C++ hit/gameplay simulation and script/NPC side effects pending |
 | Source-confirmed inventory/item/weapon handlers | Partially Implemented | Selected pickup/drop/weapon side effects | Remaining recovered C++ durable inventory/runtime behavior pending |
 | Source-confirmed NPC runtime | Blocked | Inert entity packet boundaries only | Recovered C++ script VM, NPC full props, bytecode, runtime events pending |

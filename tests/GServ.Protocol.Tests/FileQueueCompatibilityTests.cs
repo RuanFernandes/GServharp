@@ -158,6 +158,26 @@ public sealed class FileQueueCompatibilityTests
     }
 
     [Fact]
+    public void Gen4ShortPayloadFlushMatchesGs2libBzip2Fixture()
+    {
+        var queue = new GraalFileQueue();
+        queue.SetCodec(EncryptionGeneration.Gen4, key: 0);
+        queue.AddPacket(Encoding.ASCII.GetBytes("abc\n"));
+
+        Assert.Equal(
+            new byte[]
+            {
+                0x00, 0x2A, 0x5A, 0x42, 0xB9, 0xE7, 0x49, 0x99,
+                0x18, 0xA5, 0x0B, 0x43, 0x0A, 0x60, 0xED, 0x35,
+                0x98, 0xE2, 0x00, 0xC1, 0x00, 0x00, 0x10, 0x38,
+                0x00, 0x20, 0x00, 0x21, 0x9A, 0x68, 0x33, 0x4D,
+                0x13, 0x3C, 0x5D, 0xC9, 0x14, 0xE1, 0x42, 0x42,
+                0xB5, 0x9D, 0x57, 0x58
+            },
+            queue.FlushSocket());
+    }
+
+    [Fact]
     public void Gen2LongPayloadFlushMatchesGs2libZlibFixture()
     {
         var queue = new GraalFileQueue();

@@ -74,13 +74,21 @@ public sealed class InboundPacketDecoderTests
     }
 
     [Fact]
-    public void Gen4InboundBzip2BranchRemainsExplicitlyBlocked()
+    public void Gen4Bzip2FramePayloadDecodesConfirmedFixture()
     {
         var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen4, key: 0);
 
-        var ex = Assert.Throws<NotSupportedException>(() => decoder.DecodeSocketFramePayload([1, 2, 3]));
+        var result = decoder.DecodeSocketFramePayload([
+            0x5A, 0x42, 0xB9, 0xE7, 0x49, 0x99, 0x18, 0xA5,
+            0x0B, 0x43, 0x0A, 0x60, 0xED, 0x35, 0x98, 0xE2,
+            0x00, 0xC1, 0x00, 0x00, 0x10, 0x38, 0x00, 0x20,
+            0x00, 0x21, 0x9A, 0x68, 0x33, 0x4D, 0x13, 0x3C,
+            0x5D, 0xC9, 0x14, 0xE1, 0x42, 0x42, 0xB5, 0x9D,
+            0x57, 0x58
+        ]);
 
-        Assert.Equal("Inbound gen4 bzip2 decrypt/decompress is not implemented yet.", ex.Message);
+        var packet = Assert.Single(result.Packets);
+        Assert.Equal("abc", Encoding.ASCII.GetString(packet));
     }
 
     [Fact]

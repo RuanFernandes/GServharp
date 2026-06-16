@@ -95,7 +95,7 @@ post-login sessions:
 - `PLI_RAWDATA` dispatch side effect (`m_nextIsRaw`/`m_rawPacketSize`) in the
   production dispatcher. The packet framing helper already models the decoded
   raw-data transition, but production session state is not wired yet.
-- Gen4/gen5 bzip2 and websocket branches.
+- Websocket branches.
 - Live movement forwarding, touch tests, level links, NPC events, combat, and
   any other gameplay side effects.
 

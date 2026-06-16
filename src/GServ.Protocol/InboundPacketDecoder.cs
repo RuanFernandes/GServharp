@@ -38,12 +38,19 @@ public sealed class InboundPacketDecoder
             EncryptionGeneration.Gen1 or EncryptionGeneration.Gen6 => framePayload.ToArray(),
             EncryptionGeneration.Gen2 => ZlibDecompress(framePayload),
             EncryptionGeneration.Gen3 => ZlibDecompress(framePayload),
-            EncryptionGeneration.Gen4 => throw new NotSupportedException("Inbound gen4 bzip2 decrypt/decompress is not implemented yet."),
+            EncryptionGeneration.Gen4 => DecodeGen4(framePayload),
             EncryptionGeneration.Gen5 => DecodeGen5(framePayload, warnings),
             _ => throw new NotSupportedException($"Inbound generation {_generation} is not source-confirmed.")
         };
 
         return new InboundFrameDecodeResult(decoded, warnings);
+    }
+
+    private byte[] DecodeGen4(ReadOnlySpan<byte> framePayload)
+    {
+        _codec.LimitFromCompressionType(CompressionType.Bz2);
+        var decrypted = _codec.Decrypt(framePayload);
+        return Bzip2Decompress(decrypted);
     }
 
     private byte[] DecodeGen5(ReadOnlySpan<byte> framePayload, List<string> warnings)

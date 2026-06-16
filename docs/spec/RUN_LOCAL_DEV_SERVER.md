@@ -38,14 +38,15 @@ Expected limitations:
 - writes socket-framed queued bytes through confirmed `CFileQueue.FlushSocket`
   paths
 - uses the source-confirmed "level modtime already current" branch during the
-  diagnostic `.nw` boundary to avoid blocked bzip2 board payloads
+  diagnostic `.nw` boundary; full board/resource transfer is still not certified
+  against live C++ and client captures
 - applies only decoded `PLI_PLAYERPROPS` local state for confirmed safe
   movement/player-property updates
 - stops clearly on source-confirmed parsed props whose runtime side effects are
   not ported yet, such as nickname, carried NPC, status death/revive, or GMAP
   level switching
-- decodes confirmed inbound gen5 uncompressed/zlib post-login frames using the
-  login key
+- decodes confirmed inbound gen4 bzip2 and gen5 uncompressed/zlib/bzip2
+  post-login frames using the login key
 - stops before touch/link traversal, NPCs, scripts, file transfer, combat, and
   live world runtime
 - stops clearly on unsupported post-login frames before gameplay/runtime packet
@@ -53,7 +54,8 @@ Expected limitations:
 
 The protocol project now has source-confirmed socket flush primitives for
 gen1/gen6 passthrough, gen2/gen3 zlib, gen5 uncompressed payloads up to 55
-bytes, and gen5 zlib payloads through `0x2000` bytes.
+bytes, gen5 zlib payloads through `0x2000` bytes, gen5 bzip2 payloads above
+`0x2000` bytes, and gen4 bzip2 payloads.
 
 ## Manual Closed-Client Status
 
@@ -76,6 +78,5 @@ dotnet run --project src/GServ/GServ.csproj -- --dev-only-local --dev-root <root
 ```
 
 A meaningful playable session is still not expected because full board payload
-bzip2 framing, production auth/server-list behavior, inbound bzip2 branches,
-live movement forwarding, NPCs, scripts, file transfer, and live world runtime
-are not implemented.
+certification, production auth/server-list behavior, live movement forwarding,
+NPCs, scripts, file transfer, and live world runtime are not implemented.

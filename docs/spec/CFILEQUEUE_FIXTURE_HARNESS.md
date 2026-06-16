@@ -82,6 +82,18 @@ input: ASCII("a" repeated 100 + "\n")
 output: 00 0D 78 9C 4B 4C A4 3D E0 02 00 A0 36 25 EF
 ```
 
+### Gen4 bzip2, short payload
+
+```txt
+name: gen4-short-abc-newline
+gen: ENCRYPT_GEN_4
+input: ASCII("abc\n") => 61 62 63 0A
+output:
+00 2A 5A 42 B9 E7 49 99 18 A5 0B 43 0A 60 ED 35
+98 E2 00 C1 00 00 10 38 00 20 00 21 9A 68 33 4D
+13 3C 5D C9 14 E1 42 42 B5 9D 57 58
+```
+
 ### Gen5 uncompressed, short payload
 
 ```txt
@@ -145,6 +157,16 @@ decoded: 61 62 63 0A
 ```
 
 ```txt
+name: inbound-gen4-short-abc-newline
+gen: ENCRYPT_GEN_4
+framePayload:
+5A 42 B9 E7 49 99 18 A5 0B 43 0A 60 ED 35
+98 E2 00 C1 00 00 10 38 00 20 00 21 9A 68 33 4D
+13 3C 5D C9 14 E1 42 42 B5 9D 57 58
+decoded: 61 62 63 0A
+```
+
+```txt
 name: inbound-gen5-short-abc-newline
 gen: ENCRYPT_GEN_5
 framePayload: 02 79 7A B2 DC
@@ -175,17 +197,18 @@ Implemented and covered by tests:
 
 - gen2 zlib socket flush
 - gen3 zlib socket flush
+- gen4 bzip2 socket flush
 - gen5 uncompressed socket flush for payloads `<= 55`
 - gen5 zlib socket flush for payloads `56..0x2000`
 - gen5 bzip2 socket flush for payloads `> 0x2000`
 - inbound gen2 zlib frame decode
+- inbound gen4 bzip2 frame decode
 - inbound gen5 uncompressed frame decode
 - inbound gen5 zlib frame decode
 - inbound gen5 bzip2 frame decode
 
 Still blocked:
 
-- gen4 bzip2 + encryption
 - websocket wrapping
 - full dev TCP shell integration for login/level payloads that cross into
   bzip2-sized sends; the current dev shell uses confirmed gen5 zlib framing

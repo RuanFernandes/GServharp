@@ -104,5 +104,6 @@ This document satisfies the deployment-strategy half of:
 Implement TLS/WolfSSL-equivalent behavior or document deployment compatibility strategy.
 ```
 
-It does not implement WebSocket frame wrap/unwrap behavior and does not unblock
-gen4 bzip2 transport branches.
+It does not implement WebSocket frame wrap/unwrap behavior. Gen4 bzip2 transport
+framing is covered separately by the `tools/gs2lib-fixtures` harness and the
+protocol golden tests.

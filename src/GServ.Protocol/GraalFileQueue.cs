@@ -192,8 +192,9 @@ public sealed class GraalFileQueue
                 return;
 
             case EncryptionGeneration.Gen4:
-                throw new NotSupportedException(
-                    $"Socket flush for {_outboundGeneration} is blocked until zlib/bzip2 bytes are confirmed against gs2lib.");
+                AddGen4SocketPayload(_outputBuffer.ToArray());
+                _outputBuffer.Clear();
+                return;
 
             default:
                 throw new NotSupportedException($"Socket flush for {_outboundGeneration} is not confirmed.");
@@ -208,6 +209,18 @@ public sealed class GraalFileQueue
 
         AddBigEndianLength(compressed.Length);
         _socketOutputBuffer.AddRange(compressed);
+    }
+
+    private void AddGen4SocketPayload(byte[] payload)
+    {
+        var compressed = Bzip2Compress(payload);
+        if (compressed.Length > 0xFFFD)
+            return;
+
+        _outboundCodec.LimitFromCompressionType(CompressionType.Bz2);
+        var encrypted = _outboundCodec.Encrypt(compressed);
+        AddBigEndianLength(encrypted.Length);
+        _socketOutputBuffer.AddRange(encrypted);
     }
 
     private void AddGen5UncompressedSocketPayload(byte[] payload)

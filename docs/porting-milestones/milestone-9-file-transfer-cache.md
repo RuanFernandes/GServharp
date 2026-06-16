@@ -20,7 +20,7 @@
 
 - [x] Re-trace `PLI_WANTFILE`, `PLI_RAWDATA` file receive/send, package update behavior, and cache-modtime comparisons.
 - [x] Update `docs/spec/FILE_TRANSFER_CACHE_SPEC.md`.
-- [x] Add fixtures for small, medium, large, compressed, and blocked bzip2 resource transfers.
+- [x] Add fixtures for small, medium, large, compressed, and bzip2-boundary resource transfers.
 - [x] Add tests for queue ordering, raw-data boundaries, file-not-found behavior, and client cache response packets.
 - [x] Implement confirmed file transfer packet builders and session state transitions.
 - [x] Keep upload/write paths blocked until exact C++ security and overwrite behavior is confirmed.

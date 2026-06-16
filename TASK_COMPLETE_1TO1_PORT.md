@@ -140,7 +140,7 @@ Major source-confirmed areas still missing or partial:
   explicit handlers, packet paths, persistence paths, or runtime rules.
 - RC/NC/admin production sockets and mutation commands.
 - Upload/write paths and update-package lifecycle.
-- Websocket/TLS/bzip2 blocked branches.
+- Websocket/TLS blocked branches and full-session compression certification.
 - Closed-source client certification against original C++ byte captures.
 
 ---
@@ -1219,7 +1219,11 @@ Completion criteria:
 - `external/gs2lib/include/CSocket.h`
 - C++ websocket/WolfSSL integration files
 
-- [ ] Implement gen4 bzip2/encryption framing if fixture-confirmed.
+- [x] Implement gen4 bzip2/encryption framing if fixture-confirmed.
+  - 2026-06-16: Added `gen4-short-abc-newline` and
+    `inbound-gen4-short-abc-newline` fixtures to the `gs2lib` harness, then
+    implemented C# outbound gen4 bzip2 socket framing and inbound gen4
+    decrypt/decompress behavior against those exact bytes.
 - [x] Implement gen5 bzip2 payload framing if fixture-confirmed.
   - 2026-06-16: Implemented source-confirmed outbound gen5 bzip2 socket
     framing for payloads over `0x2000` bytes using the recovered
@@ -1229,8 +1233,9 @@ Completion criteria:
 - [x] Implement inbound bzip2 branches if fixture-confirmed.
   - 2026-06-16: Implemented the fixture-confirmed inbound gen5 bzip2 decode
     path using the same source-confirmed `gen5-bz2-8193a-newline` payload
-    captured from `gs2lib`. Gen4 inbound bzip2 remains blocked because this
-    repository has no dedicated gen4 fixture yet.
+    captured from `gs2lib`.
+  - 2026-06-16: Added and implemented the fixture-confirmed inbound gen4 bzip2
+    decode branch using `inbound-gen4-short-abc-newline`.
 - [ ] Implement websocket frame wrap/unwrap behavior.
 - [x] Implement TLS/WolfSSL-equivalent behavior or document deployment
   compatibility strategy.

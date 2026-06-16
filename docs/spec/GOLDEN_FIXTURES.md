@@ -674,7 +674,7 @@ first send max 3 => [0, 5, 2]
 next send => [121, 122, 178, 220]
 ```
 
-Gen5 zlib and gen5 bzip2 outbound payloads are now covered below.
+Gen4 bzip2, gen5 zlib, and gen5 bzip2 outbound payloads are now covered below.
 
 ## CFileQueue zlib Socket Flush
 
@@ -705,6 +705,14 @@ Gen2 and gen3 both use the same zlib-only `CFileQueue::sendCompress` branch.
 
 ```txt
 [0, 14, 4, 96, 132, 154, 154, 92, 211, 49, 130, 88, 70, 28, 19, 90]
+```
+
+`ENCRYPT_GEN_4`, key `0`, queued payload `ASCII("abc\n")`:
+
+```txt
+[0, 42, 90, 66, 185, 231, 73, 153, 24, 165, 11, 67, 10, 96, 237, 53,
+ 152, 226, 0, 193, 0, 0, 16, 56, 0, 32, 0, 33, 154, 104, 51, 77,
+ 19, 60, 93, 201, 20, 225, 66, 66, 181, 157, 87, 88]
 ```
 
 Gen5 bzip2 threshold fixture, implemented in C#:
@@ -1497,8 +1505,9 @@ gen5 socket frame with compression type 0x04 for small/medium responses
 The decrypted/decompressed queue payload is the confirmed login/pre-runtime
 packet sequence. The dev shell currently selects the source-confirmed
 current-modtime `sendLevel` branch, so a tiny `.nw` diagnostic response does not
-include the raw board `PLO_RAWDATA` packet and stays below the blocked bzip2
-threshold.
+include the raw board `PLO_RAWDATA` packet. Full board/resource transfer remains
+uncertified against live C++ and client captures even though bzip2 socket
+framing has isolated fixture coverage.
 
 Unsupported second length-prefixed frame after the login boundary:
 
@@ -1814,6 +1823,15 @@ Inbound decode fixtures from `tools/gs2lib-fixtures`:
 ```txt
 gen2 framePayload:
 [120, 156, 75, 76, 74, 230, 2, 0, 3, 126, 1, 49]
+decoded:
+[97, 98, 99, 10]
+```
+
+```txt
+gen4 framePayload:
+[90, 66, 185, 231, 73, 153, 24, 165, 11, 67, 10, 96, 237, 53,
+ 152, 226, 0, 193, 0, 0, 16, 56, 0, 32, 0, 33, 154, 104,
+ 51, 77, 19, 60, 93, 201, 20, 225, 66, 66, 181, 157, 87, 88]
 decoded:
 [97, 98, 99, 10]
 ```

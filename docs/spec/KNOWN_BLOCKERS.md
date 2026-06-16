@@ -63,15 +63,16 @@
 - `CFileQueue` queue selection, gen1/gen6 socket passthrough, gen2/gen3 zlib
   framing, gen5 uncompressed socket framing for payloads up to 55 bytes, gen5
   zlib framing for payloads through `0x2000` bytes, gen5 bzip2 outbound
-  framing for payloads over `0x2000` bytes, and inbound gen5 bzip2 decode are
-  implemented. Gen4 bzip2/encryption framing and websocket wrapping remain
+  framing for payloads over `0x2000` bytes, gen4 bzip2/encryption framing, and
+  inbound gen4/gen5 bzip2 decode are implemented. Websocket wrapping remains
   blocked.
 - A dev-only TCP/session shell exists for length-prefixed TCP input and a
   filesystem-backed `.nw` `sendLevel` boundary. It is not production-compatible:
   it uses explicit fake auth, stops on unsupported post-login frames before
   gameplay/runtime dispatch, and selects the current-modtime level branch so
-  small/medium responses can use confirmed gen5 zlib `FlushSocket` framing
-  without entering blocked bzip2 board payload output.
+  small/medium responses can use confirmed gen5 zlib `FlushSocket` framing.
+  Full board/resource transfer through bzip2 socket frames is not yet certified
+  against live C++ and client captures.
 - First isolated warp packet builders are implemented. The C# port now has a
   source-confirmed `warp`/`setLevel` pre-runtime boundary for same-level X/Y
   updates, missing levels, previous-level fallback, unstick fallback,
@@ -136,13 +137,13 @@
   for the confirmed X/Y/Z, X2/Y2/Z2, sprite, current-level, and gani subset.
   Safe local runtime mutation, a packet builder for confirmed movement
   `PLO_OTHERPLPROPS` forwarding bytes, and a live session sink forwarder for
-  that confirmed subset exist. Confirmed inbound gen1/gen2/gen3 and gen5
-  uncompressed/zlib frame decode exists, gen5 invalid compression
+  that confirmed subset exist. Confirmed inbound gen1/gen2/gen3, gen4 bzip2,
+  and gen5 uncompressed/zlib/bzip2 frame decode exists, gen5 invalid compression
   type now follows the C++ log-and-continue decrypted-payload behavior, and the
   dev-only TCP shell preserves source-confirmed `PLI_RAWDATA` state for decoded
-  gen1/gen2/gen5/gen6 post-login payloads. Inbound bzip2 branches, inbound
-  bundle dispatch, full `setProps`, NPC/combat side effects, and invalid-update
-  behavior remain blocked. Pure inclusive link hit-testing, client-triggered
+  gen1/gen2/gen4/gen5/gen6 post-login payloads. Inbound bundle dispatch, full
+  `setProps`, NPC/combat side effects, and invalid-update behavior remain
+  blocked. Pure inclusive link hit-testing, client-triggered
   `PLI_LEVELWARP`/`PLI_LEVELWARPMOD` parsing, static sign encoding, chest key
   formatting, runtime `PLO_SAY2` sign-touch packet construction, and the
   unopened chest acknowledgement packet are implemented; automatic player

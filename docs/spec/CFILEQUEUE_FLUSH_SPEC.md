@@ -111,11 +111,11 @@ paths:
 - gen5 bzip2 compression type byte `0x06`
 - gen5 big-endian socket length prefix equal to `encryptedLength + 1`
 - gen5 iterator-XOR encryption using the recovered `CEncryption` behavior
+- source-confirmed gen4 bzip2 socket framing
 - source-confirmed gen5 bzip2 payload framing for payloads over `0x2000`
 
-Production gen4 bzip2 flush behavior remains blocked. Gen5 uncompressed, zlib,
-and bzip2 socket bytes are now covered by the isolated
-`tools/gs2lib-fixtures` harness and C# golden tests.
+Gen4 bzip2 and gen5 uncompressed, zlib, and bzip2 socket bytes are now covered
+by the isolated `tools/gs2lib-fixtures` harness and C# golden tests.
 
 ## Current Pass Status
 
@@ -133,11 +133,11 @@ require unproven compression output:
 - gen5 payloads over `0x2000` bytes use bzip2, compression type `0x06`, bzip2
   block size `1`, gen5 iterator-XOR encryption with bzip2 limit `0x04`, and
   the same length framing.
+- gen4 payloads always use bzip2, bzip2 block size `1`, gen4 iterator-XOR
+  encryption with bzip2 limit `0x04`, and a big-endian socket length prefix
+  equal to the encrypted payload length with no compression-type byte.
 - partial socket writes leave remaining framed bytes buffered for the next
   flush, matching the `oBuffer` / `sendData` retry model in `CFileQueue`.
-- unsupported gen4 bzip2 still throws before consuming the pending diagnostic
-  queue bytes, so future compression implementation can resume from the same
-  payload.
 
 The C# boundary still queues normal newline packets, `PLO_RAWDATA` headers,
 pre-serialized board/layer payload bytes, dynamic level packets, and first
@@ -149,7 +149,6 @@ sent through gen5 socket framing; web sessions use gen1 passthrough.
 
 Still blocked:
 
-- gen4 bzip2 + encryption socket-level flush bytes
 - websocket wrapping
 - production file transfer through `PLO_FILE`
 - level resource transfer beyond pre-serialized board/layer and runtime payloads
