@@ -9,7 +9,7 @@
   gameplay because those belong to later milestones. The C++ production
   listener/session lifecycle is documented in
   `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md`, and the C# port has an
-  accept-one `ProductionTcpServer` skeleton plus `ProductionSocketReceiveBuffer`
+  accept-one `ClientTcpServer` skeleton plus `SocketReceiveBuffer`
   for confirmed TCP chunk buffering and raw two-byte length-prefixed frame
   extraction. It also has decoded post-login dispatcher/frame-handler
   boundaries for the confirmed `PLI_PLAYERPROPS` subset plus C++ `msgPLI_NULL`
@@ -19,9 +19,9 @@
 - Production auth now has source-confirmed list-server packet body builders for
   registration, HQ settings, allowed-version text, and `SVO_VERIACC2`, plus a
   gateway boundary that queues auth requests without fake validation. A
-  source-confirmed `ProductionServerListLifecycle` now sequences
+  source-confirmed `ServerListLifecycle` now sequences
   connect/register packets, local-IP selection, and gen1-to-gen2 codec
-  transition timing behind `IProductionServerListSocket`. The production auth
+  transition timing behind `IServerListSocket`. The production auth
   response boundary now parses `SVI_VERIACC2` and applies success/rejection to
   pending sessions without fake validation. Real remote list-server TCP sockets,
   live zlib-framed response receive loop, reconnect host wiring, and player
@@ -52,7 +52,7 @@
   gen5 zlib framing for payloads through `0x2000` bytes are implemented.
   Gen4 bzip2/encryption framing, gen5 bzip2 payload framing, and websocket
   wrapping remain blocked.
-- A dev-only TCP/session shell exists for diagnostic login -> filesystem `.nw`
+- A local-debug TCP/session shell exists for diagnostic login -> filesystem `.nw`
   -> `sendLevel` boundary. It is not production-compatible and must remain
   opt-in because it uses fake local auth, stops on unsupported post-login frames
   before gameplay/runtime dispatch, and selects the current-modtime level branch
@@ -127,7 +127,7 @@
   that confirmed subset exist. Confirmed inbound gen1/gen2/gen3 and gen5
   uncompressed/zlib frame decode exists, gen5 invalid compression
   type now follows the C++ log-and-continue decrypted-payload behavior, and the
-  dev-only TCP shell can preserve source-confirmed `PLI_RAWDATA` length state
+  local-debug TCP shell can preserve source-confirmed `PLI_RAWDATA` length state
   for decoded gen1/gen2/gen5/gen6 post-login payloads. Inbound bzip2 branches,
   inbound bundle dispatch, full `setProps`, touch/link traversal,
   NPC/chest/combat side effects, and invalid-update behavior remain blocked.

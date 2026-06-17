@@ -70,8 +70,8 @@ Implemented C# packet body builders:
 - `AllowedVersionsText`
 - `SetPlayers`
 
-The C# port now has `ProductionServerListLifecycle` behind
-`IProductionServerListSocket`, which preserves this source-confirmed ordering
+The C# port now has `ServerListLifecycle` behind
+`IServerListSocket`, which preserves this source-confirmed ordering
 and local-IP behavior without implementing the concrete remote TCP client yet.
 
 ## Server-List Auth Response
@@ -94,16 +94,16 @@ If `message == "SUCCESS"`, C++ calls `Player::sendLogin`. The C# implementation 
 
 ## Production C# Auth Boundary
 
-`ProductionAuthServerListBoundary` models the production shape without inventing
+`ServerListAuthBoundary` models the production shape without inventing
 account validation:
 
 - Runs the source-confirmed pre-world checks through `PreWorldAuthBoundary`.
-- Reads list-server connectivity from `IProductionServerListGateway`.
+- Reads list-server connectivity from `IServerListGateway`.
 - Queues `SVO_VERIACC2` through `SendLoginPacketForPlayer` only when the
   pre-world checks accept the login.
 - Does not inject a fake success response.
 
-`ProductionServerListAuthResponseHandler` models the source-confirmed
+`ServerListAuthResponseHandler` models the source-confirmed
 `SVI_VERIACC2` response boundary:
 
 - Parses the payload after the list-server packet id with
@@ -120,8 +120,8 @@ account validation:
 - Does nothing when no matching pending session exists; no fake account
   validation or fallback success is created.
 
-The dev-only TCP shell still performs an explicit fake server-list success, but
-that remains isolated behind `EnableDevOnlyAuth=true` and is not production
+The local-debug TCP shell still performs an explicit fake server-list success, but
+that remains isolated behind `EnableLocalDebugAuth=true` and is not production
 behavior.
 
 ## `Player::sendLogin` Pre-World Checks
@@ -135,7 +135,7 @@ behavior.
 - Same non-guest account already in use by the same client family and active within 30 seconds: `"Account is already in use."`.
 
 The implemented success-boundary path now has a production account-login wrapper:
-`ProductionAccountLoginBoundary` loads the server-list-approved account through
+`AccountLoginBoundary` loads the server-list-approved account through
 `AccountLoadService`, saves/adds a default-created account when C++ would do so,
 maps `BANNED`, `BANREASON`, `LOCALRIGHTS`, staff-list membership, and `IPRANGE`
 wildcards into `PlayerSendLoginAccount`, then runs

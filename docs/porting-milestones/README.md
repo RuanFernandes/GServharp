@@ -22,7 +22,7 @@ Rules for every milestone:
 
 ## Sequence
 
-1. `milestone-1-production-settings-startup.md`: replace dev-only startup assumptions with source-confirmed production settings/startup scaffolding.
+1. `milestone-1-production-settings-startup.md`: replace local-debug startup assumptions with source-confirmed production settings/startup scaffolding.
 2. `milestone-2-inbound-protocol-completion.md`: complete confirmed inbound packet/framing gaps before gameplay dispatch.
 3. `milestone-3-production-auth-serverlist.md`: replace fake auth boundary with source-confirmed list-server/auth protocol behavior.
 4. `milestone-4-account-persistence.md`: port account/default-account/guest persistence semantics.

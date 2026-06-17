@@ -1,6 +1,6 @@
 # Local Dev Auth Warning
 
-The local development shell uses an explicit `DevOnly` authentication shortcut.
+The local development shell uses an explicit `LocalDebug` authentication shortcut.
 It is not original C++ server-list behavior and must never be treated as
 production-compatible authentication.
 
@@ -12,7 +12,7 @@ Authoritative production sources:
 
 Production C++ sends credentials to the list server with `SVO_VERIACC2` and
 continues only after receiving `SVI_VERIACC2 SUCCESS`. The dev shell instead
-requires `--dev-only-local` / `EnableDevOnlyAuth=true` and locally injects a
+requires `--local-debug` / `EnableLocalDebugAuth=true` and locally injects a
 `SUCCESS` response so confirmed post-auth boundaries can be exercised.
 
 This shortcut exists only to test already-confirmed packet/session/level

@@ -53,7 +53,7 @@ Current production-compatible deployment mode:
 
 - Expose the C# server directly as raw TCP for classic/native clients.
 - Use the confirmed Graal socket frame protocol implemented in
-  `ProductionTcpServer`, `ProductionSocketReceiveBuffer`,
+  `ClientTcpServer`, `SocketReceiveBuffer`,
   `InboundPacketDecoder`, and `GraalFileQueue`.
 - Keep WebSocket/TLS disabled by default.
 

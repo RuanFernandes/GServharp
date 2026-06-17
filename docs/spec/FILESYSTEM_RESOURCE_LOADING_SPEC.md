@@ -135,7 +135,7 @@ semantics:
 - `.nw` static payload parsing
 - `.graal`/`.zelda` detection as unsupported rather than guessed
 
-The dev-only local diagnostic shell now builds its level index through
+The local-debug local diagnostic shell now builds its level index through
 `ServerResourceFileSystems.LoadAllFolders(...)`, matching the C++ no-folder-config
 directory setup more closely while still remaining an explicitly fake-auth
 diagnostic shell.

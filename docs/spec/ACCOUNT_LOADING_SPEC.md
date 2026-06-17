@@ -143,11 +143,11 @@ Confirmed resolver behavior:
   source-confirmed request to save the newly created account and add
   `accounts/<pAccount>.txt` to the account filesystem.
 - Real disk writes are represented by `AccountSaveService` and tested behind
-  `IAccountPersistenceFileSystem`. `ProductionAccountLoginBoundary` now invokes
+  `IAccountPersistenceFileSystem`. `AccountLoginBoundary` now invokes
   the source-confirmed default-account save/add-file side effect before running
   the pre-world `Player::sendLogin` continuation checks.
 - For `guest`, force `IsLoadOnly = true` and mark guest identity generation as
-  required. `ProductionAccountLoginBoundary` may complete guest login only when
+  required. `AccountLoginBoundary` may complete guest login only when
   an explicit `IGuestIdentitySelector` is provided; otherwise it remains blocked
   rather than inventing a fake identity.
 

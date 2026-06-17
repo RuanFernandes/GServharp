@@ -8,7 +8,7 @@ namespace GServ.Network.Tests;
 public sealed class PlayerSendLoginContinuationTests
 {
     [Fact]
-    public void ProductionAccountLoginLoadsAccountSnapshotAndRunsContinuationChecks()
+    public void AccountLoginLoadsAccountSnapshotAndRunsContinuationChecks()
     {
         var session = AuthenticatedClient3Session();
         var filesystem = new MemoryAccountFileSystem(@"C:\gserver\");
@@ -23,11 +23,11 @@ public sealed class PlayerSendLoginContinuationTests
                 "LOCALRIGHTS 16384",
                 "IPRANGE 127.0.0.*"));
 
-        var result = ProductionAccountLoginBoundary.Begin(
+        var result = AccountLoginBoundary.Begin(
             session,
             filesystem,
             AccountLoadSettings.Empty,
-            new ProductionAccountLoginOptions(
+            new AccountLoginOptions(
                 OnlyStaff: false,
                 ServerName: "Graal Reborn",
                 ActiveSessions: [],
@@ -46,7 +46,7 @@ public sealed class PlayerSendLoginContinuationTests
     }
 
     [Fact]
-    public void ProductionAccountLoginSavesDefaultCreatedAccountBeforeContinuation()
+    public void AccountLoginSavesDefaultCreatedAccountBeforeContinuation()
     {
         var session = AuthenticatedClient3Session();
         var filesystem = new MemoryAccountFileSystem(@"C:\gserver\");
@@ -58,11 +58,11 @@ public sealed class PlayerSendLoginContinuationTests
             ["startlevel"] = "onlinestartlocal.nw"
         });
 
-        var result = ProductionAccountLoginBoundary.Begin(
+        var result = AccountLoginBoundary.Begin(
             session,
             filesystem,
             settings,
-            new ProductionAccountLoginOptions(
+            new AccountLoginOptions(
                 OnlyStaff: false,
                 ServerName: "Graal Reborn",
                 ActiveSessions: [],
@@ -78,7 +78,7 @@ public sealed class PlayerSendLoginContinuationTests
     }
 
     [Fact]
-    public void ProductionAccountLoginKeepsGuestIdentityGenerationBlocked()
+    public void AccountLoginKeepsGuestIdentityGenerationBlocked()
     {
         var session = AuthenticatedClient3Session("guest");
         session.ReceiveServerListAuthResponse(
@@ -89,11 +89,11 @@ public sealed class PlayerSendLoginContinuationTests
             "guest.txt",
             "GRACC001\nLOADONLY 0");
 
-        var result = ProductionAccountLoginBoundary.Begin(
+        var result = AccountLoginBoundary.Begin(
             session,
             filesystem,
             AccountLoadSettings.Empty,
-            new ProductionAccountLoginOptions(
+            new AccountLoginOptions(
                 OnlyStaff: false,
                 ServerName: "Graal Reborn",
                 ActiveSessions: [],
@@ -107,7 +107,7 @@ public sealed class PlayerSendLoginContinuationTests
     }
 
     [Fact]
-    public void ProductionAccountLoginUsesConfirmedGuestIdentitySelectionWhenGeneratorIsProvided()
+    public void AccountLoginUsesConfirmedGuestIdentitySelectionWhenGeneratorIsProvided()
     {
         var session = AuthenticatedClient3Session("guest");
         session.ReceiveServerListAuthResponse(
@@ -118,11 +118,11 @@ public sealed class PlayerSendLoginContinuationTests
             "guest.txt",
             "GRACC001\nLOADONLY 0\nIPRANGE 0.0.0.0");
 
-        var result = ProductionAccountLoginBoundary.Begin(
+        var result = AccountLoginBoundary.Begin(
             session,
             filesystem,
             AccountLoadSettings.Empty,
-            new ProductionAccountLoginOptions(
+            new AccountLoginOptions(
                 OnlyStaff: false,
                 ServerName: "Graal Reborn",
                 ActiveSessions:
@@ -154,7 +154,7 @@ public sealed class PlayerSendLoginContinuationTests
             AdminIp = "10.0.0.?,127.0.0.*"
         };
 
-        var snapshot = ProductionAccountLoginBoundary.ToPlayerSendLoginAccount(
+        var snapshot = AccountLoginBoundary.ToPlayerSendLoginAccount(
             account,
             staffAccounts: [" pc:ruan "],
             remoteIp: "127.0.0.44",

@@ -1545,12 +1545,12 @@ GCHAR 2 "pw"
 "win"
 ```
 
-With `EnableDevOnlyAuth=true` and a filesystem-loaded `start.nw`, the diagnostic
+With `EnableLocalDebugAuth=true` and a filesystem-loaded `start.nw`, the diagnostic
 pipeline reaches:
 
 ```txt
 SessionLifecycle.DynamicLevelPayloadSent
-DevOnlyLocalStopPoint.BeforeRuntimeWorldSimulation
+LocalDebugStopPoint.BeforeRuntimeWorldSimulation
 ```
 
 The outbound byte stream includes:
@@ -1572,7 +1572,7 @@ Unsupported second length-prefixed frame after the login boundary:
 input: first Client3 login frame, then a second frame [0x20, 0x0A]
 result: Accepted=true
 log contains:
-"Unsupported post-login frame received by dev-only shell; continuous loop stopped before gameplay/runtime packet handling."
+"Unsupported post-login frame received by local-debug shell; continuous loop stopped before gameplay/runtime packet handling."
 ```
 
 Decoded post-login `PLI_PLAYERPROPS` movement frame:
@@ -1586,7 +1586,7 @@ PLPROP_Y GCHAR(71)
 bytes:
 [34, 47, 102, 48, 103]
 
-dev-only applied state:
+local-debug applied state:
 x=560
 y=568
 ```
@@ -1893,7 +1893,7 @@ GSHORT(7)
 COMPRESS_UNCOMPRESSED
 encrypted payload
 
-dev-only result:
+local-debug result:
 log contains "Decoded inbound gen5 frame into 1 packet(s)."
 log contains "Applied decoded PLI_PLAYERPROPS"
 ```

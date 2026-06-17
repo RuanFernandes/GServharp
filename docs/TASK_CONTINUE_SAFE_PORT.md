@@ -17,9 +17,9 @@ If something is unclear, document it as unknown and continue with the next safe 
 
 Current status:
 
-* Dev-only local TCP shell exists behind explicit `--dev-only-local`.
+* Local debug TCP shell exists behind explicit `--local-debug`.
 * Shell integrates source-confirmed outbound `GraalFileQueue.FlushSocket`.
-* Login -> dev auth -> account/level -> sendLevel boundary works in dev-only path.
+* Login -> dev auth -> account/level -> sendLevel boundary works in local-debug path.
 * Continuous TCP loop exists.
 * Parser for already-decoded `PLI_PLAYERPROPS` exists.
 * RuntimePlayer mutation exists for confirmed movement props.
@@ -117,9 +117,9 @@ Not allowed:
 
 ---
 
-# Milestone 4: Integrate inbound decoder into dev-only TCP shell
+# Milestone 4: Integrate inbound decoder into local-debug TCP shell
 
-If the inbound decoder is confirmed, connect it to the dev-only shell.
+If the inbound decoder is confirmed, connect it to the local-debug shell.
 
 Focus on:
 

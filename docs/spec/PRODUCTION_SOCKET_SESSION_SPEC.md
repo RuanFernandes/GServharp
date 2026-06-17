@@ -321,7 +321,7 @@ protocol fixture helpers.
 
 Recommended production shape:
 
-- Keep `DevOnlyLocalTcpServer` explicitly dev-only.
+- Keep `LocalDebugTcpServer` explicitly local-debug.
 - Add a production listener with a C++-named/session-oriented boundary, but use
   idiomatic .NET internals.
 - Preserve one logical `Player` session object per accepted socket.
@@ -336,23 +336,23 @@ Recommended production shape:
 - Preserve receive-before-send ordering.
 - Preserve deferred deletion semantics: a disconnect marks a session for
   cleanup, and cleanup unregisters/removes it later.
-- Do not wire fake auth into production; dev-only auth must stay behind explicit
-  dev-only options.
+- Do not wire fake auth into production; local-debug auth must stay behind explicit
+  local-debug options.
 
 ## Implemented C# Production Foundation
 
-`ProductionTcpServer` implements the current source-confirmed listener skeleton:
+`ClientTcpServer` implements the current source-confirmed listener skeleton:
 
 - binds a `TcpListener` to a configured address/port
 - accepts a TCP client
 - disables Nagle on the accepted `TcpClient`, matching C++ `TCP_NODELAY`
 - assigns the first dynamic player id as `2`, matching `PLAYERID_INIT`
-- creates one logical `ProductionSocketSessionContext` per accepted socket
+- creates one logical `ClientSocketSessionContext` per accepted socket
 - reads arbitrary chunks up to `0x8000` bytes, matching C++ `CSocket::getData`
   buffer size
-- feeds chunks through `ProductionSocketReceiveBuffer`
+- feeds chunks through `SocketReceiveBuffer`
 - dispatches complete frame payloads, without the two-byte socket header, to
-  `IProductionSocketFrameHandler`
+  `IClientSocketFrameHandler`
 - writes handler-provided outbound bytes to the socket
 - returns `ClientDisconnected` when the client closes the socket
 - returns `HandlerStopped` when the handler asks to stop the session
@@ -361,7 +361,7 @@ This is not the full production socket manager yet. It is a safe skeleton for
 confirmed accept/framing/lifecycle behavior and intentionally keeps packet
 decode/auth/gameplay behind explicit handler boundaries.
 
-`ProductionSocketReceiveBuffer` implements the source-confirmed frame buffering
+`SocketReceiveBuffer` implements the source-confirmed frame buffering
 part of `Player::doMain`:
 
 - arbitrary received byte chunks can be appended
@@ -377,7 +377,7 @@ decompress, split newline packets, apply `PLI_RAWDATA`, or dispatch packet ids.
 Those behaviors remain in `InboundPacketDecoder`,
 `ClientPacketStreamFramer`, and later production session-dispatch work.
 
-`ProductionPostLoginPacketDispatcher` implements the first decoded post-login
+`PostLoginPacketDispatcher` implements the first decoded post-login
 dispatch boundary:
 
 - accepts already-decoded inner packet bytes
@@ -390,8 +390,8 @@ dispatch boundary:
 
 It is not wired into a production auth/session loop yet.
 
-`ProductionPostLoginFrameHandler` adapts that dispatcher to
-`IProductionSocketFrameHandler` for already-authenticated post-login sessions.
+`PostLoginFrameHandler` adapts that dispatcher to
+`IClientSocketFrameHandler` for already-authenticated post-login sessions.
 It decodes a socket frame, preserves the existing `PLI_RAWDATA` stream-framing
 state through `ClientPacketStreamFramer`, logs dispatch statuses, continues for
 handled packets, blocks assigned-but-unimplemented packet ids, and returns the
@@ -404,12 +404,12 @@ five invalid packets.
   boundary for confirmed framing/lifecycle tests.
 - No production multi-session socket manager equivalent exists yet.
 - The production receive buffer is wired into the listener skeleton.
-- Dev-only TCP currently reads exactly one full frame at a time from
+- Local debug TCP currently reads exactly one full frame at a time from
   `NetworkStream`; C++ buffers arbitrary chunks and may receive partial headers,
   partial payloads, or multiple frames at once.
 - Production unsupported packet handling now has a reusable
-  `ProductionPostLoginPacketDispatcher` and
-  `ProductionPostLoginFrameHandler` model for `msgPLI_NULL` invalid-packet
+  `PostLoginPacketDispatcher` and
+  `PostLoginFrameHandler` model for `msgPLI_NULL` invalid-packet
   counting/disconnect, but it is not wired into a production auth/session loop
   yet.
 - Production deferred deletion and cleanup are not wired.

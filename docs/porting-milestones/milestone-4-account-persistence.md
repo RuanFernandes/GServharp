@@ -44,7 +44,7 @@
 
 - `AccountFileSerializer` and `AccountSaveService` now cover the
   source-confirmed account save text format and filesystem side effects.
-- `ProductionAccountLoginBoundary` now loads account files through
+- `AccountLoginBoundary` now loads account files through
   `AccountLoadService`, maps source-confirmed account fields into
   `PlayerSendLoginAccount`, invokes the existing `Player::sendLogin`
   continuation boundary, and applies the source-confirmed default-account

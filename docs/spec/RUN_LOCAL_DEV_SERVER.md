@@ -3,13 +3,13 @@
 ## Current Status
 
 A minimal diagnostic local development server shell now exists. It is
-explicitly dev-only and is not production-compatible.
+explicitly local-debug and is not production-compatible.
 
 The current C# codebase has protocol/session/account/level-boundary components,
 and now has read-only filesystem-backed `.nw` loading into the static
 `sendLevel` boundary. The shell can accept a TCP client, read length-prefixed
 frames in sequence, run the confirmed login/account/world-entry boundaries with
-dev-only auth, load a `.nw` file, send confirmed pre-runtime level packets
+local-debug auth, load a `.nw` file, send confirmed pre-runtime level packets
 through `CFileQueue.FlushSocket`, decode confirmed post-login inbound
 uncompressed/zlib frames, accept `PLI_PLAYERPROPS` for the confirmed
 movement/property subset, report parsed-but-unported player-prop side effects
@@ -20,21 +20,21 @@ with explicit `PLPROP_*` logs, and stop before runtime world simulation.
 Prepare a root folder with `world/start.nw`, then run:
 
 ```bash
-dotnet run --project src/Server/Server.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
+dotnet run --project src/Server/Server.csproj -- --local-debug --dev-root <root> --dev-level start.nw --port 14900
 ```
 
-The shell logs a warning on startup. Without `--dev-only-local`, it does not
+The shell logs a warning on startup. Without `--local-debug`, it does not
 enable the fake auth path.
 
 Production auth code now has source-confirmed `SVO_VERIACC2` request and
 `SVI_VERIACC2` response boundaries, but this diagnostic command still does not
 connect to a real list server. The fake success used here is only reachable
-through `--dev-only-local` / `EnableDevOnlyAuth=true`.
+through `--local-debug` / `EnableLocalDebugAuth=true`.
 
 Expected limitations:
 
 - accepts one client at a time
-- uses dev-only local auth, not the production list server
+- uses local-debug local auth, not the production list server
 - writes socket-framed queued bytes through confirmed `CFileQueue.FlushSocket`
   paths
 - sends the diagnostic `.nw` level's full static board payload through
@@ -72,7 +72,7 @@ GLEVNW01
 Run:
 
 ```bash
-dotnet run --project src/Server/Server.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
+dotnet run --project src/Server/Server.csproj -- --local-debug --dev-root <root> --dev-level start.nw --port 14900
 ```
 
 A meaningful playable session is still not expected because production

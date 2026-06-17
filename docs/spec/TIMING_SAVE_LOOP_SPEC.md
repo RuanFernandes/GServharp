@@ -83,7 +83,7 @@ When the one-second gate opens, the C++ order is:
    - if `V8NPCSERVER`, `saveNpcs()`
    - prune empty instanced group levels
 
-The C# `ProductionTimingScheduler` preserves this order as source-confirmed action values.
+The C# `ServerTimingScheduler` preserves this order as source-confirmed action values.
 
 ## New World Time
 
@@ -217,10 +217,10 @@ remains blocked until a dedicated websocket compatibility pass.
 
 ## C# Mapping
 
-- `ProductionTimingScheduler`
+- `ServerTimingScheduler`
   - source-confirmed server loop and `doTimedEvents()` periodic job order
-- `ProductionHostLoop`
-  - now calls `IProductionHostRuntime.Initialize()` before entering its loop and
+- `ServerHostLoop`
+  - now calls `IServerHostRuntime.Initialize()` before entering its loop and
     applies shutdown cleanup when initialization fails or the loop exits.
 - `PlayerTimedEventState`
   - source-confirmed early `Player::doTimedEvents()` timing gates and save/reset/file-queue actions
@@ -228,7 +228,7 @@ remains blocked until a dedicated websocket compatibility pass.
   - source-confirmed list-server exponential reconnect backoff
 - `NewWorldTimeClock`
   - source-confirmed epoch and five-second divisor
-- `ProductionTimingPackets.BuildNewWorldTime`
+- `ServerTimingPackets.BuildNewWorldTime`
   - source-confirmed `PLO_NEWWORLDTIME + GINT4` packet construction
 
 ## Open Questions / Blockers

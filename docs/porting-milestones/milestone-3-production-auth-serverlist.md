@@ -44,8 +44,8 @@
 
 ## Completion Notes
 
-- Fake server-list success remains only in the dev-only TCP shell and is still
-  gated by `EnableDevOnlyAuth=true`.
+- Fake server-list success remains only in the local-debug TCP shell and is still
+  gated by `EnableLocalDebugAuth=true`.
 - Real account/password authority is still external to the game server and is
   represented by the production gateway interface.
 - Real list-server socket lifecycle is intentionally left for a later milestone.

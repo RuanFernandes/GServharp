@@ -155,7 +155,7 @@ ServerList::sendLoginPacketForPlayer(player, password, identity)
 
 That sends `SVO_VERIACC2` through the server-list queue. The C# production auth
 boundary queues the confirmed packet body through
-`IProductionServerListGateway`.
+`IServerListGateway`.
 
 `msgSVI_VERIACC2` parses:
 
@@ -171,7 +171,7 @@ It overwrites the player's account name. Non-`SUCCESS` messages are forwarded
 as `PLO_DISCMESSAGE`, set load-only, and disconnect. `SUCCESS` calls
 `Player::sendLogin()`.
 
-The C# `ProductionServerListAuthResponseHandler` now parses this response
+The C# `ServerListAuthResponseHandler` now parses this response
 payload and applies it to the pending `ClientSessionSkeleton` found by id/type.
 It queues the confirmed disconnect message for rejection, and marks success as
 `ServerListAuthAcceptedPreWorld` so the account/login continuation can proceed
@@ -182,8 +182,8 @@ still blocked.
 
 Implemented:
 
-- `ProductionServerListLifecycle`
-  - depends on `IProductionServerListSocket`
+- `ServerListLifecycle`
+  - depends on `IServerListSocket`
   - initializes/connects/registers the socket boundary
   - clears outgoing buffers on successful connect
   - switches codec gen1 -> gen2 in the source-confirmed order
@@ -195,11 +195,11 @@ Implemented:
   - models the confirmed exponential reconnect backoff and jitter window
 - `ServerListAuthPackets`
   - builds confirmed server-list packet bodies
-- `ProductionServerListAuthResponseHandler`
+- `ServerListAuthResponseHandler`
   - parses confirmed `SVI_VERIACC2` payloads
   - resolves the pending player session by id/type
   - applies the C++ success/rejection boundary without inventing auth
-- `ProductionServerListTcpSocket`
+- `ServerListTcpSocket`
   - connects to a concrete TCP endpoint
   - writes server-list packet bodies through the confirmed `GraalFileQueue`
     socket framing/compression path
@@ -211,7 +211,7 @@ Not implemented:
 - real `CSocketManager`-style readiness polling for the list-server socket
 - zlib frame receive loop for live list-server responses
 - `SVO_PLYRADD` replay from live production player repositories inside
-  `ProductionServerListLifecycle`
+  `ServerListLifecycle`
 - full handling for `SVI_*` packets beyond auth response parsing and ping
   packet body construction
 - production startup now attempts registration with the configured remote list
@@ -229,6 +229,6 @@ Current tests cover:
 - packet body builders for registration, HQ pass/level, new-server,
   allowed-versions text, request-list text, ping, and verify-account
 - auth response success, rejection, and missing-session branches through
-  `ProductionServerListAuthResponseHandler`
+  `ServerListAuthResponseHandler`
 - concrete TCP socket output for gen1 registration and gen2 list-server frames
 - production startup mapping into list-server registration options

@@ -9,7 +9,7 @@
   fixture-confirmed. Real list-server integration still needs the production
   connection lifecycle and auth service boundary.
 - The production auth boundary can now queue `SVO_VERIACC2` through an
-  `IProductionServerListGateway`, and the response handler can consume
+  `IServerListGateway`, and the response handler can consume
   `SVI_VERIACC2` success/rejection responses for pending sessions. The actual
   zlib-framed live list-server receive loop is still not ported.
 - `ServerList::connectServer` registration packet bodies, local IP discovery,

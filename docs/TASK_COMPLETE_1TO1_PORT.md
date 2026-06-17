@@ -150,7 +150,7 @@ Major source-confirmed areas still missing or partial:
 
 ## Phase 1: Production Socket And Session Dispatch
 
-**Goal:** Replace dev-only post-login limitations with source-confirmed
+**Goal:** Replace local-debug post-login limitations with source-confirmed
 production socket/session dispatch where safe.
 
 **Source files to trace first:**
@@ -168,23 +168,23 @@ production socket/session dispatch where safe.
   `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md`.
 - [x] Implement a production TCP listener skeleton only for confirmed framing
   and lifecycle behavior.
-  - 2026-06-16: Added `ProductionSocketReceiveBuffer` for source-confirmed
+  - 2026-06-16: Added `SocketReceiveBuffer` for source-confirmed
     arbitrary TCP chunk buffering and raw two-byte big-endian frame extraction.
-  - 2026-06-16: Added accept-one `ProductionTcpServer` skeleton with
+  - 2026-06-16: Added accept-one `ClientTcpServer` skeleton with
     TCP_NODELAY, player id `2` start, `0x8000` read chunks, frame dispatch, and
     handler-provided outbound writes. Still blocked/not done: multi-session
     socket-manager scheduling, deferred deletion cleanup, and real production
     auth dispatch.
 - [x] Integrate confirmed post-login decoded packet dispatch without gameplay
   invention.
-  - 2026-06-16: Added `ProductionPostLoginPacketDispatcher` for already-decoded
+  - 2026-06-16: Added `PostLoginPacketDispatcher` for already-decoded
     post-login inner packet bytes. It handles only the confirmed
     `PLI_PLAYERPROPS` movement/property subset, blocks assigned-but-unimplemented
     C++ `TPLFunc` ids, and models `msgPLI_NULL` invalid-packet counting with the
     source-confirmed sixth-packet disconnect message. It is not yet wired into a
     production auth/session loop.
 - [x] Keep unsupported packet ids logged/blocked, not faked.
-  - 2026-06-16: Added `ProductionPostLoginFrameHandler`, which decodes
+  - 2026-06-16: Added `PostLoginFrameHandler`, which decodes
     post-login frames, logs dispatch statuses, stops assigned-but-unimplemented
     packet ids as blocked, and only returns outbound bytes for the confirmed
     `msgPLI_NULL` invalid-packet disconnect path.
@@ -236,22 +236,22 @@ without fake auth.
     shape, receive/decode loop, timed reconnect, connect/register packet order,
     ping, auth response, and C# mapping.
 - [x] Implement confirmed server-list socket lifecycle behind an interface.
-  - 2026-06-16: Added `ProductionServerListLifecycle` behind
-    `IProductionServerListSocket`, preserving confirmed initialize/connect/
+  - 2026-06-16: Added `ServerListLifecycle` behind
+    `IServerListSocket`, preserving confirmed initialize/connect/
     register, queue clear, gen1 register immediate send, gen2 follow-up packet
     order, and local-IP loopback clearing. Concrete remote TCP client remains
     blocked.
 - [x] Wire real `SVO_VERIACC2` request/`SVI_VERIACC2` response path into
   production login.
-  - 2026-06-16: Added `ProductionServerListAuthResponseHandler`, which parses
+  - 2026-06-16: Added `ServerListAuthResponseHandler`, which parses
     confirmed `SVI_VERIACC2` payloads, resolves pending sessions by id/type,
     applies account-name overwrite, queues source-confirmed rejection
     disconnect bytes, and marks `SUCCESS` as `ServerListAuthAcceptedPreWorld`
     without local fake auth. Concrete live list-server receive loop remains
     blocked.
-- [x] Preserve fake/dev auth only behind explicit dev-only settings.
+- [x] Preserve fake/dev auth only behind explicit local-debug settings.
   - 2026-06-16: Verified the only fake server-list success path remains inside
-    `DevOnlyLocalSessionPipeline` and throws unless `EnableDevOnlyAuth=true`;
+    `LocalDebugSessionPipeline` and throws unless `EnableLocalDebugAuth=true`;
     production auth request/response boundaries do not inject success.
 - [x] Add golden tests for registration, ping, reconnect backoff, and auth
   response branches.
@@ -922,7 +922,7 @@ behavior, and movement-loop invocation.
     returns raw zero minus 32 and unsigned callers observe `224`. Truncated
     multi-byte scalar reads remain blocked until a C++ fixture proves the
     missing-byte behavior.
-  - 2026-06-16: Added dev-only local pipeline coverage for parsed-but-unported
+  - 2026-06-16: Added local-debug local pipeline coverage for parsed-but-unported
     player-prop side effects. The diagnostic shell now logs explicit
     `PLPROP_*` blocked side-effect messages instead of throwing when a
     confirmed post-login frame reaches a runtime branch such as nickname before
@@ -1306,15 +1306,15 @@ shutdown side effects.
 - level/account/server-list timing code
 
 - [x] Implement production infinite host loop safely.
-  - 2026-06-16: `ProductionHostLoop.Run` now initializes runtime before entering loop, performs deterministic shutdown cleanup when initialization fails, and preserves source-confirmed action ordering.
+  - 2026-06-16: `ServerHostLoop.Run` now initializes runtime before entering loop, performs deterministic shutdown cleanup when initialization fails, and preserves source-confirmed action ordering.
 - [ ] Wire player/level/server-list repositories.
 - [x] Implement `cleanupDeletedPlayers` V8 retention behavior.
-  - 2026-06-16: `RuntimeServer.CleanupDeletedPlayers` now accepts optional script-object callbacks for script-referenced skip, before-delete hooks, and confirmed deletion callbacks; `ProductionHostRuntime` forwards these hooks through `ScriptObjectReferenceGate`, `ScriptObjectReferencedCallback`, and `BeforeRuntimePlayerDeleteCallback` paths, matching the C++ "skip while referenced / process before final removal" flow shape.
+  - 2026-06-16: `RuntimeServer.CleanupDeletedPlayers` now accepts optional script-object callbacks for script-referenced skip, before-delete hooks, and confirmed deletion callbacks; `ServerHostRuntime` forwards these hooks through `ScriptObjectReferenceGate`, `ScriptObjectReferencedCallback`, and `BeforeRuntimePlayerDeleteCallback` paths, matching the C++ "skip while referenced / process before final removal" flow shape.
 - [ ] Implement AP/singleplayer timed runtime behavior only when prerequisites
   exist.
 - [ ] Implement production shutdown side effects.
 - [x] Add timing tests with fake clocks.
-  - 2026-06-16: Verified existing `ProductionTimingBoundaryTests` cover
+  - 2026-06-16: Verified existing `ServerTimingBoundaryTests` cover
     source-confirmed fake-time boundaries through `TimeSpan` inputs and fake
     server-list reconnect jitter: one-second scheduler gate/order, five-minute
     job order, strict player timeout/save/reset thresholds, disconnected

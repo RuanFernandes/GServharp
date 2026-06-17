@@ -4,22 +4,22 @@ using GServ.Network;
 using GServ.Persistence;
 using GServ.Protocol;
 
-var config = DevOnlyLocalServerCommandLine.Parse(args);
+var config = LocalDebugServerCommandLine.Parse(args);
 if (!config.Enabled)
 {
     Console.WriteLine("GServ C# compatibility foundation initialized. Full server runtime is not implemented yet.");
-    var productionArgs = ProductionStartupCommandLine.Parse(args, Environment.GetEnvironmentVariable);
+    var productionArgs = ServerStartupCommandLine.Parse(args, Environment.GetEnvironmentVariable);
     if (productionArgs.ShowHelp)
     {
         Console.WriteLine("Confirmed C++ options: -h, --help, -s/--server, -p/--port, --localip, --serverip, --interface, --staff, --name.");
-        Console.WriteLine("Dev-only shell: --dev-only-local --dev-root <path> --dev-level <level.nw> [--port <port>].");
+        Console.WriteLine("Local debug shell: --local-debug --dev-root <path> --dev-level <level.nw> [--port <port>].");
         return;
     }
 
-    var snapshot = ProductionStartupLoader.Load(Environment.CurrentDirectory, productionArgs);
+    var snapshot = ServerStartupLoader.Load(Environment.CurrentDirectory, productionArgs);
     if (snapshot.Resolution.Success)
     {
-        Console.WriteLine($"Production startup resolved server '{snapshot.Resolution.ServerName}' from {snapshot.Resolution.Source}.");
+        Console.WriteLine($"Server startup resolved server '{snapshot.Resolution.ServerName}' from {snapshot.Resolution.Source}.");
         Console.WriteLine($"Server path: {snapshot.Resolution.ServerPath}");
         Console.WriteLine($"config/serveroptions.txt opened: {snapshot.ServerOptions.IsOpened}");
         Console.WriteLine($"config/adminconfig.txt opened: {snapshot.AdminConfig.IsOpened}");
@@ -32,10 +32,10 @@ if (!config.Enabled)
 
     var runtimeServer = new RuntimeServer();
     var runtimeLevelCache = new RuntimeLevelCache();
-    var runtime = new ProductionHostRuntime(runtimeServer);
-    using var serverListSocket = new ProductionServerListTcpSocket();
-    var serverListOptions = ProductionServerListStartupOptions.FromStartupSnapshot(snapshot, productionArgs);
-    var serverListResult = new ProductionServerListLifecycle(serverListSocket).ConnectServer(serverListOptions);
+    var runtime = new ServerHostRuntime(runtimeServer);
+    using var serverListSocket = new ServerListTcpSocket();
+    var serverListOptions = ServerListStartupOptions.FromStartupSnapshot(snapshot, productionArgs);
+    var serverListResult = new ServerListLifecycle(serverListSocket).ConnectServer(serverListOptions);
     Console.WriteLine(serverListResult.Connected
         ? $"Registered '{serverListOptions.Name}' with list server {serverListOptions.ListIp}:{serverListOptions.ListPort}."
         : $"Could not connect/register with list server {serverListOptions.ListIp}:{serverListOptions.ListPort}.");
@@ -45,7 +45,7 @@ if (!config.Enabled)
         return;
     }
 
-    var authBridge = new ProductionLoginAuthBridge(
+    var authBridge = new LoginAuthBridge(
         serverListSocket,
         new PreWorldAuthOptions(
             MaxPlayers: snapshot.ServerOptions.GetInt("maxplayers", 128),
@@ -54,11 +54,11 @@ if (!config.Enabled)
             IsServerListConnected: serverListResult.Connected,
             AllowedVersions: serverListOptions.AllowedVersions,
             AllowedVersionText: string.Join(", ", serverListOptions.AllowedVersions)));
-    var clientConnections = new ProductionTcpClientConnectionRegistry();
-    using var clientServer = new ProductionTcpServer(
+    var clientConnections = new TcpClientConnectionRegistry();
+    using var clientServer = new ClientTcpServer(
         IPAddress.Any,
         gamePort,
-        new ProductionLoginSocketFrameHandler(authBridge),
+        new LoginSocketFrameHandler(authBridge),
         clientConnections);
 
     runtime.CleanupHandler = () =>
@@ -66,7 +66,7 @@ if (!config.Enabled)
         runtimeServer.CleanupForShutdown(player => { });
         runtimeLevelCache.Clear();
     };
-    var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, TimeSpan.Zero);
+    var hostLoop = new ServerHostLoop(runtime, ServerHostLoop.StaticTime, TimeSpan.Zero);
 
     using var productionCts = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) =>
@@ -81,13 +81,13 @@ if (!config.Enabled)
         ? RunServerListReceiveLoop(serverListSocket, authBridge, clientConnections, productionCts.Token)
         : Task.CompletedTask;
 
-    Console.WriteLine($"Production startup resolved. Listening for clients on port {gamePort}. Press Ctrl+C to stop.");
+    Console.WriteLine($"Server startup resolved. Listening for clients on port {gamePort}. Press Ctrl+C to stop.");
     hostLoop.Run(TimeSpan.FromMilliseconds(5), productionCts.Token);
     await Task.WhenAll(acceptTask, listServerReceiveTask);
     return;
 }
 
-Console.WriteLine("WARNING: running DEV-ONLY local shell.");
+Console.WriteLine("WARNING: running LOCAL DEBUG local shell.");
 Console.WriteLine("This is not production-compatible auth, server-list, movement, NPC, script, or file-transfer behavior.");
 Console.WriteLine($"Root: {config.RootPath}");
 Console.WriteLine($"Level: {config.LevelName}");
@@ -95,11 +95,11 @@ Console.WriteLine($"Port: {config.Port}");
 
 var fileSystems = ServerResourceFileSystems.LoadAllFolders(config.RootPath, shareFolder: string.Empty);
 var fileSystem = fileSystems.Get(ServerFileSystemKind.All);
-var pipeline = new DevOnlyLocalSessionPipeline(
-    new DevOnlyLocalServerOptions(EnableDevOnlyAuth: true, LevelName: config.LevelName),
+var pipeline = new LocalDebugSessionPipeline(
+    new LocalDebugServerOptions(EnableLocalDebugAuth: true, LevelName: config.LevelName),
     new NwLevelFileLoader(fileSystem));
 
-using var server = new DevOnlyLocalTcpServer(IPAddress.Any, config.Port, pipeline);
+using var server = new LocalDebugTcpServer(IPAddress.Any, config.Port, pipeline);
 using var cts = new CancellationTokenSource();
 Console.CancelKeyPress += (_, e) =>
 {
@@ -124,7 +124,7 @@ while (!cts.IsCancellationRequested)
     }
 }
 
-static async Task RunClientAcceptLoop(ProductionTcpServer server, CancellationToken cancellationToken)
+static async Task RunClientAcceptLoop(ClientTcpServer server, CancellationToken cancellationToken)
 {
     while (!cancellationToken.IsCancellationRequested)
     {
@@ -145,9 +145,9 @@ static async Task RunClientAcceptLoop(ProductionTcpServer server, CancellationTo
 }
 
 static async Task RunServerListReceiveLoop(
-    ProductionServerListTcpSocket serverListSocket,
-    ProductionLoginAuthBridge authBridge,
-    ProductionTcpClientConnectionRegistry clientConnections,
+    ServerListTcpSocket serverListSocket,
+    LoginAuthBridge authBridge,
+    TcpClientConnectionRegistry clientConnections,
     CancellationToken cancellationToken)
 {
     while (!cancellationToken.IsCancellationRequested && serverListSocket.IsConnected)
