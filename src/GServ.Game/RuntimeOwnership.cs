@@ -667,6 +667,7 @@ public sealed class RuntimeServer
     private readonly Dictionary<ushort, RuntimePlayer> _players = [];
     private readonly HashSet<RuntimePlayer> _deletedPlayers = [];
     private readonly RuntimeUShortIdGenerator _playerIds = new(2);
+    private const ushort PlayerIdStart = 2;
 
     public IReadOnlyList<ushort> PlayerIds => _players.Keys.ToArray();
     public IReadOnlyCollection<RuntimePlayer> Players => _players.Values;
@@ -711,6 +712,23 @@ public sealed class RuntimeServer
             _deletedPlayers.Remove(player);
         }
     }
+
+    public void CleanupForShutdown(Action<RuntimePlayer>? cleanupPlayer = null)
+    {
+        foreach (var player in _players.Values.ToArray())
+            cleanupPlayer?.Invoke(player);
+
+        foreach (var player in _players.Values.ToArray())
+            player.LeaveLevel();
+
+        _deletedPlayers.Clear();
+        foreach (var player in _players.Values.ToArray())
+            _deletedPlayers.Add(player);
+
+        CleanupDeletedPlayers();
+        _deletedPlayers.Clear();
+        _playerIds.ResetAndSetNext(PlayerIdStart);
+    }
 }
 
 public sealed class RuntimeUShortIdGenerator
@@ -739,6 +757,12 @@ public sealed class RuntimeUShortIdGenerator
 
     public void FreeId(ushort id) =>
         _freeIds.Add(id);
+
+    public void ResetAndSetNext(ushort startId)
+    {
+        _freeIds.Clear();
+        _nextId = startId;
+    }
 }
 
 public sealed class RuntimeByteIdGenerator
@@ -766,6 +790,12 @@ public sealed class RuntimeByteIdGenerator
     }
 
     public void FreeId(byte id) => _freeIds.Add(id);
+
+    public void ResetAndSetNext(byte startId)
+    {
+        _freeIds.Clear();
+        _nextId = startId;
+    }
 }
 
 public sealed record LevelEntryVisibilitySelection(

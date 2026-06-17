@@ -29,8 +29,16 @@ if (!config.Enabled)
         return;
     }
 
-    var runtime = new ProductionHostRuntime(new RuntimeServer());
-    var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, TimeSpan.Zero);
+var runtimeServer = new RuntimeServer();
+var runtimeLevelCache = new RuntimeLevelCache();
+var runtime = new ProductionHostRuntime(runtimeServer);
+
+runtime.CleanupHandler = () =>
+{
+    runtimeServer.CleanupForShutdown(player => { });
+    runtimeLevelCache.Clear();
+};
+var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, TimeSpan.Zero);
 
     using var productionCts = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) =>

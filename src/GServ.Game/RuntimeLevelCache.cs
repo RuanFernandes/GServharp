@@ -61,6 +61,15 @@ public sealed class RuntimeLevelCache
             AttachToFirstMatchingMap(level, level.LevelName.ToLowerInvariant());
     }
 
+    public void Clear()
+    {
+        foreach (var level in _levels)
+            level.SetMap(null);
+
+        _levels.Clear();
+        _maps.Clear();
+    }
+
     private void AttachToFirstMatchingMap(RuntimeLevel level, string lowerLevelName)
     {
         foreach (var binding in _maps)
