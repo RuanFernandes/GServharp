@@ -199,6 +199,11 @@ static async Task RunServerListReceiveLoop(
                     var result = authBridge.HandleVerifyAccount2(packet.AsSpan(1));
                     if (result.OutboundBytes.Length != 0)
                         await clientConnections.SendAsync(result.PlayerId, result.OutboundBytes, cancellationToken);
+                    foreach (var broadcast in result.Broadcasts)
+                    {
+                        if (broadcast.OutboundBytes.Length != 0)
+                            await clientConnections.SendAsync(broadcast.PlayerId, broadcast.OutboundBytes, cancellationToken);
+                    }
                     break;
                 }
                 case ListServerToServerPacketId.Ping:

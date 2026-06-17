@@ -12,7 +12,10 @@ public sealed record ServerListLoginResponseResult(
     ServerListAuthResponseStatus Status,
     ushort PlayerId,
     PlayerSessionType Type,
-    byte[] OutboundBytes);
+    byte[] OutboundBytes,
+    IReadOnlyList<ClientSessionOutbound> Broadcasts);
+
+public sealed record ClientSessionOutbound(ushort PlayerId, byte[] OutboundBytes);
 
 public sealed class LoginAuthBridge(
     IServerListGateway serverList,
@@ -21,6 +24,8 @@ public sealed class LoginAuthBridge(
 {
     private readonly Dictionary<(ushort PlayerId, PlayerSessionType Type), ClientSessionSkeleton> _pendingSessions = [];
     private readonly Dictionary<(ushort PlayerId, PlayerSessionType Type), string> _remoteAddresses = [];
+    private readonly Dictionary<ushort, ClientSessionSkeleton> _activeSessions = [];
+    private readonly Dictionary<ushort, PostLoginPlayerSnapshot> _activeSnapshots = [];
     private readonly Dictionary<ushort, string> _loginFrameDebug = [];
 
     public ClientLoginAuthResult BeginClientLogin(
@@ -57,6 +62,7 @@ public sealed class LoginAuthBridge(
         var response = result.Response;
         var key = (response.PlayerId, response.Type);
         var session = FindSession(response.PlayerId, response.Type);
+        var broadcasts = Array.Empty<ClientSessionOutbound>();
         if (result.Status == ServerListAuthResponseStatus.AcceptedPreWorld &&
             session is not null &&
             worldEntryOptions is not null &&
@@ -66,8 +72,11 @@ public sealed class LoginAuthBridge(
                 {
                     RemoteIp = _remoteAddresses.GetValueOrDefault(key, worldEntryOptions.AccountLoginOptions.RemoteIp)
                 }
-            }, out var playerAdd))
+            }, out var playerAdd, out var snapshot))
         {
+            broadcasts = ExchangeLoginPlayerProps(session, snapshot).ToArray();
+            _activeSessions[session.Id] = session;
+            _activeSnapshots[session.Id] = snapshot;
             serverList.SendPlayerAdd(playerAdd);
         }
 
@@ -83,7 +92,8 @@ public sealed class LoginAuthBridge(
             result.Status,
             response.PlayerId,
             response.Type,
-            outbound);
+            outbound,
+            broadcasts);
     }
 
     private ClientSessionSkeleton? FindSession(ushort id, PlayerSessionType type) =>
@@ -91,6 +101,41 @@ public sealed class LoginAuthBridge(
 
     private bool HasPendingSession(ushort id) =>
         _pendingSessions.Keys.Any(key => key.PlayerId == id);
+
+    private IEnumerable<ClientSessionOutbound> ExchangeLoginPlayerProps(
+        ClientSessionSkeleton joiningSession,
+        PostLoginPlayerSnapshot joiningSnapshot)
+    {
+        if (!IsClient(joiningSession.Type))
+            yield break;
+
+        foreach (var (otherId, otherSnapshot) in _activeSnapshots.ToArray())
+        {
+            if (otherId == joiningSession.Id || !IsClient(otherSnapshot.Type))
+                continue;
+
+            joiningSession.QueuePacket(BuildOtherPlayerProps(otherSnapshot));
+
+            if (!_activeSessions.TryGetValue(otherId, out var otherSession))
+                continue;
+
+            otherSession.QueuePacket(BuildOtherPlayerProps(joiningSnapshot));
+            var outbound = FlushOutboundBytes(otherSession);
+            if (outbound.Length != 0)
+                yield return new ClientSessionOutbound(otherId, outbound);
+        }
+    }
+
+    private static byte[] BuildOtherPlayerProps(PostLoginPlayerSnapshot snapshot)
+    {
+        var payload = PlayerPropertySerializer.SerializeOtherPlayerPropsPayload(
+            snapshot.LoginPropertySource,
+            GetLoginPropertySet.All);
+        return PlayerPropertySerializer.BuildOtherPlayerPropsPacket(snapshot.PlayerId, payload, appendNewline: true);
+    }
+
+    private static bool IsClient(PlayerSessionType type) =>
+        (type & PlayerSessionType.AnyClient) != 0;
 
     private ClientLoginAuthResult Finish(ClientSessionSkeleton session, bool accepted) =>
         new(accepted, session.Lifecycle, FlushOutboundBytes(session), BuildDiagnostic(session, accepted));

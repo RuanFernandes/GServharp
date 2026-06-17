@@ -15,9 +15,14 @@ public sealed record LoginWorldEntryOptions(
 
 public static class LoginWorldEntry
 {
-    public static bool Complete(ClientSessionSkeleton session, LoginWorldEntryOptions options, out byte[] serverListAddPlayerPacket)
+    public static bool Complete(
+        ClientSessionSkeleton session,
+        LoginWorldEntryOptions options,
+        out byte[] serverListAddPlayerPacket,
+        out PostLoginPlayerSnapshot snapshot)
     {
         serverListAddPlayerPacket = [];
+        snapshot = EmptySnapshot(session);
         var accountLogin = AccountLoginBoundary.Begin(
             session,
             options.AccountFileSystem,
@@ -27,7 +32,7 @@ public static class LoginWorldEntry
             return false;
 
         var account = accountLogin.Account;
-        var snapshot = BuildSnapshot(session, account, options.AccountLoginOptions.RemoteIp);
+        snapshot = BuildSnapshot(session, account, options.AccountLoginOptions.RemoteIp);
         var postLogin = PostLoginWorldEntryBoundary.BeginClient(session, snapshot);
         serverListAddPlayerPacket = postLogin.ServerListAddPlayerPacket;
 
@@ -57,6 +62,63 @@ public static class LoginWorldEntry
             new SendLevelRequest(RequestedModTime: 0, CachedLevelModTime: 0, FromAdjacent: false));
         return true;
     }
+
+    private static PostLoginPlayerSnapshot EmptySnapshot(ClientSessionSkeleton session) =>
+        new(
+            session.Id,
+            session.Type,
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            new PlayerPropertySource(
+                Nickname: "",
+                MaxPower: 0,
+                Hitpoints: 0,
+                Rupees: 0,
+                Arrows: 0,
+                Bombs: 0,
+                GlovePower: 0,
+                SwordPower: 0,
+                SwordImage: "",
+                ShieldPower: 0,
+                ShieldImage: "",
+                Gani: "",
+                HeadImage: "",
+                ChatMessage: "",
+                Colors: [],
+                PlayerId: session.Id,
+                X: 0,
+                Y: 0,
+                Sprite: 0,
+                Status: 0,
+                CarrySprite: 0,
+                CurrentLevel: "",
+                HorseImage: "",
+                HorseBombCount: 0,
+                CarryNpcId: 0,
+                ApCounter: 0,
+                MagicPoints: 0,
+                Kills: 0,
+                Deaths: 0,
+                OnlineSeconds: 0,
+                AccountIp: 0,
+                Alignment: 0,
+                AdditionalFlags: 0,
+                AccountName: "",
+                BodyImage: "",
+                EloRating: 1500,
+                EloDeviation: 350,
+                GaniAttributes: new Dictionary<int, string>(),
+                Os: "",
+                TextCodePage: 1252,
+                CommunityName: ""),
+            [],
+            [],
+            []);
 
     private static PostLoginPlayerSnapshot BuildSnapshot(ClientSessionSkeleton session, AccountFileData account, string remoteIp)
     {

@@ -1,0 +1,6 @@
+[submodule "external/gs2compiler"]
+	path = external/gs2compiler
+	url = https://github.com/xtjoeytx/gs2-parser.git
+[submodule "external/gs2lib"]
+	path = external/gs2lib
+	url = https://xtjoeytx@bitbucket.org/xtjoeytx/gs2lib.git

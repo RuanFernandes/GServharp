@@ -86,6 +86,37 @@ public sealed class LoginAuthBridgeTests
         Assert.True(File.Exists(Path.Combine(serverRoot.Path, "accounts", "pc_Ruan.txt")));
     }
 
+    [Fact]
+    public void SecondClientLoginExchangesPlayerPropsWithFirstClient()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var resources = ServerResourceFileSystems.LoadFolderConfig(
+            serverRoot.Path,
+            File.ReadAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt")));
+        var levelLoader = new NwLevelFileLoader(resources.Get(ServerFileSystemKind.All));
+        var gateway = new RecordingGateway { IsConnected = true };
+        var bridge = new LoginAuthBridge(
+            gateway,
+            AuthOptions(),
+            new LoginWorldEntryOptions(
+                new DiskAccountFileSystem(serverRoot.Path),
+                Gs2Settings.LoadFile(Path.Combine(serverRoot.Path, "config", "serveroptions.txt")),
+                levelLoader,
+                new FileLevelLookup(levelLoader),
+                new AccountLoginOptions(false, "My Server", [], ["YOURACCOUNT"], "")));
+
+        _ = bridge.BeginClientLogin(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
+        var first = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        _ = bridge.BeginClientLogin(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
+        var second = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+
+        Assert.Empty(first.Broadcasts);
+        var broadcast = Assert.Single(second.Broadcasts);
+        Assert.Equal(7, broadcast.PlayerId);
+        Assert.NotEmpty(broadcast.OutboundBytes);
+        Assert.True(second.OutboundBytes.Length > first.OutboundBytes.Length);
+    }
+
     private static PreWorldAuthOptions AuthOptions() =>
         new(
             MaxPlayers: 128,
@@ -95,14 +126,14 @@ public sealed class LoginAuthBridgeTests
             AllowedVersions: ["G3D0311C"],
             AllowedVersionText: "6.037");
 
-    private static byte[] Client3LoginPacket()
+    private static byte[] Client3LoginPacket(string account = "Ruan", byte key = 42)
     {
         var packet = new GraalBinaryWriter();
         packet.WriteGChar(5);
-        packet.WriteGChar(42);
+        packet.WriteGChar(key);
         packet.WriteBytes("G3D0311C"u8);
-        packet.WriteGChar(4);
-        packet.WriteBytes("Ruan"u8);
+        packet.WriteGChar((byte)account.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(account));
         packet.WriteGChar(2);
         packet.WriteBytes("pw"u8);
         packet.WriteBytes("win"u8);
