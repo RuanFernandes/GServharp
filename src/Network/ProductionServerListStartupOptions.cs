@@ -18,7 +18,7 @@ public static class ProductionServerListStartupOptions
             ? snapshot.Resolution.ServerName
             : overrides.ServerName;
         var serverPort = string.IsNullOrEmpty(overrides.Port)
-            ? options.GetString("serverport", "14900")
+            ? options.GetString("serverport", "14802")
             : overrides.Port;
         var serverIp = string.IsNullOrEmpty(overrides.ServerIp)
             ? options.GetString("serverip", "AUTO")

@@ -16,7 +16,7 @@ Rules for every milestone:
 - Do not invent behavior.
 - If behavior is unclear, document it as blocked and continue with the next safe item in the same milestone.
 - Write compatibility tests before implementation where possible.
-- Run `dotnet build GServharp.sln` and `dotnet test GServharp.sln`.
+- Run `dotnet build GServerSharp.sln` and `dotnet test GServerSharp.sln`.
 - Confirm `ai_resources/` is untouched.
 - Commit all pending changes at the end.
 

@@ -59,7 +59,7 @@ Rules:
 - Use TDD for every implementation slice: write failing tests, verify failure,
   implement minimal source-confirmed code, verify pass.
 - Update docs/specs/blockers/golden fixtures as behavior is confirmed.
-- Run `dotnet build GServharp.sln` and `dotnet test GServharp.sln` before the
+- Run `dotnet build GServerSharp.sln` and `dotnet test GServerSharp.sln` before the
   final report unless only non-code markdown changed and the task explicitly
   documents why a build was not needed.
 - Always run `git status --short ai_resources` before committing.
@@ -1403,8 +1403,8 @@ ai_resources:
 - untouched / modified only because user explicitly requested ...
 
 Verification:
-- dotnet build GServharp.sln: passed/failed/not run because ...
-- dotnet test GServharp.sln: passed/failed/not run because ...
+- dotnet build GServerSharp.sln: passed/failed/not run because ...
+- dotnet test GServerSharp.sln: passed/failed/not run because ...
 
 Commit:
 - <hash> <message>

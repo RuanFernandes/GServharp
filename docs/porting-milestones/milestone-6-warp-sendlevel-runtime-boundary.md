@@ -24,8 +24,8 @@
 - [x] Implement source-confirmed `warp` and `setLevel` state changes.
 - [x] Implement `sendLevel141` only if packet bytes and branches are fully confirmed.
 - [x] Guard NPC/baddy/script execution branches behind documented blocked interfaces.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement warp sendlevel runtime boundary`.
 

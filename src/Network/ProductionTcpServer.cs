@@ -38,12 +38,18 @@ public sealed class ProductionTcpServer : IDisposable
 
     private readonly TcpListener _listener;
     private readonly IProductionSocketFrameHandler _handler;
+    private readonly ProductionTcpClientConnectionRegistry? _connectionRegistry;
     private ushort _nextPlayerId = PlayerIdInitialValue;
 
-    public ProductionTcpServer(IPAddress address, int port, IProductionSocketFrameHandler handler)
+    public ProductionTcpServer(
+        IPAddress address,
+        int port,
+        IProductionSocketFrameHandler handler,
+        ProductionTcpClientConnectionRegistry? connectionRegistry = null)
     {
         _listener = new TcpListener(address, port);
         _handler = handler;
+        _connectionRegistry = connectionRegistry;
     }
 
     public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
@@ -62,27 +68,35 @@ public sealed class ProductionTcpServer : IDisposable
         var session = new ProductionSocketSessionContext(playerId, remoteAddress);
         var receiveBuffer = new ProductionSocketReceiveBuffer();
         await using var stream = client.GetStream();
+        _connectionRegistry?.Register(playerId, stream);
         var readBuffer = new byte[0x8000];
 
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            var read = await stream.ReadAsync(readBuffer, cancellationToken);
-            if (read == 0)
-                return new ProductionTcpSessionResult(playerId, ProductionTcpSessionStopReason.ClientDisconnected);
-
-            receiveBuffer.Append(readBuffer.AsSpan(0, read));
-            foreach (var frame in receiveBuffer.DrainFrames())
+            while (!cancellationToken.IsCancellationRequested)
             {
-                var result = await _handler.HandleFrameAsync(session, frame, cancellationToken);
-                if (result.OutboundBytes.Length != 0)
-                    await stream.WriteAsync(result.OutboundBytes, cancellationToken);
+                var read = await stream.ReadAsync(readBuffer, cancellationToken);
+                if (read == 0)
+                    return new ProductionTcpSessionResult(playerId, ProductionTcpSessionStopReason.ClientDisconnected);
 
-                if (!result.ContinueSession)
-                    return new ProductionTcpSessionResult(playerId, ProductionTcpSessionStopReason.HandlerStopped);
+                receiveBuffer.Append(readBuffer.AsSpan(0, read));
+                foreach (var frame in receiveBuffer.DrainFrames())
+                {
+                    var result = await _handler.HandleFrameAsync(session, frame, cancellationToken);
+                    if (result.OutboundBytes.Length != 0)
+                        await stream.WriteAsync(result.OutboundBytes, cancellationToken);
+
+                    if (!result.ContinueSession)
+                        return new ProductionTcpSessionResult(playerId, ProductionTcpSessionStopReason.HandlerStopped);
+                }
             }
-        }
 
-        return new ProductionTcpSessionResult(playerId, ProductionTcpSessionStopReason.ClientDisconnected);
+            return new ProductionTcpSessionResult(playerId, ProductionTcpSessionStopReason.ClientDisconnected);
+        }
+        finally
+        {
+            _connectionRegistry?.Unregister(playerId);
+        }
     }
 
     public void Dispose() => _listener.Stop();

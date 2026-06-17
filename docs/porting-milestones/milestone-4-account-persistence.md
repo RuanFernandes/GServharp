@@ -25,8 +25,8 @@
 - [x] Add failing tests for parse, round-trip save, missing file, default account load, banned/staff/admin fields, and guest account behavior where confirmed.
 - [x] Implement account repository behavior only for source-confirmed filesystem semantics.
 - [x] Wire account DTOs into the existing pre-world login boundary without inventing gameplay defaults.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement account persistence boundary`.
 

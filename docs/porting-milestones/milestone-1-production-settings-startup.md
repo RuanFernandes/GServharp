@@ -26,8 +26,8 @@
 - [x] Add a server-root resolver that keeps the current dev-only mode opt-in and separates it from production startup.
 - [x] Add startup diagnostics that clearly state when behavior is blocked rather than silently faking production behavior.
 - [x] Update `docs/KNOWN_BLOCKERS.md` and `docs/spec/docs/KNOWN_BLOCKERS.md`.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement production settings startup boundary`.
 

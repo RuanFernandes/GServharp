@@ -34,8 +34,8 @@ account sources.
   handlers and confirmed packet/persistence formats.
 - [ ] Preserve account save/load side effects and ordering where those systems touch account state.
 - [x] Keep behavior absent when no C++ source path exists.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 
 ## Removed From Scope Unless Source Is Recovered

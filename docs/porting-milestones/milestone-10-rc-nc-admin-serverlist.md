@@ -24,8 +24,8 @@
 - [x] Add tests for rights parsing, RC login rejection/success boundary, NC packet construction, file browser packets, and server-list side effects where confirmed.
 - [x] Implement source-confirmed RC/NC session states and packet builders.
 - [x] Keep scripting execution, NPC editing execution, and unsafe filesystem writes blocked until exact behavior is confirmed.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement rc nc admin boundary`.
 

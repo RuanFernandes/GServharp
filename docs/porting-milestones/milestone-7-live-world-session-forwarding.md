@@ -24,8 +24,8 @@
 - [x] Implement live multi-session forwarding only for confirmed packet types.
 - [x] Add guards for gameplay packet types that are not yet ported.
 - [x] Ensure dev-only single-client behavior remains opt-in.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement live world session forwarding`.
 

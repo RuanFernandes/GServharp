@@ -25,8 +25,8 @@
 - [x] Implement source-confirmed autosave, heartbeat, cleanup, idle timeout, and shutdown order.
 - [x] Recover websocket/TLS behavior only from C++/gs2lib; keep it blocked if dependencies or byte behavior are unclear.
 - [ ] Add production logging messages only where they do not change client-facing behavior.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement timing save loop hardening`.
 

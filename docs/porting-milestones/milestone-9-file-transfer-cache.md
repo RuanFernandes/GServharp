@@ -24,8 +24,8 @@
 - [x] Add tests for queue ordering, raw-data boundaries, file-not-found behavior, and client cache response packets.
 - [x] Implement confirmed file transfer packet builders and session state transitions.
 - [x] Keep upload/write paths blocked until exact C++ security and overwrite behavior is confirmed.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement file transfer cache boundary`.
 

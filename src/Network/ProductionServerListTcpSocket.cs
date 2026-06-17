@@ -4,9 +4,11 @@ using GServ.Protocol;
 
 namespace GServ.Network;
 
-public sealed class ProductionServerListTcpSocket : IProductionServerListSocket, IDisposable
+public sealed class ProductionServerListTcpSocket : IProductionServerListSocket, IProductionServerListGateway, IDisposable
 {
     private readonly GraalFileQueue _queue = new();
+    private readonly ProductionServerListReceiveBuffer _receiveBuffer = new();
+    private readonly byte[] _readBuffer = new byte[0x8000];
     private string _host = "";
     private int _port;
     private TcpClient? _client;
@@ -81,6 +83,27 @@ public sealed class ProductionServerListTcpSocket : IProductionServerListSocket,
             return;
 
         _stream.Write(bytes);
+    }
+
+    public void SendLoginPacketForPlayer(byte[] packetBody)
+    {
+        SendPacket(packetBody);
+    }
+
+    public async ValueTask<IReadOnlyList<byte[]>> ReceivePacketsAsync(CancellationToken cancellationToken)
+    {
+        if (_stream is null)
+            throw new InvalidOperationException("Server-list socket must be connected before receiving packets.");
+
+        var read = await _stream.ReadAsync(_readBuffer, cancellationToken);
+        if (read == 0)
+        {
+            DisposeClient();
+            return [];
+        }
+
+        _receiveBuffer.Append(_readBuffer.AsSpan(0, read));
+        return _receiveBuffer.DrainPackets();
     }
 
     public void Dispose()

@@ -62,6 +62,33 @@ public sealed class ProductionTcpServerTests
     }
 
     [Fact]
+    public async Task AcceptOneAsyncRegistersClientConnectionUntilSessionEnds()
+    {
+        var handler = new RecordingProductionFrameHandler(expectedFrames: 1);
+        var registry = new ProductionTcpClientConnectionRegistry();
+        using var server = new ProductionTcpServer(IPAddress.Loopback, port: 0, handler, registry);
+        server.Start();
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var acceptTask = server.AcceptOneAsync(timeout.Token);
+
+        using var client = new TcpClient();
+        await client.ConnectAsync(IPAddress.Loopback, server.Port, timeout.Token);
+        await using var stream = client.GetStream();
+        await stream.WriteAsync(new byte[] { 0, 1, 70 }, timeout.Token);
+        await handler.WaitForExpectedFrames(timeout.Token);
+
+        Assert.True(await registry.SendAsync(2, new byte[] { 80 }, timeout.Token));
+        var received = new byte[1];
+        await stream.ReadExactlyAsync(received, timeout.Token);
+        Assert.Equal([80], received);
+
+        client.Close();
+        _ = await acceptTask;
+        Assert.False(await registry.SendAsync(2, new byte[] { 81 }, timeout.Token));
+    }
+
+    [Fact]
     public async Task AcceptOneAsyncCanDriveConfirmedPostLoginPlayerPropsDispatch()
     {
         var player = new RuntimePlayer(2, "pc:Ruan", RuntimePlayerKind.Client);

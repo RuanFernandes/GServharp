@@ -180,8 +180,8 @@ docs/KNOWN_BLOCKERS.md
 Run:
 
 ```bash
-dotnet build GServharp.sln
-dotnet test GServharp.sln
+dotnet build GServerSharp.sln
+dotnet test GServerSharp.sln
 ```
 
 If a C++ fixture harness is used, build/run it or document why it cannot run.

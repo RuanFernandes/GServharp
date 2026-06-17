@@ -23,8 +23,8 @@
 - [x] Implement inert NPC/baddy/item/weapon runtime state only where C++ behavior is confirmed.
 - [x] Implement packet builders for confirmed add/remove/update packets.
 - [x] Keep script execution, AI behavior, combat effects, and inventory rewards blocked unless proven in this milestone.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement npc baddy item weapon runtime boundary`.
 

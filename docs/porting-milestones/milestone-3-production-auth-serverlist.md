@@ -26,8 +26,8 @@
 - [x] Remove or isolate fake dev auth from production code paths.
 - [x] Implement confirmed version checks from `allowedversions.txt` and list-server responses.
 - [x] Add tests for invalid version, rejected account, banned response, and allowed auth only where exact response packets are confirmed.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement production auth serverlist boundary`.
 

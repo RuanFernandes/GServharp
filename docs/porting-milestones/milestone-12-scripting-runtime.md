@@ -25,8 +25,8 @@
 - [ ] After dependency recovery, add tests for script parse/load errors, event hooks, exposed APIs, and lifecycle order.
 - [x] Implement only source-confirmed compiler/runtime adapter behavior.
 - [x] Keep gameplay effects blocked until both script API and affected gameplay system are confirmed.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Recover scripting runtime boundary`.
 

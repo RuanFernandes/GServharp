@@ -97,7 +97,7 @@ When disconnected:
    - `APP_VERSION`
    - `url`, default `"http://www.graal.in/"`
    - `serverip`, default `"AUTO"`
-   - `serverport`, default `"14900"`
+   - `serverport`, default `"14802"`
    - `localip`
 7. if `localip` is empty or `"AUTO"`, use `m_socket.getLocalIp()`
 8. if local IP is `"127.0.1.1"` or `"127.0.0.1"`, log a warning and send an

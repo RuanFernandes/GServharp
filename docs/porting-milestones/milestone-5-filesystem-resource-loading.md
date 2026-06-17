@@ -24,8 +24,8 @@
 - [x] Implement `.graal`, `.zelda`, `.gmap`, and package/resource parsing only after source-confirmed tests exist.
 - [x] Keep runtime NPC/baddy execution blocked; preserve static payload bytes when behavior is not yet ported.
 - [x] Wire production filesystem into the existing dev sendLevel boundary where safe.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement production filesystem resource loading`.
 

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.IO.Compression;
 using GServ.Protocol;
 using Xunit;
 
@@ -41,5 +42,49 @@ public sealed class ProductionServerListTcpSocketTests
         var gen2 = new byte[expectedGen2.Length];
         await stream.ReadExactlyAsync(gen2, timeout.Token);
         Assert.Equal(expectedGen2, gen2);
+    }
+
+    [Fact]
+    public async Task ReceivePacketsAsyncReturnsDecodedListServerPacketsFromTcpStream()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, port: 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port.ToString();
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = new ProductionServerListTcpSocket();
+
+        Assert.True(socket.Initialize(IPAddress.Loopback.ToString(), port));
+        var acceptTask = listener.AcceptTcpClientAsync(timeout.Token);
+        Assert.True(socket.Connect());
+        using var serverSide = await acceptTask;
+        await using var stream = serverSide.GetStream();
+
+        await stream.WriteAsync(LengthFrame(Zlib("a\nb\n"u8.ToArray())), timeout.Token);
+
+        Assert.Equal(
+            ["a"u8.ToArray(), "b"u8.ToArray()],
+            await socket.ReceivePacketsAsync(timeout.Token));
+    }
+
+    [Fact]
+    public void TcpSocketCanSendLoginPacketsThroughProductionGatewayInterface()
+    {
+        Assert.IsAssignableFrom<IProductionServerListGateway>(new ProductionServerListTcpSocket());
+    }
+
+    private static byte[] LengthFrame(byte[] payload) =>
+    [
+        (byte)(payload.Length >> 8),
+        (byte)payload.Length,
+        ..payload
+    ];
+
+    private static byte[] Zlib(byte[] payload)
+    {
+        using var output = new MemoryStream();
+        using (var zlib = new ZLibStream(output, CompressionLevel.Optimal, leaveOpen: true))
+            zlib.Write(payload);
+        return output.ToArray();
     }
 }

@@ -155,8 +155,8 @@ For every mismatch:
 4. Add or update a C# golden/unit/integration test that reproduces the C++
    behavior.
 5. Implement the smallest source-confirmed fix.
-6. Run `dotnet build GServharp.sln`.
-7. Run `dotnet test GServharp.sln`.
+6. Run `dotnet build GServerSharp.sln`.
+7. Run `dotnet test GServerSharp.sln`.
 8. Re-capture both servers if timing/state changed, otherwise re-run the
    comparison with the same C++ baseline.
 9. Commit the fix and evidence docs.

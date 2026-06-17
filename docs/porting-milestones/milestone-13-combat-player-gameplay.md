@@ -24,8 +24,8 @@
 - [x] Implement health/hearts, hurt/death, AP, bombs/arrows, hit detection, and spar behavior only where C++ is confirmed.
 - [x] Wire persistence changes only if account save behavior is already confirmed.
 - [x] Keep NPC/script side effects blocked if their source-confirmed dependencies are missing.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement combat player gameplay rules`.
 

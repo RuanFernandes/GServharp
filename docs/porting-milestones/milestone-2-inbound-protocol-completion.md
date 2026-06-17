@@ -27,8 +27,8 @@
 - [x] Implement only branches with source-confirmed byte layout.
 - [x] Keep unsupported branches throwing documented compatibility exceptions instead of guessing.
 - [x] Integrate confirmed branches into the TCP dev shell without adding gameplay dispatch.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Complete confirmed inbound protocol decoding`.
 

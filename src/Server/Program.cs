@@ -2,6 +2,7 @@ using System.Net;
 using GServ.Game;
 using GServ.Network;
 using GServ.Persistence;
+using GServ.Protocol;
 
 var config = DevOnlyLocalServerCommandLine.Parse(args);
 if (!config.Enabled)
@@ -38,13 +39,34 @@ if (!config.Enabled)
     Console.WriteLine(serverListResult.Connected
         ? $"Registered '{serverListOptions.Name}' with list server {serverListOptions.ListIp}:{serverListOptions.ListPort}."
         : $"Could not connect/register with list server {serverListOptions.ListIp}:{serverListOptions.ListPort}.");
+    if (!int.TryParse(serverListOptions.ServerPort, out var gamePort))
+    {
+        Console.WriteLine($"Invalid serverport '{serverListOptions.ServerPort}'.");
+        return;
+    }
+
+    var authBridge = new ProductionLoginAuthBridge(
+        serverListSocket,
+        new PreWorldAuthOptions(
+            MaxPlayers: snapshot.ServerOptions.GetInt("maxplayers", 128),
+            CurrentPlayerCount: 0,
+            IsIpBanned: false,
+            IsServerListConnected: serverListResult.Connected,
+            AllowedVersions: serverListOptions.AllowedVersions,
+            AllowedVersionText: string.Join(", ", serverListOptions.AllowedVersions)));
+    var clientConnections = new ProductionTcpClientConnectionRegistry();
+    using var clientServer = new ProductionTcpServer(
+        IPAddress.Any,
+        gamePort,
+        new ProductionLoginSocketFrameHandler(authBridge),
+        clientConnections);
 
     runtime.CleanupHandler = () =>
     {
         runtimeServer.CleanupForShutdown(player => { });
         runtimeLevelCache.Clear();
-};
-var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, TimeSpan.Zero);
+    };
+    var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, TimeSpan.Zero);
 
     using var productionCts = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) =>
@@ -53,8 +75,15 @@ var hostLoop = new ProductionHostLoop(runtime, ProductionHostLoop.StaticTime, Ti
         productionCts.Cancel();
     };
 
-    Console.WriteLine("Production startup resolved. Running host loop skeleton. Press Ctrl+C to stop.");
+    clientServer.Start();
+    var acceptTask = RunClientAcceptLoop(clientServer, productionCts.Token);
+    var listServerReceiveTask = serverListResult.Connected
+        ? RunServerListReceiveLoop(serverListSocket, authBridge, clientConnections, productionCts.Token)
+        : Task.CompletedTask;
+
+    Console.WriteLine($"Production startup resolved. Listening for clients on port {gamePort}. Press Ctrl+C to stop.");
     hostLoop.Run(TimeSpan.FromMilliseconds(5), productionCts.Token);
+    await Task.WhenAll(acceptTask, listServerReceiveTask);
     return;
 }
 
@@ -92,5 +121,63 @@ while (!cts.IsCancellationRequested)
     catch (OperationCanceledException) when (cts.IsCancellationRequested)
     {
         break;
+    }
+}
+
+static async Task RunClientAcceptLoop(ProductionTcpServer server, CancellationToken cancellationToken)
+{
+    while (!cancellationToken.IsCancellationRequested)
+    {
+        try
+        {
+            var result = await server.AcceptOneAsync(cancellationToken);
+            Console.WriteLine($"Client session {result.PlayerId} stopped: {result.StopReason}.");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            break;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Client accept loop failed: {ex.Message}");
+        }
+    }
+}
+
+static async Task RunServerListReceiveLoop(
+    ProductionServerListTcpSocket serverListSocket,
+    ProductionLoginAuthBridge authBridge,
+    ProductionTcpClientConnectionRegistry clientConnections,
+    CancellationToken cancellationToken)
+{
+    while (!cancellationToken.IsCancellationRequested && serverListSocket.IsConnected)
+    {
+        IReadOnlyList<byte[]> packets;
+        try
+        {
+            packets = await serverListSocket.ReceivePacketsAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            break;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Listserver receive loop failed: {ex.Message}");
+            break;
+        }
+
+        foreach (var packet in packets)
+        {
+            if (packet.Length == 0)
+                continue;
+
+            if (packet[0] != (byte)ListServerToServerPacketId.VerifyAccount2)
+                continue;
+
+            var result = authBridge.HandleVerifyAccount2(packet.AsSpan(1));
+            if (result.OutboundBytes.Length != 0)
+                await clientConnections.SendAsync(result.PlayerId, result.OutboundBytes, cancellationToken);
+        }
     }
 }

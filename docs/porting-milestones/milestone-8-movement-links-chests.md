@@ -27,8 +27,8 @@
   blocked until a direct C++ player call path is proven.
 - [x] Implement chest/sign packet responses only where bytes and state changes are confirmed.
 - [x] Keep combat/NPC/script triggers blocked unless explicitly confirmed in this milestone.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement movement links chests boundary`.
 

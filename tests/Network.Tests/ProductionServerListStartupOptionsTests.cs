@@ -16,7 +16,8 @@ public sealed class ProductionServerListStartupOptionsTests
                 Source: ProductionStartupServerSource.CommandLineOrEnvironment,
                 Diagnostic: null),
             Gs2Settings.Parse("""
-                listip=listserver.graal.in
+                listip=custom-list.example.test
+                listport=14901
                 description=Test server
                 hq_password=secret
                 serverip=203.0.113.9
@@ -37,8 +38,8 @@ public sealed class ProductionServerListStartupOptionsTests
                 ServerName: "Public Classic",
                 ShowHelp: false));
 
-        Assert.Equal("listserver.graal.in", options.ListIp);
-        Assert.Equal("14900", options.ListPort);
+        Assert.Equal("custom-list.example.test", options.ListIp);
+        Assert.Equal("14901", options.ListPort);
         Assert.Equal("Public Classic", options.Name);
         Assert.Equal("Test server", options.Description);
         Assert.Equal("English", options.Language);
@@ -51,5 +52,37 @@ public sealed class ProductionServerListStartupOptionsTests
         Assert.Equal(1, options.HqLevel);
         Assert.False(options.OnlyStaff);
         Assert.Equal(["G3D0311C", "G3D0321C"], options.AllowedVersions);
+    }
+
+    [Fact]
+    public void FromStartupSnapshotUsesDocumentedServerOptionsDefaultsWhenKeysAreAbsent()
+    {
+        var snapshot = new ProductionStartupSnapshot(
+            new ProductionStartupResolution(
+                Success: true,
+                ServerName: "Classic",
+                ServerPath: @"C:\servers\Classic\",
+                Source: ProductionStartupServerSource.CommandLineOrEnvironment,
+                Diagnostic: null),
+            Gs2Settings.Parse(""),
+            Gs2Settings.Parse(""));
+
+        var options = ProductionServerListStartupOptions.FromStartupSnapshot(
+            snapshot,
+            new ProductionStartupOverrides(
+                Server: "Classic",
+                Port: null,
+                LocalIp: null,
+                ServerIp: null,
+                ServerInterface: null,
+                StaffAccount: null,
+                ServerName: null,
+                ShowHelp: false));
+
+        Assert.Equal("listserver.graal.in", options.ListIp);
+        Assert.Equal("14900", options.ListPort);
+        Assert.Equal("14802", options.ServerPort);
+        Assert.Equal("AUTO", options.ServerIp);
+        Assert.Equal("AUTO", options.LocalIp);
     }
 }
