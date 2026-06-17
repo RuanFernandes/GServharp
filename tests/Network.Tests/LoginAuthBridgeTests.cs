@@ -154,7 +154,7 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
-    public void EndSessionSavesRuntimeAccountState()
+    public void EndSessionSavesAccountAndRemovesListserverPlayer()
     {
         using var serverRoot = TestDefaultServerRoot();
         var resources = ServerResourceFileSystems.LoadFolderConfig(
@@ -180,13 +180,47 @@ public sealed class LoginAuthBridgeTests
             new ClientSocketSessionContext(7, "127.0.0.1"),
             SocketPayload(PlayerPropsPacket(PlayerPropertyId.X, 70, PlayerPropertyId.Y, 71), 42));
 
-        var save = bridge.EndClientSession(7);
+        var end = bridge.EndClientSession(7);
 
-        Assert.NotNull(save);
-        Assert.True(save.WriteSucceeded);
+        Assert.NotNull(end.SaveResult);
+        Assert.True(end.SaveResult.WriteSucceeded);
+        Assert.Equal(ServerListAuthPackets.PlayerRemove(7), Assert.Single(gateway.SentPlayerRemoves));
         var saved = File.ReadAllText(Path.Combine(serverRoot.Path, "accounts", "pc_Ruan.txt"));
         Assert.Contains("\r\nX 35\r\n", saved, StringComparison.Ordinal);
         Assert.Contains("\r\nY 35.5\r\n", saved, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EndSessionBroadcastsDisconnectToClientPeer()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var resources = ServerResourceFileSystems.LoadFolderConfig(
+            serverRoot.Path,
+            File.ReadAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt")));
+        var levelLoader = new NwLevelFileLoader(resources.Get(ServerFileSystemKind.All));
+        var runtimeServer = new RuntimeServer();
+        var gateway = new RecordingGateway { IsConnected = true };
+        var bridge = new LoginAuthBridge(
+            gateway,
+            AuthOptions(),
+            new LoginWorldEntryOptions(
+                new DiskAccountFileSystem(serverRoot.Path),
+                Gs2Settings.LoadFile(Path.Combine(serverRoot.Path, "config", "serveroptions.txt")),
+                levelLoader,
+                new FileLevelLookup(levelLoader),
+                new AccountLoginOptions(false, "My Server", [], ["YOURACCOUNT"], "")),
+            runtimeServer);
+
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
+        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
+        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+
+        var end = bridge.EndClientSession(7);
+
+        var broadcast = Assert.Single(end.Broadcasts);
+        Assert.Equal(8, broadcast.PlayerId);
+        Assert.Equal(ExpectedDisconnectPacket(7), DecodeSocketPayload(broadcast.OutboundBytes, key: 43));
     }
 
     private static PreWorldAuthOptions AuthOptions() =>
@@ -237,6 +271,21 @@ public sealed class LoginAuthBridgeTests
 
     private static byte[] SocketPayload(byte[] raw, byte key) =>
         SocketFrame(raw, key)[2..];
+
+    private static byte[] DecodeSocketPayload(byte[] socketFrame, byte key) =>
+        new InboundPacketDecoder(EncryptionGeneration.Gen5, key)
+            .DecodeSocketFrame(socketFrame.AsSpan(2))
+            .DecodedPayload;
+
+    private static byte[] ExpectedDisconnectPacket(ushort playerId)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        packet.WriteGShort(playerId);
+        packet.WriteGChar((byte)PlayerPropertyId.PlayerConnected);
+        packet.WriteByte((byte)'\n');
+        return packet.ToArray();
+    }
 
     private static byte[] PlayerPropsPacket(PlayerPropertyId first, byte firstValue, PlayerPropertyId second, byte secondValue)
     {
@@ -298,6 +347,7 @@ public sealed class LoginAuthBridgeTests
         public bool IsConnected { get; init; }
         public List<byte[]> SentPackets { get; } = [];
         public List<byte[]> SentPlayerAdds { get; } = [];
+        public List<byte[]> SentPlayerRemoves { get; } = [];
 
         public void SendLoginPacketForPlayer(byte[] packetBody)
         {
@@ -307,6 +357,11 @@ public sealed class LoginAuthBridgeTests
         public void SendPlayerAdd(byte[] packetBody)
         {
             SentPlayerAdds.Add(packetBody);
+        }
+
+        public void SendPlayerRemove(byte[] packetBody)
+        {
+            SentPlayerRemoves.Add(packetBody);
         }
     }
 }

@@ -7,6 +7,7 @@ public interface IServerListGateway
     bool IsConnected { get; }
     void SendLoginPacketForPlayer(byte[] packetBody);
     void SendPlayerAdd(byte[] packetBody);
+    void SendPlayerRemove(byte[] packetBody);
 }
 
 public sealed class ServerListAuthBoundary(

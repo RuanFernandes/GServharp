@@ -25,6 +25,10 @@ public sealed record ClientFrameBridgeResult(
     IReadOnlyList<ClientSessionOutbound> Broadcasts,
     string Diagnostic = "");
 
+public sealed record ClientSessionEndResult(
+    AccountSaveResult? SaveResult,
+    IReadOnlyList<ClientSessionOutbound> Broadcasts);
+
 public sealed class LoginAuthBridge(
     IServerListGateway serverList,
     PreWorldAuthOptions options,
@@ -130,7 +134,7 @@ public sealed class LoginAuthBridge(
             broadcasts);
     }
 
-    public AccountSaveResult? EndClientSession(ushort playerId)
+    public ClientSessionEndResult EndClientSession(ushort playerId)
     {
         RemovePendingSession(playerId);
         _activeSessions.Remove(playerId);
@@ -141,6 +145,10 @@ public sealed class LoginAuthBridge(
         AccountSaveResult? saveResult = null;
         if (_activePlayers.Remove(playerId, out var player))
         {
+            var broadcasts = BuildDisconnectBroadcasts(player).ToArray();
+            if (serverList.IsConnected)
+                serverList.SendPlayerRemove(ServerListAuthPackets.PlayerRemove(playerId));
+
             if (_activeAccounts.Remove(playerId, out var account) && worldEntryOptions is not null)
             {
                 CopyRuntimeToAccount(player, account);
@@ -148,13 +156,11 @@ public sealed class LoginAuthBridge(
             }
 
             runtimeServer?.DeletePlayer(player);
-        }
-        else
-        {
-            _activeAccounts.Remove(playerId);
+            return new ClientSessionEndResult(saveResult, broadcasts);
         }
 
-        return saveResult;
+        _activeAccounts.Remove(playerId);
+        return new ClientSessionEndResult(null, []);
     }
 
     private ClientSessionSkeleton? FindSession(ushort id, PlayerSessionType type) =>
@@ -314,6 +320,30 @@ public sealed class LoginAuthBridge(
 
     private static short ClampShort(int value) =>
         (short)Math.Clamp(value, short.MinValue, short.MaxValue);
+
+    private IEnumerable<ClientSessionOutbound> BuildDisconnectBroadcasts(RuntimePlayer player)
+    {
+        if (player.Kind == RuntimePlayerKind.NpcControl)
+            yield break;
+
+        var packet = BuildOtherPlayerDisconnected(player.Id);
+        foreach (var (otherId, session) in _activeSessions.ToArray())
+        {
+            if (otherId == player.Id || !IsClient(session.Type))
+                continue;
+
+            session.QueuePacket(packet);
+            var outbound = FlushOutboundBytes(session);
+            if (outbound.Length != 0)
+                yield return new ClientSessionOutbound(otherId, outbound);
+        }
+    }
+
+    private static byte[] BuildOtherPlayerDisconnected(ushort playerId) =>
+        PlayerPropertySerializer.BuildOtherPlayerPropsPacket(
+            playerId,
+            [(byte)((byte)PlayerPropertyId.PlayerConnected + 32)],
+            appendNewline: true);
 
     private IEnumerable<ClientSessionOutbound> ExchangeLoginPlayerProps(
         ClientSessionSkeleton joiningSession,

@@ -46,6 +46,7 @@ public sealed class ProtocolConstantTests
         Assert.Equal(5, (int)ServerToListServerPacketId.SetIp);
         Assert.Equal(7, (int)ServerToListServerPacketId.PlayerSet);
         Assert.Equal(14, (int)ServerToListServerPacketId.PlayerAdd);
+        Assert.Equal(15, (int)ServerToListServerPacketId.PlayerRemove);
         Assert.Equal(17, (int)ServerToListServerPacketId.VerifyAccount2);
         Assert.Equal(22, (int)ServerToListServerPacketId.NewServer);
         Assert.Equal(23, (int)ServerToListServerPacketId.ServerHqPass);

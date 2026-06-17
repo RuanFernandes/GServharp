@@ -95,6 +95,11 @@ public sealed class ServerListTcpSocket : IServerListSocket, IServerListGateway,
         SendPacket(packetBody);
     }
 
+    public void SendPlayerRemove(byte[] packetBody)
+    {
+        SendPacket(packetBody);
+    }
+
     public async ValueTask<IReadOnlyList<byte[]>> ReceivePacketsAsync(CancellationToken cancellationToken)
     {
         if (_stream is null)

@@ -170,5 +170,10 @@ public sealed class ServerListAuthBoundaryTests
         {
             LastLoginPacketForPlayer = packetBody;
         }
+
+        public void SendPlayerRemove(byte[] packetBody)
+        {
+            LastLoginPacketForPlayer = packetBody;
+        }
     }
 }

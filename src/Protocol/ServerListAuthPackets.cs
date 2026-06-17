@@ -105,6 +105,14 @@ public static class ServerListAuthPackets
         return writer.ToArray();
     }
 
+    public static byte[] PlayerRemove(ushort playerId)
+    {
+        var writer = new GraalBinaryWriter();
+        writer.WriteGChar((byte)ServerToListServerPacketId.PlayerRemove);
+        writer.WriteGShort(playerId);
+        return writer.ToArray();
+    }
+
     public static byte[] VerifyAccount2Request(
         string accountName,
         string password,

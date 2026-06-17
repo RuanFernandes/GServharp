@@ -110,7 +110,14 @@ if (!config.Enabled)
     clientServer.Start();
     var acceptTask = clientServer.RunAsync(productionCts.Token, result =>
     {
-        var saveResult = authBridge.EndClientSession(result.PlayerId);
+        var endResult = authBridge.EndClientSession(result.PlayerId);
+        foreach (var broadcast in endResult.Broadcasts)
+        {
+            if (broadcast.OutboundBytes.Length != 0)
+                clientConnections.SendAsync(broadcast.PlayerId, broadcast.OutboundBytes, productionCts.Token).AsTask().GetAwaiter().GetResult();
+        }
+
+        var saveResult = endResult.SaveResult;
         if (saveResult is { WriteAttempted: true })
             Console.WriteLine($"Saved account for client session {result.PlayerId}: writeSucceeded={saveResult.WriteSucceeded}; path={saveResult.Path}");
 

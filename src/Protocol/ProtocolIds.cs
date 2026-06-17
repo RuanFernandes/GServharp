@@ -199,6 +199,7 @@ public enum ServerToListServerPacketId : byte
     SetIp = 5,
     PlayerSet = 7,
     PlayerAdd = 14,
+    PlayerRemove = 15,
     Ping = 16,
     VerifyAccount2 = 17,
     NewServer = 22,

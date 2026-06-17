@@ -87,5 +87,10 @@ public sealed class LoginSocketFrameHandlerTests
         {
             SentPackets.Add(packetBody);
         }
+
+        public void SendPlayerRemove(byte[] packetBody)
+        {
+            SentPackets.Add(packetBody);
+        }
     }
 }
