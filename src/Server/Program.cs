@@ -71,6 +71,14 @@ if (!config.Enabled)
                 RemoteIp: "")),
         runtimeServer);
     var clientConnections = new TcpClientConnectionRegistry();
+    runtime.LevelTimedEventsHandler = () =>
+    {
+        foreach (var broadcast in authBridge.TickLevelTimedEvents())
+        {
+            if (broadcast.OutboundBytes.Length != 0)
+                clientConnections.SendAsync(broadcast.PlayerId, broadcast.OutboundBytes, cancellationToken).AsTask().GetAwaiter().GetResult();
+        }
+    };
     using var clientServer = new ClientTcpServer(
         IPAddress.Any,
         gamePort,

@@ -257,6 +257,51 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
+    public void BoardModifyForwardsAndRespawns()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var resources = ServerResourceFileSystems.LoadFolderConfig(
+            serverRoot.Path,
+            File.ReadAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt")));
+        var levelLoader = new NwLevelFileLoader(resources.Get(ServerFileSystemKind.All));
+        var loaded = levelLoader.TryLoad("onlinestartlocal.nw");
+        var (tileX, tileY) = FindRespawningTile(loaded.Level);
+        var runtimeServer = new RuntimeServer();
+        var gateway = new RecordingGateway { IsConnected = true };
+        var bridge = new LoginAuthBridge(
+            gateway,
+            AuthOptions(),
+            new LoginWorldEntryOptions(
+                new DiskAccountFileSystem(serverRoot.Path),
+                Gs2Settings.LoadFile(Path.Combine(serverRoot.Path, "config", "serveroptions.txt")),
+                levelLoader,
+                new FileLevelLookup(levelLoader),
+                new AccountLoginOptions(false, "My Server", [], ["YOURACCOUNT"], "")),
+            runtimeServer);
+
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
+        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
+        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+
+        var payload = BoardModifyPayload((byte)tileX, (byte)tileY, 1, 1, 0);
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(BoardModifyPacket(payload), 42));
+
+        Assert.Equal(BoardChangeRuntime.BuildBoardModifyPacket(payload), DecodeSocketPayload(result.OutboundBytes, key: 42));
+        var broadcast = Assert.Single(result.Broadcasts);
+        Assert.Equal(BoardChangeRuntime.BuildBoardModifyPacket(payload), DecodeSocketPayload(broadcast.OutboundBytes, key: 43));
+
+        IReadOnlyList<ClientSessionOutbound> respawns = [];
+        for (var i = 0; i < 15; i++)
+            respawns = bridge.TickLevelTimedEvents();
+
+        Assert.Contains(respawns, packet => packet.PlayerId == 7 && packet.OutboundBytes.Length != 0);
+        Assert.Contains(respawns, packet => packet.PlayerId == 8 && packet.OutboundBytes.Length != 0);
+    }
+
+    [Fact]
     public void ServerWarpRequestsListserver()
     {
         using var serverRoot = TestDefaultServerRoot();
@@ -527,6 +572,36 @@ public sealed class LoginAuthBridgeTests
         packet.WriteGChar(y);
         packet.WriteByte((byte)'\n');
         return packet.ToArray();
+    }
+
+    private static byte[] BoardModifyPacket(byte[] payload)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)PlayerToServerPacketId.BoardModify);
+        packet.WriteBytes(payload);
+        packet.WriteByte((byte)'\n');
+        return packet.ToArray();
+    }
+
+    private static byte[] BoardModifyPayload(byte x, byte y, byte width, byte height, ushort tile)
+    {
+        var tiles = new GraalBinaryWriter();
+        tiles.WriteGShort(tile);
+        return BoardChangeRuntime.BuildPayload(x, y, width, height, tiles.ToArray());
+    }
+
+    private static (int X, int Y) FindRespawningTile(NwLevelSnapshot level)
+    {
+        for (var y = 0; y < 64; y++)
+        {
+            for (var x = 0; x < 64; x++)
+            {
+                if (BoardChangeRuntime.ShouldRespawn(level.GetTile(0, x, y)))
+                    return (x, y);
+            }
+        }
+
+        throw new InvalidOperationException("Default level must contain a C++ respawning tile.");
     }
 
     private static byte[] ServerWarpPacket(string serverName)

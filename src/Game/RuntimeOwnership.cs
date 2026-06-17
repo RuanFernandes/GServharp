@@ -516,6 +516,7 @@ public sealed class RuntimeLevel
     private readonly List<ushort> _playerIds = [];
     private readonly List<RuntimeLevelItem> _items = [];
     private readonly List<RuntimeHorse> _horses = [];
+    private readonly List<RuntimeBoardChange> _boardChanges = [];
     private readonly SortedSet<uint> _npcIds = [];
     private readonly Dictionary<byte, RuntimeBaddy> _baddies = [];
     private readonly RuntimeByteIdGenerator _baddyIds = new(1);
@@ -640,6 +641,23 @@ public sealed class RuntimeLevel
     {
         _items.Add(new RuntimeLevelItem(x, y, itemType));
         return true;
+    }
+
+    public void AddBoardChange(byte[] respawnPayload, int respawnTime)
+    {
+        _boardChanges.Add(new RuntimeBoardChange(respawnPayload, respawnTime));
+    }
+
+    public IReadOnlyList<RuntimeBoardChangePacket> TickBoardChanges()
+    {
+        var packets = new List<RuntimeBoardChangePacket>();
+        foreach (var change in _boardChanges)
+        {
+            if (change.Tick())
+                packets.Add(new RuntimeBoardChangePacket(BoardChangeRuntime.BuildBoardModifyPacket(change.RespawnPayload)));
+        }
+
+        return packets;
     }
 
     public LevelItemType RemoveItem(float x, float y)

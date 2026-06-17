@@ -7,6 +7,17 @@ public sealed record RuntimeLevelItem(float X, float Y, LevelItemType ItemType);
 
 public sealed record RuntimeHorse(string Image, float X, float Y, byte Direction, byte Bushes);
 
+public sealed record RuntimeBoardChangePacket(byte[] Packet);
+
+internal sealed class RuntimeBoardChange(byte[] respawnPayload, int respawnTime)
+{
+    private readonly RuntimeTimeoutCounter _timeout = new(respawnTime);
+
+    public byte[] RespawnPayload { get; } = respawnPayload;
+
+    public bool Tick() => respawnTime >= 0 && _timeout.DoTimeout() == 0;
+}
+
 public sealed record LevelItemRuntimeResult(
     bool ChangedLevel,
     byte[] ForwardPacket,
@@ -93,6 +104,58 @@ public static class LevelItemRuntime
 
     private static LevelItemRuntimeResult NoChange() =>
         new(false, [], [], []);
+}
+
+public static class BoardChangeRuntime
+{
+    private static readonly HashSet<ushort> RespawningTiles =
+    [
+        0x1ff, 0x3ff, 0x2ac, 0x002, 0x200, 0x022, 0x3de, 0x1a4, 0x14a, 0x674, 0x72a
+    ];
+
+    public static byte[] BuildBoardModifyPacket(ReadOnlySpan<byte> payload)
+    {
+        var writer = new GraalBinaryWriter();
+        writer.WriteGChar((byte)ServerToPlayerPacketId.BoardModify);
+        writer.WriteBytes(payload);
+        writer.WriteByte((byte)'\n');
+        return writer.ToArray();
+    }
+
+    public static byte[] BuildPayload(byte x, byte y, byte width, byte height, ReadOnlySpan<byte> tiles)
+    {
+        var writer = new GraalBinaryWriter();
+        writer.WriteGChar(x);
+        writer.WriteGChar(y);
+        writer.WriteGChar(width);
+        writer.WriteGChar(height);
+        writer.WriteBytes(tiles);
+        return writer.ToArray();
+    }
+
+    public static bool ShouldRespawn(ushort tile) => RespawningTiles.Contains(tile);
+
+    public static byte[] BuildOldTilePayload(NwLevelSnapshot level, byte x, byte y, byte width, byte height)
+    {
+        var tiles = new GraalBinaryWriter();
+        for (var row = y; row < y + height && row < 64; row++)
+        {
+            for (var column = x; column < x + width && column < 64; column++)
+                tiles.WriteGShort(level.GetTile(0, column, row));
+        }
+
+        return BuildPayload(x, y, width, height, tiles.ToArray());
+    }
+
+    public static LevelItemType RollTileDrop(ushort oldTile, bool bushItems, bool vasesDrop, int tileDropRate, Random rng)
+    {
+        if ((oldTile is 2 or 0x1a4 or 0x1ff or 0x3ff) && bushItems && tileDropRate > 0 && rng.Next(100) < tileDropRate)
+            return LevelItemCatalog.GetItemId(rng.Next(6));
+
+        return oldTile == 0x2ac && vasesDrop
+            ? LevelItemType.Heart
+            : LevelItemType.Invalid;
+    }
 }
 
 public enum BaddyMode : byte

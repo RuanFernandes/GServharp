@@ -47,6 +47,7 @@ public sealed class LoginAuthBridge(
     private readonly Dictionary<ushort, ClientPacketStreamFramer> _activeFramers = [];
     private readonly Dictionary<string, RuntimeLevel> _levels = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ushort, string> _loginFrameDebug = [];
+    private readonly Random _rng = new();
 
     public ClientFrameBridgeResult HandleClientFrame(
         ClientSocketSessionContext context,
@@ -180,6 +181,18 @@ public sealed class LoginAuthBridge(
         return new ListServerInfoResult(playerId, FlushOutboundBytes(session));
     }
 
+    public IReadOnlyList<ClientSessionOutbound> TickLevelTimedEvents()
+    {
+        var touched = new HashSet<ushort>();
+        foreach (var level in _levels.Values)
+        {
+            foreach (var packet in level.TickBoardChanges())
+                QueueOneLevelPacket(level, packet.Packet, touched, exclude: null);
+        }
+
+        return FlushTouchedBroadcasts(touched);
+    }
+
     private ClientSessionSkeleton? FindSession(ushort id, PlayerSessionType type) =>
         _pendingSessions.TryGetValue((id, type), out var session) ? session : null;
 
@@ -218,6 +231,12 @@ public sealed class LoginAuthBridge(
             {
                 var serverName = System.Text.Encoding.ASCII.GetString(packet.Payload.Span[1..]).TrimEnd('\n', '\r');
                 serverList.SendServerInfoForPlayer(ServerListAuthPackets.ServerInfoForPlayer(context.PlayerId, serverName));
+                continue;
+            }
+
+            if (packetId == (byte)PlayerToServerPacketId.BoardModify)
+            {
+                HandleBoardModify(packet.Payload.Span[1..], player, touched);
                 continue;
             }
 
@@ -279,6 +298,45 @@ public sealed class LoginAuthBridge(
 
         var warning = decoded.Warnings.Count == 0 ? "" : string.Join("; ", decoded.Warnings);
         return new ClientFrameBridgeResult(true, outbound.ToArray(), broadcasts, warning);
+    }
+
+    private void HandleBoardModify(ReadOnlySpan<byte> payload, RuntimePlayer player, ISet<ushort> touched)
+    {
+        if (runtimeServer is null || player.Level is not { } level || payload.Length < 4)
+            return;
+
+        QueueOneLevelPacket(level, BoardChangeRuntime.BuildBoardModifyPacket(payload), touched, exclude: null);
+
+        var reader = new GraalBinaryReader(payload);
+        var x = reader.ReadGChar();
+        var y = reader.ReadGChar();
+        var width = reader.ReadGChar();
+        var height = reader.ReadGChar();
+        if (x > 63 || y > 63 || width == 0 || height == 0 || worldEntryOptions is null)
+            return;
+
+        var loaded = worldEntryOptions.LevelLoader.TryLoad(level.LevelName);
+        if (!loaded.Success)
+            return;
+
+        var oldTile = loaded.Level.GetTile(0, x, y);
+        if (BoardChangeRuntime.ShouldRespawn(oldTile))
+            level.AddBoardChange(
+                BoardChangeRuntime.BuildOldTilePayload(loaded.Level, x, y, width, height),
+                GetIntOption("respawntime", 15));
+
+        var drop = BoardChangeRuntime.RollTileDrop(
+            oldTile,
+            GetBoolOption("bushitems", true),
+            GetBoolOption("vasesdrop", true),
+            GetIntOption("tiledroprate", 50),
+            _rng);
+        if (drop == LevelItemType.Invalid)
+            return;
+
+        var state = RuntimePlayerInventoryState.Capture(player);
+        var result = LevelItemRuntime.SpawnLevelItem(level, (byte)(x * 2), (byte)(y * 2), (byte)drop, playerDrop: false, state);
+        QueueLevelPacket(player, result.ForwardPacket, touched);
     }
 
     private void HandleItemAdd(GraalBinaryReader reader, RuntimePlayer player, ISet<ushort> touched)
@@ -368,6 +426,21 @@ public sealed class LoginAuthBridge(
             touched.Add(delivery.PlayerId);
     }
 
+    private void QueueOneLevelPacket(RuntimeLevel level, byte[] packet, ISet<ushort> touched, IReadOnlySet<ushort>? exclude)
+    {
+        if (runtimeServer is null || packet.Length == 0)
+            return;
+
+        var deliveries = LiveWorldSessionForwarder.ForwardConfirmedOneLevelPacket(
+            runtimeServer,
+            level,
+            packet,
+            BuildSinks(),
+            exclude);
+        foreach (var delivery in deliveries)
+            touched.Add(delivery.PlayerId);
+    }
+
     private void QueueSelfPacket(ushort playerId, byte[] packet, ISet<ushort> touched)
     {
         if (packet.Length == 0 || !_activeSessions.TryGetValue(playerId, out var session))
@@ -375,6 +448,42 @@ public sealed class LoginAuthBridge(
 
         session.QueuePacket(packet);
         touched.Add(playerId);
+    }
+
+    private bool GetBoolOption(string key, bool defaultValue)
+    {
+        if (worldEntryOptions is null)
+            return defaultValue;
+
+        var value = worldEntryOptions.AccountSettings.GetString(key, defaultValue ? "true" : "false");
+        return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private int GetIntOption(string key, int defaultValue)
+    {
+        if (worldEntryOptions is null)
+            return defaultValue;
+
+        var value = worldEntryOptions.AccountSettings.GetString(key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        return int.TryParse(value, out var parsed) ? parsed : defaultValue;
+    }
+
+    private IReadOnlyList<ClientSessionOutbound> FlushTouchedBroadcasts(IEnumerable<ushort> touched)
+    {
+        var broadcasts = new List<ClientSessionOutbound>();
+        foreach (var playerId in touched)
+        {
+            if (!_activeSessions.TryGetValue(playerId, out var session))
+                continue;
+
+            var bytes = FlushOutboundBytes(session);
+            if (bytes.Length != 0)
+                broadcasts.Add(new ClientSessionOutbound(playerId, bytes));
+        }
+
+        return broadcasts;
     }
 
     private IReadOnlyDictionary<ushort, ILiveWorldSessionSink> BuildSinks() =>
