@@ -1308,7 +1308,8 @@ shutdown side effects.
 - [x] Implement production infinite host loop safely.
   - 2026-06-16: `ProductionHostLoop.Run` now initializes runtime before entering loop, performs deterministic shutdown cleanup when initialization fails, and preserves source-confirmed action ordering.
 - [ ] Wire player/level/server-list repositories.
-- [ ] Implement `cleanupDeletedPlayers` V8 retention behavior.
+- [x] Implement `cleanupDeletedPlayers` V8 retention behavior.
+  - 2026-06-16: `RuntimeServer.CleanupDeletedPlayers` now accepts optional script-object callbacks for script-referenced skip, before-delete hooks, and confirmed deletion callbacks; `ProductionHostRuntime` forwards these hooks through `ScriptObjectReferenceGate`, `ScriptObjectReferencedCallback`, and `BeforeRuntimePlayerDeleteCallback` paths, matching the C++ "skip while referenced / process before final removal" flow shape.
 - [ ] Implement AP/singleplayer timed runtime behavior only when prerequisites
   exist.
 - [ ] Implement production shutdown side effects.

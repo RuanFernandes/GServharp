@@ -696,16 +696,26 @@ public sealed class RuntimeServer
 
     public void CleanupDeletedPlayers()
     {
-        CleanupDeletedPlayers(isScriptObjectReferenced: null);
+        CleanupDeletedPlayers(
+            isScriptObjectReferenced: null,
+            onScriptObjectReferenced: null,
+            onBeforeDelete: null);
     }
 
-    public void CleanupDeletedPlayers(Func<RuntimePlayer, bool>? isScriptObjectReferenced)
+    public void CleanupDeletedPlayers(
+        Func<RuntimePlayer, bool>? isScriptObjectReferenced,
+        Action<RuntimePlayer>? onScriptObjectReferenced = null,
+        Action<RuntimePlayer>? onBeforeDelete = null)
     {
         foreach (var player in _deletedPlayers.ToArray())
         {
             if (isScriptObjectReferenced?.Invoke(player) == true)
+            {
+                onScriptObjectReferenced?.Invoke(player);
                 continue;
+            }
 
+            onBeforeDelete?.Invoke(player);
             player.LeaveLevel();
             _players.Remove(player.Id);
             _playerIds.FreeId(player.Id);

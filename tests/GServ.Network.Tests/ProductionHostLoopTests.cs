@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using GServ.Network;
+using GServ.Game;
 using Xunit;
 
 namespace GServ.Network.Tests;
@@ -83,6 +84,39 @@ namespace GServ.Network.Tests;
         Assert.False(shouldContinue);
         Assert.True(runtime.CleanupCalled);
         Assert.True(runtime.InitializeCalled);
+    }
+
+    [Fact]
+    public void HostRuntimeCleanupDeletedPlayersPassesScriptReferenceHooks()
+    {
+        var server = new RuntimeServer();
+        var player = new RuntimePlayer(2, "pc:player", RuntimePlayerKind.Client);
+        server.AddPlayer(player, 2);
+        server.DeletePlayer(player);
+
+        var hostRuntime = new ProductionHostRuntime(server);
+        var referenced = false;
+        var beforeDelete = false;
+
+        hostRuntime.ScriptObjectReferenceGate = p => p.Id == 2;
+        hostRuntime.ScriptObjectReferencedCallback = _ => referenced = true;
+        hostRuntime.BeforeRuntimePlayerDeleteCallback = _ => beforeDelete = true;
+
+        hostRuntime.CleanupDeletedPlayers();
+
+        Assert.True(referenced);
+        Assert.False(beforeDelete);
+        Assert.NotNull(server.GetPlayer(2));
+
+        referenced = false;
+        beforeDelete = false;
+        hostRuntime.ScriptObjectReferenceGate = p => false;
+        hostRuntime.IsScriptAwareCleanupAllowed = _ => true;
+        hostRuntime.CleanupDeletedPlayers();
+
+        Assert.True(beforeDelete);
+        Assert.False(referenced);
+        Assert.Null(server.GetPlayer(2));
     }
 
     [Fact]

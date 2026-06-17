@@ -56,6 +56,8 @@ public sealed class ProductionHostRuntime : IProductionHostRuntime
     public Func<RuntimePlayer, bool>? ScriptObjectReferenceGate { get; set; }
 
     public Func<RuntimeServer, bool> IsScriptAwareCleanupAllowed { get; set; } = _ => true;
+    public Action<RuntimePlayer>? ScriptObjectReferencedCallback { get; set; }
+    public Action<RuntimePlayer>? BeforeRuntimePlayerDeleteCallback { get; set; }
 
     public ProductionHostRuntime(
         RuntimeServer? runtimeServer = null,
@@ -108,8 +110,14 @@ public sealed class ProductionHostRuntime : IProductionHostRuntime
         if (_runtimeServer is null)
             return;
 
+        var scriptObjectRefGate = IsScriptAwareCleanupAllowed(_runtimeServer)
+            ? ScriptObjectReferenceGate
+            : null;
+
         _runtimeServer.CleanupDeletedPlayers(
-            IsScriptAwareCleanupAllowed(_runtimeServer) ? ScriptObjectReferenceGate : null);
+            scriptObjectRefGate,
+            scriptObjectRefGate is null ? null : ScriptObjectReferencedCallback,
+            BeforeRuntimePlayerDeleteCallback);
     }
 
     public bool Initialize() => InitializeHandler();

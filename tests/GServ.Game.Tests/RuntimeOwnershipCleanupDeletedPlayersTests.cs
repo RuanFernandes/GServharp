@@ -39,4 +39,44 @@ public sealed class RuntimeOwnershipCleanupDeletedPlayersTests
         Assert.True(observed);
         Assert.NotNull(server.GetPlayer(2));
     }
+
+    [Fact]
+    public void CleanupDeletedPlayersCallsBeforeDeleteCallbackForConfirmedDeletion()
+    {
+        var server = new RuntimeServer();
+        var player = new RuntimePlayer(0, "pc:test", RuntimePlayerKind.Client);
+        server.AddPlayer(player, 2);
+        server.DeletePlayer(player);
+
+        var deletedPlayer = false;
+        server.CleanupDeletedPlayers(
+            isScriptObjectReferenced: null,
+            onScriptObjectReferenced: _ => throw new Xunit.Sdk.XunitException("Should not be called."),
+            onBeforeDelete: p =>
+            {
+                Assert.Equal(2, p.Id);
+                deletedPlayer = true;
+            });
+
+        Assert.Null(server.GetPlayer(2));
+        Assert.True(deletedPlayer);
+    }
+
+    [Fact]
+    public void CleanupDeletedPlayersCallsScriptReferenceCallbackOnlyWhenScriptObjectStillReferenced()
+    {
+        var server = new RuntimeServer();
+        var player = new RuntimePlayer(0, "pc:test", RuntimePlayerKind.Client);
+        server.AddPlayer(player, 2);
+        server.DeletePlayer(player);
+
+        var scriptReferencedCalled = false;
+        server.CleanupDeletedPlayers(
+            isScriptObjectReferenced: _ => true,
+            onScriptObjectReferenced: _ => scriptReferencedCalled = true,
+            onBeforeDelete: _ => throw new Xunit.Sdk.XunitException("Should not delete while script-referenced."));
+
+        Assert.True(scriptReferencedCalled);
+        Assert.NotNull(server.GetPlayer(2));
+    }
 }
