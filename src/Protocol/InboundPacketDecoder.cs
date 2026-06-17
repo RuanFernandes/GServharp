@@ -33,15 +33,29 @@ public sealed class InboundPacketDecoder
     public InboundFrameDecodeResult DecodeSocketFrame(ReadOnlySpan<byte> framePayload)
     {
         var warnings = new List<string>();
-        var decoded = _generation switch
+        byte[] decoded;
+        try
         {
-            EncryptionGeneration.Gen1 or EncryptionGeneration.Gen6 => framePayload.ToArray(),
-            EncryptionGeneration.Gen2 => ZlibDecompress(framePayload),
-            EncryptionGeneration.Gen3 => ZlibDecompress(framePayload),
-            EncryptionGeneration.Gen4 => DecodeGen4(framePayload),
-            EncryptionGeneration.Gen5 => DecodeGen5(framePayload, warnings),
-            _ => throw new NotSupportedException($"Inbound generation {_generation} is not source-confirmed.")
-        };
+            decoded = _generation switch
+            {
+                EncryptionGeneration.Gen1 or EncryptionGeneration.Gen6 => framePayload.ToArray(),
+                EncryptionGeneration.Gen2 => ZlibDecompress(framePayload),
+                EncryptionGeneration.Gen3 => ZlibDecompress(framePayload),
+                EncryptionGeneration.Gen4 => DecodeGen4(framePayload),
+                EncryptionGeneration.Gen5 => DecodeGen5(framePayload, warnings),
+                _ => throw new NotSupportedException($"Inbound generation {_generation} is not source-confirmed.")
+            };
+        }
+        catch (InvalidDataException ex)
+        {
+            warnings.Add($"Inbound {_generation} decompression failed: {ex.Message}");
+            decoded = [];
+        }
+        catch (IOException ex)
+        {
+            warnings.Add($"Inbound {_generation} decompression failed: {ex.Message}");
+            decoded = [];
+        }
 
         return new InboundFrameDecodeResult(decoded, warnings);
     }

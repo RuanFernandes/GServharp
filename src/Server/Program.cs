@@ -76,7 +76,7 @@ if (!config.Enabled)
         foreach (var broadcast in authBridge.TickLevelTimedEvents())
         {
             if (broadcast.OutboundBytes.Length != 0)
-                clientConnections.SendAsync(broadcast.PlayerId, broadcast.OutboundBytes, cancellationToken).AsTask().GetAwaiter().GetResult();
+                clientConnections.SendAsync(broadcast.PlayerId, broadcast.OutboundBytes, CancellationToken.None).AsTask().GetAwaiter().GetResult();
         }
     };
     using var clientServer = new ClientTcpServer(

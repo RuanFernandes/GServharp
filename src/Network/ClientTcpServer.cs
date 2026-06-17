@@ -94,8 +94,16 @@ public sealed class ClientTcpServer : IDisposable
     {
         using (client)
         {
-            var result = await RunSessionAsync(client, playerId, cancellationToken);
-            onSessionEnded?.Invoke(result);
+            try
+            {
+                var result = await RunSessionAsync(client, playerId, cancellationToken);
+                onSessionEnded?.Invoke(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Client session {playerId} crashed: {ex.GetType().Name}: {ex.Message}");
+                throw;
+            }
         }
     }
 

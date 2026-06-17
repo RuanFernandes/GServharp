@@ -74,6 +74,18 @@ public sealed class InboundPacketDecoderTests
     }
 
     [Fact]
+    public void Gen5BadCompressedPayloadWarnsAndKeepsSessionAlive()
+    {
+        var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen5, key: 0);
+
+        var result = decoder.DecodeSocketFramePayload([0x04, 0x01, 0x02, 0x03, 0x04]);
+
+        Assert.Empty(result.DecodedPayload);
+        Assert.Empty(result.Packets);
+        Assert.Contains(result.Warnings, warning => warning.Contains("decompression failed", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Gen4Bzip2FramePayloadDecodesConfirmedFixture()
     {
         var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen4, key: 0);
