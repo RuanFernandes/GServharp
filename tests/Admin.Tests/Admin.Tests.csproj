@@ -9,6 +9,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <ProjectReference Include="..\..\src\GServ.Scripting\GServ.Scripting.csproj" />
+    <ProjectReference Include="..\..\src\Admin\Admin.csproj" />
   </ItemGroup>
 </Project>

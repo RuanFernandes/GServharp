@@ -216,8 +216,8 @@ Implemented:
 
 Tests:
 
-- `tests/GServ.Game.Tests/EntityRuntimeBoundaryTests.cs`
-- `tests/GServ.Protocol.Tests/EntityRuntimePacketTests.cs`
+- `tests/Game.Tests/EntityRuntimeBoundaryTests.cs`
+- `tests/Protocol.Tests/EntityRuntimePacketTests.cs`
 
 ## Blocked
 

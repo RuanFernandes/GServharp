@@ -1,6 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <ProjectReference Include="..\GServ.Core\GServ.Core.csproj" />
-    <ProjectReference Include="..\GServ.Game\GServ.Game.csproj" />
-  </ItemGroup>
-</Project>

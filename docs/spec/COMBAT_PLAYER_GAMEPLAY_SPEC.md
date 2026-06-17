@@ -136,15 +136,15 @@ When warping into a sparring zone with AP exactly `100`, C++ changes AP to `99`,
 
 ## C# Mapping
 
-- `src/GServ.Protocol/ProtocolIds.cs`
+- `src/Protocol/ProtocolIds.cs`
   - adds confirmed packet IDs.
-- `src/GServ.Protocol/CombatPackets.cs`
+- `src/Protocol/CombatPackets.cs`
   - source-confirmed packet builders for bomb, arrow, hurt, explosion, and hitobjects.
-- `src/GServ.Game/CombatPlayerGameplay.cs`
+- `src/Game/CombatPlayerGameplay.cs`
   - isolated deterministic player state transitions and clamps.
-- `tests/GServ.Protocol.Tests/CombatPacketTests.cs`
+- `tests/Protocol.Tests/CombatPacketTests.cs`
   - golden byte fixtures for packet IDs and packet construction.
-- `tests/GServ.Game.Tests/CombatPlayerGameplayTests.cs`
+- `tests/Game.Tests/CombatPlayerGameplayTests.cs`
   - formula/clamp/state-transition tests.
 
 ## Blocked Areas

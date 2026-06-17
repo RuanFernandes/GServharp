@@ -9,9 +9,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <ProjectReference Include="..\..\src\GServ.Game\GServ.Game.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\..\src\Core\Core.csproj" />
   </ItemGroup>
 </Project>

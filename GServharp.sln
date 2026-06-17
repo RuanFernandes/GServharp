@@ -1,41 +1,41 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Core", "src\GServ.Core\GServ.Core.csproj", "{0A5A93EA-4D0E-4D24-AF47-A7A1F79B6521}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{0A5A93EA-4D0E-4D24-AF47-A7A1F79B6521}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Protocol", "src\GServ.Protocol\GServ.Protocol.csproj", "{92FC31E7-78E9-4B80-9868-E8049F1E0417}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protocol", "src\Protocol\Protocol.csproj", "{92FC31E7-78E9-4B80-9868-E8049F1E0417}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Network", "src\GServ.Network\GServ.Network.csproj", "{CFE2C3E3-F891-48D1-B1F3-674C67F48EA8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Network", "src\Network\Network.csproj", "{CFE2C3E3-F891-48D1-B1F3-674C67F48EA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Game", "src\GServ.Game\GServ.Game.csproj", "{44FE2A9C-27C7-4A2C-9352-1B01E52B97DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game", "src\Game\Game.csproj", "{44FE2A9C-27C7-4A2C-9352-1B01E52B97DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Scripting", "src\GServ.Scripting\GServ.Scripting.csproj", "{8918DA7D-5593-4E85-A7E3-581569E43E61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scripting", "src\Scripting\Scripting.csproj", "{8918DA7D-5593-4E85-A7E3-581569E43E61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Persistence", "src\GServ.Persistence\GServ.Persistence.csproj", "{FD7CD5FB-D5E0-40DA-98EA-31B5A5DB22AD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence", "src\Persistence\Persistence.csproj", "{FD7CD5FB-D5E0-40DA-98EA-31B5A5DB22AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Admin", "src\GServ.Admin\GServ.Admin.csproj", "{1C401276-B557-43BA-81D5-1F2D98D0BA5C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admin", "src\Admin\Admin.csproj", "{1C401276-B557-43BA-81D5-1F2D98D0BA5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ", "src\GServ\GServ.csproj", "{936F78B9-932F-4864-842D-5BFA39E03A4A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "src\Server\Server.csproj", "{936F78B9-932F-4864-842D-5BFA39E03A4A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Protocol.Tests", "tests\GServ.Protocol.Tests\GServ.Protocol.Tests.csproj", "{44B6D6C8-65F8-4B55-AB99-52DA19D0F436}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protocol.Tests", "tests\Protocol.Tests\Protocol.Tests.csproj", "{44B6D6C8-65F8-4B55-AB99-52DA19D0F436}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Network.Tests", "tests\GServ.Network.Tests\GServ.Network.Tests.csproj", "{A4A2B2A9-AE3F-40CC-BF1B-A5AD5F42E0E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Network.Tests", "tests\Network.Tests\Network.Tests.csproj", "{A4A2B2A9-AE3F-40CC-BF1B-A5AD5F42E0E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Core.Tests", "tests\GServ.Core.Tests\GServ.Core.Tests.csproj", "{17363044-650B-4071-84AB-D4837307B964}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Tests", "tests\Core.Tests\Core.Tests.csproj", "{17363044-650B-4071-84AB-D4837307B964}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Scripting.Tests", "tests\GServ.Scripting.Tests\GServ.Scripting.Tests.csproj", "{3921F908-48C8-405D-B842-ED7D9C057485}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scripting.Tests", "tests\Scripting.Tests\Scripting.Tests.csproj", "{3921F908-48C8-405D-B842-ED7D9C057485}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Persistence.Tests", "tests\GServ.Persistence.Tests\GServ.Persistence.Tests.csproj", "{51073E0B-C18F-47EF-8C75-BFC61E708C06}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Persistence.Tests", "tests\Persistence.Tests\Persistence.Tests.csproj", "{51073E0B-C18F-47EF-8C75-BFC61E708C06}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Game.Tests", "tests\GServ.Game.Tests\GServ.Game.Tests.csproj", "{0E6A05FC-3E46-4592-9D14-3E6AC82C20D8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game.Tests", "tests\Game.Tests\Game.Tests.csproj", "{0E6A05FC-3E46-4592-9D14-3E6AC82C20D8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GServ.Admin.Tests", "tests\GServ.Admin.Tests\GServ.Admin.Tests.csproj", "{63D38816-6014-45A3-854B-E6043E0B64ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admin.Tests", "tests\Admin.Tests\Admin.Tests.csproj", "{63D38816-6014-45A3-854B-E6043E0B64ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -20,7 +20,7 @@ with explicit `PLPROP_*` logs, and stop before runtime world simulation.
 Prepare a root folder with `world/start.nw`, then run:
 
 ```bash
-dotnet run --project src/GServ/GServ.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
+dotnet run --project src/Server/Server.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
 ```
 
 The shell logs a warning on startup. Without `--dev-only-local`, it does not
@@ -74,7 +74,7 @@ GLEVNW01
 Run:
 
 ```bash
-dotnet run --project src/GServ/GServ.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
+dotnet run --project src/Server/Server.csproj -- --dev-only-local --dev-root <root> --dev-level start.nw --port 14900
 ```
 
 A meaningful playable session is still not expected because full board payload

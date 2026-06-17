@@ -900,7 +900,7 @@ Z 1.5\r\n
 ```
 
 Confirmed full-order fixture is locked by
-`tests/GServ.Persistence.Tests/AccountFileSerializerTests.cs`.
+`tests/Persistence.Tests/AccountFileSerializerTests.cs`.
 
 Load-only account save:
 
@@ -1377,7 +1377,7 @@ UNKNOWN! => unknown
 ```
 
 The confirmed signature and representative level packet fixtures are also
-cataloged in `tests/GServ.Game.Tests/LevelGoldenFixtures.cs` and verified by
+cataloged in `tests/Game.Tests/LevelGoldenFixtures.cs` and verified by
 `LevelGoldenFixtureCatalogTests`. The catalog intentionally stays in the test
 project because it is compatibility evidence, not runtime behavior.
 

@@ -1024,7 +1024,7 @@ Completion criteria:
     `BDMODE_DIE` -> `BDMODE_DEAD` deferred set, and `BDMODE_DEAD` respawn timeout handling with
     respawn-enabled/disabled branches.
 - [x] Add golden tests for packet bytes and gameplay rule outputs.
-  - 2026-06-16: Added `tests/GServ.Game.Tests/EntityRuntimeBoundaryTests.cs` coverage for:
+  - 2026-06-16: Added `tests/Game.Tests/EntityRuntimeBoundaryTests.cs` coverage for:
     non-leader-only `BDMODE_SWAMPSHOT`/`BDMODE_DEAD` mode packets, dead-mode reset timing, and
     removal on non-respawnable baddies after `BDMODE_DEAD`.
 

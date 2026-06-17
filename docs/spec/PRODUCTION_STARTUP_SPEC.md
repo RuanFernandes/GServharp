@@ -130,7 +130,7 @@ Confirmed from `external/gs2lib/src/CSettings.cpp` and `external/gs2lib/include/
 - `GServ.Persistence.ProductionStartupCommandLine` implements confirmed CLI/environment override rules.
 - `GServ.Persistence.ProductionStartupResolver` implements override, `startupserver.txt`, and single-directory selection.
 - `GServ.Persistence.ProductionStartupLoader` loads `config/serveroptions.txt` and `config/adminconfig.txt` after a server root resolves.
-- `src/GServ/Program.cs` now reports production startup resolution and then stops before unported production runtime.
+- `src/Server/Program.cs` now reports production startup resolution and then stops before unported production runtime.
 
 ## Blocked Runtime
 

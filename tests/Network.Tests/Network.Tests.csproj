@@ -9,6 +9,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <ProjectReference Include="..\..\src\GServ.Protocol\GServ.Protocol.csproj" />
+    <ProjectReference Include="..\..\src\Persistence\Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Game\Game.csproj" />
+    <ProjectReference Include="..\..\src\Network\Network.csproj" />
+      <ProjectReference Include="..\..\src\Protocol\Protocol.csproj" />
   </ItemGroup>
 </Project>

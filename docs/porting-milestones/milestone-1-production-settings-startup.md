@@ -21,7 +21,7 @@
 
 - [x] Re-read the source files above and update `docs/spec/PRODUCTION_STARTUP_SPEC.md`.
 - [x] Document every settings filename, default, parse rule, section/key behavior, and missing-file behavior confirmed from C++.
-- [x] Add tests in `tests/GServ.Persistence.Tests` for confirmed settings parsing behavior before implementation.
+- [x] Add tests in `tests/Persistence.Tests` for confirmed settings parsing behavior before implementation.
 - [x] Add production settings DTOs and readers only for confirmed fields.
 - [x] Add a server-root resolver that keeps the current dev-only mode opt-in and separates it from production startup.
 - [x] Add startup diagnostics that clearly state when behavior is blocked rather than silently faking production behavior.
