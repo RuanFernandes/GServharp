@@ -38,6 +38,7 @@ public sealed class RuntimePlayer
     public int PixelY { get; internal set; }
     public int PixelZ { get; internal set; }
     public byte Sprite { get; internal set; }
+    public PlayerStatus Status { get; internal set; }
     public byte HeartLimit { get; set; } = 3;
     public byte MaxPower { get; set; }
     public float Hitpoints { get; set; }
@@ -116,6 +117,7 @@ public sealed class RuntimePlayer
         PixelY = source.Y;
         PixelZ = source.Z;
         Sprite = source.Sprite;
+        Status = (PlayerStatus)source.Status;
         MaxPower = source.MaxPower;
         Hitpoints = source.Hitpoints;
         Rupees = source.Rupees;

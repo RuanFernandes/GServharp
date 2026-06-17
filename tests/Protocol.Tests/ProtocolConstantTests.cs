@@ -10,7 +10,11 @@ public sealed class ProtocolConstantTests
     {
         Assert.Equal(50, (int)PlayerToServerPacketId.RawData);
         Assert.Equal(41, (int)PlayerToServerPacketId.ServerWarp);
+        Assert.Equal(12, (int)PlayerToServerPacketId.ItemAdd);
+        Assert.Equal(13, (int)PlayerToServerPacketId.ItemDelete);
         Assert.Equal(14, (int)PlayerToServerPacketId.ClaimPker);
+        Assert.Equal(20, (int)PlayerToServerPacketId.OpenChest);
+        Assert.Equal(32, (int)PlayerToServerPacketId.ItemTake);
         Assert.Equal(252, (int)PlayerToServerPacketId.SetEncryptionKey);
         Assert.Equal(253, (int)PlayerToServerPacketId.Bundle);
         Assert.Equal(0, (int)ServerToPlayerPacketId.LevelBoard);

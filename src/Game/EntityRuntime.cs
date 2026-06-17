@@ -10,7 +10,39 @@ public sealed record RuntimeHorse(string Image, float X, float Y, byte Direction
 public sealed record LevelItemRuntimeResult(
     bool ChangedLevel,
     byte[] ForwardPacket,
-    byte[] SelfPacket);
+    byte[] SelfPacket,
+    byte[] PlayerPropsPayload,
+    LevelItemType ItemType = LevelItemType.Invalid);
+
+public static class RuntimePlayerInventoryState
+{
+    public static DurablePlayerInventoryState Capture(RuntimePlayer player) =>
+        new()
+        {
+            Rupees = player.Rupees,
+            Bombs = player.Bombs,
+            Arrows = player.Arrows,
+            Hitpoints = player.Hitpoints,
+            MaxPower = player.MaxPower,
+            GlovePower = player.GlovePower,
+            ShieldPower = player.ShieldPower,
+            SwordPower = player.SwordPower,
+            Status = player.Status
+        };
+
+    public static void Apply(RuntimePlayer player, DurablePlayerInventoryState state)
+    {
+        player.Rupees = state.Rupees;
+        player.Bombs = state.Bombs;
+        player.Arrows = state.Arrows;
+        player.Hitpoints = state.Hitpoints;
+        player.MaxPower = state.MaxPower;
+        player.GlovePower = state.GlovePower;
+        player.ShieldPower = state.ShieldPower;
+        player.SwordPower = state.SwordPower;
+        player.Status = state.Status;
+    }
+}
 
 public static class LevelItemRuntime
 {
@@ -32,9 +64,9 @@ public static class LevelItemRuntime
         var x = encodedX / 2.0f;
         var y = encodedY / 2.0f;
         if (level.AddItem(x, y, itemType))
-            return new LevelItemRuntimeResult(true, EntityPackets.ItemAdd(encodedX, encodedY, itemId), []);
+            return new LevelItemRuntimeResult(true, EntityPackets.ItemAdd(encodedX, encodedY, itemId), [], [], itemType);
 
-        return new LevelItemRuntimeResult(false, [], EntityPackets.ItemDelete(encodedX, encodedY));
+        return new LevelItemRuntimeResult(false, [], EntityPackets.ItemDelete(encodedX, encodedY), [], itemType);
     }
 
     public static LevelItemRuntimeResult DeleteOrTakeLevelItem(
@@ -47,19 +79,20 @@ public static class LevelItemRuntime
         var forwardPacket = EntityPackets.ItemDelete(encodedX, encodedY);
         var itemType = level.RemoveItem(encodedX / 2.0f, encodedY / 2.0f);
         if (itemType == LevelItemType.Invalid)
-            return new LevelItemRuntimeResult(false, forwardPacket, []);
+            return new LevelItemRuntimeResult(false, forwardPacket, [], []);
 
+        var playerPropsPayload = Array.Empty<byte>();
         if (takeItem)
         {
-            var payload = InventoryItemRules.BuildPickupPlayerProps(itemType, player);
-            InventoryItemRules.ApplyPickupPlayerProps(payload, player);
+            playerPropsPayload = InventoryItemRules.BuildPickupPlayerProps(itemType, player);
+            InventoryItemRules.ApplyPickupPlayerProps(playerPropsPayload, player);
         }
 
-        return new LevelItemRuntimeResult(true, forwardPacket, []);
+        return new LevelItemRuntimeResult(true, forwardPacket, [], playerPropsPayload, itemType);
     }
 
     private static LevelItemRuntimeResult NoChange() =>
-        new(false, [], []);
+        new(false, [], [], []);
 }
 
 public enum BaddyMode : byte

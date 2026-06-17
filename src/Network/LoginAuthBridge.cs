@@ -221,6 +221,24 @@ public sealed class LoginAuthBridge(
                 continue;
             }
 
+            if (packetId == (byte)PlayerToServerPacketId.ItemAdd)
+            {
+                HandleItemAdd(reader, player, touched);
+                continue;
+            }
+
+            if (packetId is (byte)PlayerToServerPacketId.ItemDelete or (byte)PlayerToServerPacketId.ItemTake)
+            {
+                HandleItemDelete(reader, player, session, takeItem: packetId == (byte)PlayerToServerPacketId.ItemTake, touched);
+                continue;
+            }
+
+            if (packetId == (byte)PlayerToServerPacketId.OpenChest)
+            {
+                HandleOpenChest(reader, context.PlayerId, player, session, touched);
+                continue;
+            }
+
             if (packetId != (byte)PlayerToServerPacketId.PlayerProps)
                 continue;
 
@@ -261,6 +279,102 @@ public sealed class LoginAuthBridge(
 
         var warning = decoded.Warnings.Count == 0 ? "" : string.Join("; ", decoded.Warnings);
         return new ClientFrameBridgeResult(true, outbound.ToArray(), broadcasts, warning);
+    }
+
+    private void HandleItemAdd(GraalBinaryReader reader, RuntimePlayer player, ISet<ushort> touched)
+    {
+        if (runtimeServer is null || player.Level is not { } level)
+            return;
+
+        var encodedX = reader.ReadGChar();
+        var encodedY = reader.ReadGChar();
+        var itemId = reader.ReadGChar();
+        var state = RuntimePlayerInventoryState.Capture(player);
+        var result = LevelItemRuntime.SpawnLevelItem(level, encodedX, encodedY, itemId, playerDrop: true, state);
+        RuntimePlayerInventoryState.Apply(player, state);
+        QueueLevelPacket(player, result.ForwardPacket, touched);
+        QueueSelfPacket(player.Id, result.SelfPacket, touched);
+    }
+
+    private void HandleItemDelete(
+        GraalBinaryReader reader,
+        RuntimePlayer player,
+        ClientSessionSkeleton session,
+        bool takeItem,
+        ISet<ushort> touched)
+    {
+        if (runtimeServer is null || player.Level is not { } level)
+            return;
+
+        var encodedX = reader.ReadGChar();
+        var encodedY = reader.ReadGChar();
+        var state = RuntimePlayerInventoryState.Capture(player);
+        var result = LevelItemRuntime.DeleteOrTakeLevelItem(level, encodedX, encodedY, takeItem, state);
+        RuntimePlayerInventoryState.Apply(player, state);
+        QueueLevelPacket(player, result.ForwardPacket, touched);
+
+        if (!takeItem || result.ItemType == LevelItemType.Invalid || result.PlayerPropsPayload.Length == 0)
+            return;
+
+        QueueSelfPacket(player.Id, PlayerPropertySerializer.BuildPlayerPropsPacket(result.PlayerPropsPayload, appendNewline: true), touched);
+    }
+
+    private void HandleOpenChest(
+        GraalBinaryReader reader,
+        ushort playerId,
+        RuntimePlayer player,
+        ClientSessionSkeleton session,
+        ISet<ushort> touched)
+    {
+        if (worldEntryOptions is null || !_activeAccounts.TryGetValue(playerId, out var account))
+            return;
+
+        var x = reader.ReadGChar();
+        var y = reader.ReadGChar();
+        var levelName = string.IsNullOrWhiteSpace(player.CurrentLevelName)
+            ? "onlinestartlocal.nw"
+            : player.CurrentLevelName;
+        var loaded = worldEntryOptions.LevelLoader.TryLoad(levelName);
+        if (!loaded.Success)
+            return;
+
+        var opened = new HashSet<string>(account.Chests, StringComparer.Ordinal);
+        var result = LevelInteraction.TryOpenChest(loaded.Level, loaded.LevelName, x, y, opened);
+        if (!result.Opened)
+            return;
+
+        account.Chests.Add(result.ChestKey);
+        var state = RuntimePlayerInventoryState.Capture(player);
+        var payload = InventoryItemRules.BuildPickupPlayerProps(result.ItemType, state);
+        InventoryItemRules.ApplyPickupPlayerProps(payload, state);
+        RuntimePlayerInventoryState.Apply(player, state);
+        QueueSelfPacket(player.Id, result.Packet, touched);
+        if (payload.Length != 0)
+            QueueSelfPacket(player.Id, PlayerPropertySerializer.BuildPlayerPropsPacket(payload, appendNewline: true), touched);
+    }
+
+    private void QueueLevelPacket(RuntimePlayer player, byte[] packet, ISet<ushort> touched)
+    {
+        if (runtimeServer is null || packet.Length == 0)
+            return;
+
+        var deliveries = LiveWorldSessionForwarder.ForwardConfirmedLevelAreaPacket(
+            runtimeServer,
+            player,
+            packet,
+            BuildSinks(),
+            new HashSet<ushort> { player.Id });
+        foreach (var delivery in deliveries)
+            touched.Add(delivery.PlayerId);
+    }
+
+    private void QueueSelfPacket(ushort playerId, byte[] packet, ISet<ushort> touched)
+    {
+        if (packet.Length == 0 || !_activeSessions.TryGetValue(playerId, out var session))
+            return;
+
+        session.QueuePacket(packet);
+        touched.Add(playerId);
     }
 
     private IReadOnlyDictionary<ushort, ILiveWorldSessionSink> BuildSinks() =>
