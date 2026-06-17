@@ -87,6 +87,36 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
+    public void LoginSendsAccountDefaultWeaponsLikeCpp()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var resources = ServerResourceFileSystems.LoadFolderConfig(
+            serverRoot.Path,
+            File.ReadAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt")));
+        var levelLoader = new NwLevelFileLoader(resources.Get(ServerFileSystemKind.All));
+        var gateway = new RecordingGateway { IsConnected = true };
+        var bridge = new LoginAuthBridge(
+            gateway,
+            AuthOptions(),
+            new LoginWorldEntryOptions(
+                new DiskAccountFileSystem(serverRoot.Path),
+                Gs2Settings.LoadFile(Path.Combine(serverRoot.Path, "config", "serveroptions.txt")),
+                levelLoader,
+                new FileLevelLookup(levelLoader),
+                new AccountLoginOptions(false, "My Server", [], ["YOURACCOUNT"], "")));
+        _ = bridge.BeginClientLogin(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket());
+
+        var result = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        var decoded = DecodeSocketPayload(result.OutboundBytes, key: 42);
+
+        Assert.True(IndexOf(decoded, EntityPackets.DefaultWeapon((byte)LevelItemType.Bomb)) >= 0);
+        Assert.True(IndexOf(decoded, EntityPackets.DefaultWeapon((byte)LevelItemType.Bow)) >= 0);
+        Assert.True(
+            IndexOf(decoded, EntityPackets.DefaultWeapon((byte)LevelItemType.Bomb)) <
+            IndexOf(decoded, EntityPackets.DefaultWeapon((byte)LevelItemType.Bow)));
+    }
+
+    [Fact]
     public void SecondClientLoginExchangesPlayerPropsWithFirstClient()
     {
         using var serverRoot = TestDefaultServerRoot();
@@ -276,6 +306,17 @@ public sealed class LoginAuthBridgeTests
         new InboundPacketDecoder(EncryptionGeneration.Gen5, key)
             .DecodeSocketFrame(socketFrame.AsSpan(2))
             .DecodedPayload;
+
+    private static int IndexOf(byte[] bytes, byte[] pattern)
+    {
+        for (var i = 0; i <= bytes.Length - pattern.Length; i++)
+        {
+            if (bytes.AsSpan(i, pattern.Length).SequenceEqual(pattern))
+                return i;
+        }
+
+        return -1;
+    }
 
     private static byte[] ExpectedDisconnectPacket(ushort playerId)
     {

@@ -33,7 +33,13 @@ public static class LoginWorldEntry
 
         var account = accountLogin.Account;
         snapshot = BuildSnapshot(session, account, options.AccountLoginOptions.RemoteIp);
-        var postLogin = PostLoginWorldEntryBoundary.BeginClient(session, snapshot);
+        var postLogin = PostLoginWorldEntryBoundary.BeginClient(
+            session,
+            snapshot,
+            new PostLoginClientOptions(
+                ResourceFileSystem: null,
+                Maps: [],
+                PlayerWeapons: BuildLoginWeaponPackets(account, options.AccountSettings)));
         serverListAddPlayerPacket = postLogin.ServerListAddPlayerPacket;
 
         var levelName = string.IsNullOrWhiteSpace(account.LevelName)
@@ -190,6 +196,34 @@ public static class LoginWorldEntry
             BowPower: account.BowPower,
             BowImage: account.BowImage,
             Language: account.Language);
+
+    private static IReadOnlyList<LoginWeaponPacket> BuildLoginWeaponPackets(
+        AccountFileData account,
+        IAccountLoadSettings settings)
+    {
+        if (!GetBool(settings, "defaultweapons", defaultValue: true))
+            return [];
+
+        var packets = new List<LoginWeaponPacket>();
+        foreach (var weaponName in account.Weapons)
+        {
+            var itemType = LevelItemCatalog.GetItemId(weaponName);
+            if (itemType == LevelItemType.Invalid)
+                continue;
+
+            packets.Add(new LoginWeaponPacket(
+                weaponName,
+                EntityPackets.DefaultWeapon((byte)itemType)));
+        }
+
+        return packets;
+    }
+
+    private static bool GetBool(IAccountLoadSettings settings, string key, bool defaultValue)
+    {
+        var value = settings.GetString(key, defaultValue ? "true" : "false");
+        return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
+    }
 
     private static byte[] GCharString(string value)
     {
