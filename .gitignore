@@ -7,3 +7,4 @@ obj/
 **/obj/
 tools/**/build/
 tools/dev-server-root/*.log
+server-live.*.log
