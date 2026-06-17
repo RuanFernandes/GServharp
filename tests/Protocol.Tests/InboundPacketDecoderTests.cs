@@ -74,7 +74,7 @@ public sealed class InboundPacketDecoderTests
     }
 
     [Fact]
-    public void Gen5BadCompressedPayloadWarnsAndKeepsSessionAlive()
+    public void Gen5BadCompressWarns()
     {
         var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen5, key: 0);
 

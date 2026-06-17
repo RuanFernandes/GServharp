@@ -45,6 +45,7 @@ public sealed class LoginAuthBridge(
     private readonly Dictionary<ushort, RuntimePlayer> _activePlayers = [];
     private readonly Dictionary<ushort, InboundPacketDecoder> _activeDecoders = [];
     private readonly Dictionary<ushort, ClientPacketStreamFramer> _activeFramers = [];
+    private readonly Dictionary<ushort, GraalFileQueue> _outboundQueues = [];
     private readonly Dictionary<string, RuntimeLevel> _levels = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ushort, string> _loginFrameDebug = [];
     private readonly Random _rng = new();
@@ -144,6 +145,7 @@ public sealed class LoginAuthBridge(
         _activeSnapshots.Remove(playerId);
         _activeDecoders.Remove(playerId);
         _activeFramers.Remove(playerId);
+        _outboundQueues.Remove(playerId);
 
         AccountSaveResult? saveResult = null;
         if (_activePlayers.Remove(playerId, out var player))
@@ -650,8 +652,14 @@ public sealed class LoginAuthBridge(
         }
     }
 
-    private ClientLoginAuthResult Finish(ClientSessionSkeleton session, bool accepted) =>
-        new(accepted, session.Lifecycle, FlushOutboundBytes(session), BuildDiagnostic(session, accepted));
+    private ClientLoginAuthResult Finish(ClientSessionSkeleton session, bool accepted)
+    {
+        var outbound = FlushOutboundBytes(session);
+        if (!accepted)
+            _outboundQueues.Remove(session.Id);
+
+        return new ClientLoginAuthResult(accepted, session.Lifecycle, outbound, BuildDiagnostic(session, accepted));
+    }
 
     private string BuildDiagnostic(ClientSessionSkeleton session, bool accepted)
     {
@@ -667,24 +675,31 @@ public sealed class LoginAuthBridge(
         return $"frameHex={Convert.ToHexString(frame[..previewLength])}; frameBytes={frame.Length}";
     }
 
-    private static byte[] FlushOutboundBytes(ClientSessionSkeleton session)
+    private byte[] FlushOutboundBytes(ClientSessionSkeleton session)
     {
         var raw = session.TakeOutboundBytes();
         if (raw.Length == 0)
             return [];
 
-        var queue = new GraalFileQueue();
-        if (session.LoginPacket?.Type is PlayerSessionType.Client3 or PlayerSessionType.RemoteControl2 &&
-            session.LoginPacket.EncryptionKey is { } key)
-        {
-            queue.SetCodec(EncryptionGeneration.Gen5, key);
-        }
-        else if (session.LoginPacket?.Type == PlayerSessionType.Web)
-        {
-            queue.SetCodec(EncryptionGeneration.Gen1, key: 0);
-        }
+        var queue = GetOutboundQueue(session);
 
         queue.AddPacket(raw);
         return queue.FlushSocket(forceSendFiles: true);
+    }
+
+    private GraalFileQueue GetOutboundQueue(ClientSessionSkeleton session)
+    {
+        if (_outboundQueues.TryGetValue(session.Id, out var queue))
+            return queue;
+
+        queue = new GraalFileQueue();
+        if (session.LoginPacket?.Type is PlayerSessionType.Client3 or PlayerSessionType.RemoteControl2 &&
+            session.LoginPacket.EncryptionKey is { } key)
+            queue.SetCodec(EncryptionGeneration.Gen5, key);
+        else if (session.LoginPacket?.Type == PlayerSessionType.Web)
+            queue.SetCodec(EncryptionGeneration.Gen1, key: 0);
+
+        _outboundQueues[session.Id] = queue;
+        return queue;
     }
 }

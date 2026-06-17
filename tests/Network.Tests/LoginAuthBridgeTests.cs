@@ -146,7 +146,7 @@ public sealed class LoginAuthBridgeTests
         Assert.NotEmpty(broadcast.OutboundBytes);
         Assert.True(second.OutboundBytes.Length > first.OutboundBytes.Length);
         Assert.True(IndexOf(DecodeSocketPayload(second.OutboundBytes, key: 43), LoginPeerPrefix(7)) >= 0);
-        Assert.True(IndexOf(DecodeSocketPayload(broadcast.OutboundBytes, key: 42), LoginPeerPrefix(8)) >= 0);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, first.OutboundBytes, broadcast.OutboundBytes), LoginPeerPrefix(8)) >= 0);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public sealed class LoginAuthBridgeTests
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
         _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+        var secondLogin = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
 
         var result = bridge.HandleClientFrame(
             new ClientSocketSessionContext(7, "127.0.0.1"),
@@ -209,7 +209,7 @@ public sealed class LoginAuthBridgeTests
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
         _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+        var secondLogin = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
 
         var result = bridge.HandleClientFrame(
             new ClientSocketSessionContext(7, "127.0.0.1"),
@@ -219,7 +219,7 @@ public sealed class LoginAuthBridgeTests
         Assert.Equal(8, broadcast.PlayerId);
         Assert.Equal(
             EntityPackets.ItemAdd(20, 22, (byte)LevelItemType.Bombs),
-            DecodeSocketPayload(broadcast.OutboundBytes, key: 43));
+            DecodeLastSocketPayload(43, secondLogin.OutboundBytes, broadcast.OutboundBytes));
     }
 
     [Fact]
@@ -244,13 +244,13 @@ public sealed class LoginAuthBridgeTests
             runtimeServer);
 
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        var login = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
 
         var result = bridge.HandleClientFrame(
             new ClientSocketSessionContext(7, "127.0.0.1"),
             SocketPayload(BundlePacket(OpenChestPacket(20, 24)), 42));
 
-        Assert.True(IndexOf(DecodeSocketPayload(result.OutboundBytes, key: 42), OpenedChestPacket(20, 24)) >= 0);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes), OpenedChestPacket(20, 24)) >= 0);
         _ = bridge.EndClientSession(7);
         var saved = File.ReadAllText(Path.Combine(serverRoot.Path, "accounts", "pc_Ruan.txt"));
         Assert.Contains("\r\nCHEST 20:24:onlinestartlocal.nw\r\n", saved, StringComparison.Ordinal);
@@ -280,18 +280,19 @@ public sealed class LoginAuthBridgeTests
             runtimeServer);
 
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        var firstLogin = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+        var secondLogin = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+        var secondLoginBroadcast = Assert.Single(secondLogin.Broadcasts);
 
         var payload = BoardModifyPayload((byte)tileX, (byte)tileY, 1, 1, 0);
         var result = bridge.HandleClientFrame(
             new ClientSocketSessionContext(7, "127.0.0.1"),
             SocketPayload(BundlePacket(BoardModifyPacket(payload)), 42));
 
-        Assert.True(IndexOf(DecodeSocketPayload(result.OutboundBytes, key: 42), BoardChangeRuntime.BuildBoardModifyPacket(payload)) >= 0);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, firstLogin.OutboundBytes, secondLoginBroadcast.OutboundBytes, result.OutboundBytes), BoardChangeRuntime.BuildBoardModifyPacket(payload)) >= 0);
         var broadcast = Assert.Single(result.Broadcasts);
-        Assert.True(IndexOf(DecodeSocketPayload(broadcast.OutboundBytes, key: 43), BoardChangeRuntime.BuildBoardModifyPacket(payload)) >= 0);
+        Assert.True(IndexOf(DecodeLastSocketPayload(43, secondLogin.OutboundBytes, broadcast.OutboundBytes), BoardChangeRuntime.BuildBoardModifyPacket(payload)) >= 0);
 
         IReadOnlyList<ClientSessionOutbound> respawns = [];
         for (var i = 0; i < 15; i++)
@@ -358,12 +359,12 @@ public sealed class LoginAuthBridgeTests
             runtimeServer);
 
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
+        var login = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
 
         var response = bridge.HandleServerInfo(ServerListAuthPackets.ServerInfoForPlayer(7, "Login,127.0.0.1,14899")[1..]);
 
         Assert.Equal(7, response.PlayerId);
-        Assert.Equal(ExpectedServerWarp("Login,127.0.0.1,14899"), DecodeSocketPayload(response.OutboundBytes, key: 42));
+        Assert.Equal(ExpectedServerWarp("Login,127.0.0.1,14899"), DecodeLastSocketPayload(42, login.OutboundBytes, response.OutboundBytes));
     }
 
     [Fact]
@@ -427,13 +428,13 @@ public sealed class LoginAuthBridgeTests
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), Client3LoginPacket("Ruan", key: 42));
         _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Ruan", 7, PlayerSessionType.Client3, "SUCCESS"));
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(8, "127.0.0.1"), Client3LoginPacket("Z", key: 43));
-        _ = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
+        var secondLogin = bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:Z", 8, PlayerSessionType.Client3, "SUCCESS"));
 
         var end = bridge.EndClientSession(7);
 
         var broadcast = Assert.Single(end.Broadcasts);
         Assert.Equal(8, broadcast.PlayerId);
-        Assert.Equal(ExpectedDisconnectPacket(7), DecodeSocketPayload(broadcast.OutboundBytes, key: 43));
+        Assert.Equal(ExpectedDisconnectPacket(7), DecodeLastSocketPayload(43, secondLogin.OutboundBytes, broadcast.OutboundBytes));
     }
 
     private static PreWorldAuthOptions AuthOptions() =>
@@ -489,6 +490,16 @@ public sealed class LoginAuthBridgeTests
         new InboundPacketDecoder(EncryptionGeneration.Gen5, key)
             .DecodeSocketFrame(socketFrame.AsSpan(2))
             .DecodedPayload;
+
+    private static byte[] DecodeLastSocketPayload(byte key, params byte[][] socketFrames)
+    {
+        var decoder = new InboundPacketDecoder(EncryptionGeneration.Gen5, key);
+        var decoded = Array.Empty<byte>();
+        foreach (var socketFrame in socketFrames)
+            decoded = decoder.DecodeSocketFrame(socketFrame.AsSpan(2)).DecodedPayload;
+
+        return decoded;
+    }
 
     private static int IndexOf(byte[] bytes, byte[] pattern)
     {
