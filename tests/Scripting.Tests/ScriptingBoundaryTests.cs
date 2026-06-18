@@ -24,7 +24,7 @@ public sealed class ScriptingBoundaryTests
     public void DependencyStatusDocumentsServerSideVmSubmodule()
     {
         Assert.Equal("https://github.com/Preagonal/Preagonal.Scripting.GS2Engine.git", ScriptingRuntimeStatus.ServerSideVmRepositoryUrl);
-        Assert.Equal("external/Preagonal.Scripting.GS2Engine", ScriptingRuntimeStatus.ServerSideVmSubmodulePath);
+        Assert.Equal("external/gs2engine", ScriptingRuntimeStatus.ServerSideVmSubmodulePath);
         Assert.False(ScriptingRuntimeStatus.IsServerSideVmWired);
     }
 

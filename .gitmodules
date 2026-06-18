@@ -4,6 +4,6 @@
 [submodule "external/gs2lib"]
 	path = external/gs2lib
 	url = https://xtjoeytx@bitbucket.org/xtjoeytx/gs2lib.git
-[submodule "external/Preagonal.Scripting.GS2Engine"]
-	path = external/Preagonal.Scripting.GS2Engine
+[submodule "external/gs2engine"]
+	path = external/gs2engine
 	url = https://github.com/Preagonal/Preagonal.Scripting.GS2Engine.git

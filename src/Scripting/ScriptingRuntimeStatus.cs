@@ -7,8 +7,8 @@ public static class ScriptingRuntimeStatus
     public const string RecoveredGs2CompilerCommit = "4fa0a26ca75ac5238fe34a1d90ef9a459b02c2f9";
     public const bool IsExactOriginalGs2CompilerCommitProven = false;
     public const string ServerSideVmRepositoryUrl = "https://github.com/Preagonal/Preagonal.Scripting.GS2Engine.git";
-    public const string ServerSideVmSubmodulePath = "external/Preagonal.Scripting.GS2Engine";
+    public const string ServerSideVmSubmodulePath = "external/gs2engine";
     public const bool IsServerSideVmWired = false;
     public const string Blocker =
-        "Client script packets remain gated by C++ V8NPCSERVER and gs2compiler behavior; server-side VM support is recovered under external/Preagonal.Scripting.GS2Engine but not wired yet.";
+        "Client script packets remain gated by C++ V8NPCSERVER and gs2compiler behavior; server-side VM support is recovered under external/gs2engine but not wired yet.";
 }
