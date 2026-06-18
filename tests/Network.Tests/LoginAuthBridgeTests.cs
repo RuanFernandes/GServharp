@@ -152,7 +152,7 @@ public sealed class LoginAuthBridgeTests
         Assert.True(IndexOf(decoded, RcNcPackets.StatusList("Online,Away")) >= 0);
         Assert.True(IndexOf(decoded, RcNcPackets.RcMaxUploadFileSize(20 * 1024 * 1024)) >= 0);
         Assert.True(IndexOf(decoded, LevelNamePacketPrefix()) < 0);
-        Assert.NotEmpty(gateway.SentPlayerAdds);
+        Assert.Empty(gateway.SentPlayerAdds);
     }
 
     [Fact]
@@ -279,6 +279,57 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
+    public void ControlsDoNotPublishAsListserverPlayers()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var gateway = new RecordingGateway { IsConnected = true };
+        var bridge = CreateBridge(serverRoot, new RuntimeServer(), gateway);
+
+        _ = LoginRc(bridge, "YOURACCOUNT", 8, 42);
+        _ = LoginNc(bridge, "YOURACCOUNT", 9);
+
+        Assert.DoesNotContain(gateway.SentPlayerAdds, packet => PlayerAddId(packet) == 8);
+        Assert.DoesNotContain(gateway.SentPlayerAdds, packet => PlayerAddId(packet) == 9);
+    }
+
+    [Fact]
+    public void RcSeesOneSelfAndNpcServer()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        File.WriteAllText(
+            Path.Combine(serverRoot.Path, "config", "serveroptions.txt"),
+            "name = GSharp\nserverport = 14899\nserverside = true\nnickname = Testbed\n");
+        var gateway = new RecordingGateway { IsConnected = true };
+        var bridge = CreateBridge(serverRoot, new RuntimeServer(), gateway);
+
+        var login = LoginRc(bridge, "YOURACCOUNT", 8, 42);
+        var decoded = DecodeSocketPayload(login.OutboundBytes, 42);
+
+        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(8, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
+        var decodedText = System.Text.Encoding.Latin1.GetString(decoded);
+        Assert.Contains("(npcserver)", decodedText);
+        Assert.Contains("Testbed (Server)", decodedText);
+        Assert.Contains(gateway.SentPlayerAdds, packet => PlayerAddId(packet) == 1 && PlayerAddType(packet) == PlayerSessionType.NpcServer);
+    }
+
+    [Fact]
+    public void NcNpcAddCreatesDatabaseNpcRow()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        _ = LoginNc(bridge, "YOURACCOUNT", 7);
+        var clientQueue = Gen3Queue();
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, NcNpcAddPacket("Control-NPC", 10000, "CONTROL", "moondeath", "onlinestartlocal.nw", "30", "30")));
+
+        var decoded = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, result.OutboundBytes);
+        Assert.True(IndexOf(decoded, RcNcPackets.NcNpcAdd(10000, "Control-NPC", "CONTROL", "onlinestartlocal.nw")) >= 0);
+        Assert.Contains("ID 10000", File.ReadAllText(Path.Combine(serverRoot.Path, "npcs", "npcControl-NPC.txt")));
+    }
+
+    [Fact]
     public void RcFileBrowserStartReturnsFolderListAndDirectory()
     {
         using var serverRoot = TestDefaultServerRoot();
@@ -350,7 +401,9 @@ public sealed class LoginAuthBridgeTests
         var runtime = new RuntimeServer();
         var bridge = CreateBridge(serverRoot, runtime);
         var clientLogin = LoginClient(bridge, "YOURACCOUNT", 8, 43);
-        _ = LoginNc(bridge, "YOURACCOUNT", 7);
+        var rcLogin = LoginRc(bridge, "YOURACCOUNT", 9, 42);
+        var ncLogin = LoginNc(bridge, "YOURACCOUNT", 7);
+        var ncLoginRcBroadcast = Assert.Single(ncLogin.Broadcasts, packet => packet.PlayerId == 9);
         var clientQueue = Gen3Queue();
 
         var result = bridge.HandleClientFrame(
@@ -361,14 +414,15 @@ public sealed class LoginAuthBridgeTests
         Assert.Contains("REALNAME -gr_movement", saved);
         Assert.Contains("IMAGE tool.png", saved);
         Assert.Contains("//#CLIENTSIDE\nplayer.chat = 1;", saved.Replace("\r", "", StringComparison.Ordinal));
-        Assert.Single(result.Broadcasts);
-        var clientDecoded = DecodeLastSocketPayload(43, clientLogin.OutboundBytes, result.Broadcasts[0].OutboundBytes);
-        var ncDecoded = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, result.OutboundBytes);
+        var clientBroadcast = Assert.Single(result.Broadcasts, packet => packet.PlayerId == 8);
+        var rcBroadcast = Assert.Single(result.Broadcasts, packet => packet.PlayerId == 9);
+        var clientDecoded = DecodeLastSocketPayload(43, clientLogin.OutboundBytes, clientBroadcast.OutboundBytes);
+        var rcDecoded = DecodeLastSocketPayload(42, rcLogin.OutboundBytes, ncLoginRcBroadcast.OutboundBytes, rcBroadcast.OutboundBytes);
         Assert.True(IndexOf(clientDecoded, EntityPackets.NpcWeaponDelete("-gr_movement")) >= 0);
         Assert.True(IndexOf(clientDecoded, EntityPackets.NpcWeaponAdd("-gr_movement", "tool.png", "//#CLIENTSIDE\u00a7player.chat = 1;")) >= 0);
         Assert.True(IndexOf(clientDecoded, [(byte)ServerToPlayerPacketId.RawData + 32]) >= 0);
         Assert.True(IndexOf(clientDecoded, [(byte)ServerToPlayerPacketId.NpcWeaponScript + 32]) >= 0);
-        Assert.Equal(1, CountOf(ncDecoded, RcNcPackets.RcChat("Weapon/GUI-script -gr_movement updated by YOURACCOUNT")));
+        Assert.Equal(1, CountOf(rcDecoded, RcNcPackets.RcChat("Weapon/GUI-script -gr_movement updated by YOURACCOUNT")));
     }
 
     [Fact]
@@ -451,7 +505,9 @@ public sealed class LoginAuthBridgeTests
     {
         using var serverRoot = TestDefaultServerRoot();
         var bridge = CreateBridge(serverRoot, new RuntimeServer());
-        _ = LoginNc(bridge, "YOURACCOUNT", 7);
+        var rcLogin = LoginRc(bridge, "YOURACCOUNT", 8, 42);
+        var ncLogin = LoginNc(bridge, "YOURACCOUNT", 7);
+        var ncLoginRcBroadcast = Assert.Single(ncLogin.Broadcasts, packet => packet.PlayerId == 8);
         var clientQueue = Gen3Queue();
 
         var result = bridge.HandleClientFrame(
@@ -461,8 +517,9 @@ public sealed class LoginAuthBridgeTests
                 "tool.png",
                 "echo(1);\n//#CLIENTSIDE\n//#GS2\nfunction onCreated() {\n}")));
 
-        var decoded = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, result.OutboundBytes);
-        Assert.True(IndexOf(decoded, RcNcPackets.RcChat("GS2 -gr_movement: 1")) >= 0);
+        var rcBroadcast = Assert.Single(result.Broadcasts, packet => packet.PlayerId == 8);
+        var rcDecoded = DecodeLastSocketPayload(42, rcLogin.OutboundBytes, ncLoginRcBroadcast.OutboundBytes, rcBroadcast.OutboundBytes);
+        Assert.True(IndexOf(rcDecoded, RcNcPackets.RcChat("GS2 -gr_movement: 1")) >= 0);
     }
 
     [Fact]
@@ -1386,12 +1443,21 @@ public sealed class LoginAuthBridgeTests
         RuntimeServer runtimeServer,
         IAccountLoadSettings? settings = null)
     {
+        return CreateBridge(serverRoot, runtimeServer, new RecordingGateway { IsConnected = true }, settings);
+    }
+
+    private static LoginAuthBridge CreateBridge(
+        TempServerRoot serverRoot,
+        RuntimeServer runtimeServer,
+        IServerListGateway gateway,
+        IAccountLoadSettings? settings = null)
+    {
         var resources = ServerResourceFileSystems.LoadFolderConfig(
             serverRoot.Path,
             File.ReadAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt")));
         var levelLoader = new NwLevelFileLoader(resources.Get(ServerFileSystemKind.All));
         return new LoginAuthBridge(
-            new RecordingGateway { IsConnected = true },
+            gateway,
             AuthOptions(),
             new LoginWorldEntryOptions(
                 new DiskAccountFileSystem(serverRoot.Path),
@@ -1753,6 +1819,15 @@ public sealed class LoginAuthBridgeTests
         return packet.ToArray();
     }
 
+    private static byte[] NcNpcAddPacket(string name, uint id, string type, string owner, string level, string x, string y)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)PlayerToServerPacketId.NcNpcAdd);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(GTokenize($"{name}\n{id}\n{type}\n{owner}\n{level}\n{x}\n{y}\n")));
+        packet.WriteByte((byte)'\n');
+        return packet.ToArray();
+    }
+
     private static byte[] RcSetCommentsPacket(string accountName, string comments)
     {
         var packet = new GraalBinaryWriter();
@@ -1840,6 +1915,25 @@ public sealed class LoginAuthBridgeTests
         packet.WriteBytes("\"I am the npcserver for\",\"this game server. Almost\",\"all npc actions are controlled\",\"by me.\""u8);
         packet.WriteByte((byte)'\n');
         return packet.ToArray();
+    }
+
+    private static ushort PlayerAddId(byte[] packet)
+    {
+        if (packet.Length < 4 || packet[0] != (byte)ServerToListServerPacketId.PlayerAdd + 32)
+            return 0;
+
+        var reader = new GraalBinaryReader(packet.AsSpan(1));
+        return reader.ReadGShort();
+    }
+
+    private static PlayerSessionType PlayerAddType(byte[] packet)
+    {
+        if (packet.Length < 4 || packet[0] != (byte)ServerToListServerPacketId.PlayerAdd + 32)
+            return 0;
+
+        var reader = new GraalBinaryReader(packet.AsSpan(1));
+        _ = reader.ReadGShort();
+        return (PlayerSessionType)reader.ReadGChar();
     }
 
     private static byte[] WeaponAddPacket(LevelItemType itemType)

@@ -63,6 +63,17 @@ public sealed class Gs2ServerScriptHost
 
     public IReadOnlyList<string> Output => _output;
 
+    public static string NormalizeServerSource(string source)
+    {
+        var body = source.TrimStart().StartsWith("function ", StringComparison.Ordinal)
+            ? NormalizeSingleLineFunction(source)
+            : "function onCreated() {\n" + source.TrimEnd() + "\n}";
+
+        return body.Contains("//#CLIENTSIDE", StringComparison.Ordinal)
+            ? body
+            : "//#CLIENTSIDE\n//#GS2\n" + body;
+    }
+
     public IReadOnlyList<string> FunctionNames(string name) =>
         _runtime.TryGet(name, out var script)
             ? script.Functions.Keys.Order(StringComparer.OrdinalIgnoreCase).ToArray()
@@ -131,5 +142,17 @@ public sealed class Gs2ServerScriptHost
             host._output.Add(args.Length == 0 ? "" : args[0]?.GetValue()?.ToString() ?? "");
 
         return 0;
+    }
+
+    private static string NormalizeSingleLineFunction(string source)
+    {
+        var trimmed = source.Trim();
+        var closeParen = trimmed.IndexOf(')');
+        if (closeParen < 0 || trimmed[(closeParen + 1)..].TrimStart().StartsWith('{'))
+            return source;
+
+        var header = trimmed[..(closeParen + 1)];
+        var body = trimmed[(closeParen + 1)..].Trim();
+        return header + " {\n" + body + "\n}";
     }
 }

@@ -100,6 +100,25 @@ public sealed class ScriptingBoundaryTests
     }
 
     [Fact]
+    public async Task ServerScriptRunsSingleLineFunction()
+    {
+        var host = new Gs2ServerScriptHost();
+        var compile = new Gs2CompilerAdapter().Compile(
+            Gs2ServerScriptHost.NormalizeServerSource("function onCreated() echo(1);"),
+            "weapon",
+            "-gr_movement");
+        Assert.True(compile.Success, compile.Error);
+
+        var load = host.LoadWeapon("-gr_movement", compile.Bytecode);
+        Assert.True(load.Success, load.Error);
+
+        var run = await host.Call("-gr_movement", "onCreated");
+
+        Assert.True(run.Success, run.Error);
+        Assert.Equal(["1"], run.Output);
+    }
+
+    [Fact]
     public void ApiCatalogTracksGs2EngineBindings()
     {
         var apis = ScriptVisibleApiCatalog.All;

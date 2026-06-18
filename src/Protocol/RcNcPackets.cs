@@ -236,6 +236,19 @@ public static class RcNcPackets
     public static byte[] NcClassDelete(string className) =>
         PacketWithAsciiPayload(ServerToPlayerPacketId.NcClassDelete, className);
 
+    public static byte[] NcNpcAdd(uint npcId, string name, string type, string levelName)
+    {
+        var writer = NewServerPacket(ServerToPlayerPacketId.NcNpcAdd);
+        writer.WriteGInt(npcId);
+        writer.WriteGChar(50);
+        WriteGCharString(writer, name);
+        writer.WriteGChar(51);
+        WriteGCharString(writer, type);
+        writer.WriteGChar(52);
+        WriteGCharString(writer, levelName);
+        return WithTrailingNewline(writer);
+    }
+
     public static byte[] NpcServerAddress(ushort npcServerId, string ip, int port)
     {
         var writer = NewServerPacket(ServerToPlayerPacketId.NpcServerAddress);
