@@ -5,5 +5,6 @@
     <ProjectReference Include="..\Game\Game.csproj" />
     <ProjectReference Include="..\Persistence\Persistence.csproj" />
     <ProjectReference Include="..\Protocol\Protocol.csproj" />
+    <ProjectReference Include="..\Scripting\Scripting.csproj" />
   </ItemGroup>
 </Project>

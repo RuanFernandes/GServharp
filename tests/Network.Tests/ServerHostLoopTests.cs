@@ -139,7 +139,7 @@ namespace Preagonal.GServer.Network.Tests;
 
     private sealed class RecordingServerHostRuntime : IServerHostRuntime
     {
-        public bool V8NpcServerEnabled { get; }
+        public bool Gs2NpcServerEnabled { get; }
 
         public readonly List<ServerTimingAction> Actions = [];
         public bool InitializeResult { get; init; } = true;

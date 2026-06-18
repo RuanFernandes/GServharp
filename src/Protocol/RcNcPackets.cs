@@ -206,6 +206,9 @@ public static class RcNcPackets
         return WithTrailingNewline(writer);
     }
 
+    public static byte[] NcLevelList(IReadOnlyList<string> levelNames) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.NcLevelList, GTokenize(string.Join('\n', levelNames) + "\n"));
+
     public static byte[] LegacyNcWeaponGet(string weaponName, string imageName, string script)
     {
         var formattedScript = Encoding.Latin1.GetBytes(script.Replace('\n', '\u00a7'));

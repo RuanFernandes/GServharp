@@ -4,7 +4,7 @@ namespace Preagonal.GServer.Network;
 
 public interface IServerHostRuntime
 {
-    bool V8NpcServerEnabled { get; }
+    bool Gs2NpcServerEnabled { get; }
 
     void UpdateSockets();
     void RunScripts();
@@ -32,7 +32,7 @@ public sealed class ServerHostRuntime : IServerHostRuntime
 {
     private readonly RuntimeServer? _runtimeServer;
 
-    public bool V8NpcServerEnabled { get; }
+    public bool Gs2NpcServerEnabled { get; }
 
     public Action SocketManagerUpdateHandler { get; set; } = () => { };
     public Action RunScriptsHandler { get; set; } = () => { };
@@ -61,10 +61,10 @@ public sealed class ServerHostRuntime : IServerHostRuntime
 
     public ServerHostRuntime(
         RuntimeServer? runtimeServer = null,
-        bool v8NpcServerEnabled = false)
+        bool gs2NpcServerEnabled = false)
     {
         _runtimeServer = runtimeServer;
-        V8NpcServerEnabled = v8NpcServerEnabled;
+        Gs2NpcServerEnabled = gs2NpcServerEnabled;
     }
 
     public void UpdateSockets() => SocketManagerUpdateHandler();

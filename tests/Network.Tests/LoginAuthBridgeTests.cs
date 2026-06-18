@@ -248,6 +248,69 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
+    public void NcOpensWeaponScripts()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var login = LoginNc(bridge, "YOURACCOUNT", 7);
+        Assert.Equal(ServerListAuthResponseStatus.AcceptedPreWorld, login.Status);
+        Assert.NotEmpty(login.OutboundBytes);
+        var clientQueue = Gen3Queue();
+
+        var list = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, NcPacket(PlayerToServerPacketId.NcWeaponListGet)));
+        var get = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, NcPacket(PlayerToServerPacketId.NcWeaponGet, "-gr_movement")));
+
+        var listed = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, list.OutboundBytes);
+        var opened = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, get.OutboundBytes);
+        Assert.True(
+            IndexOf(listed, RcNcPackets.NcWeaponList(["-gr_movement"])) >= 0,
+            Convert.ToHexString(listed) + " " + System.Text.Encoding.ASCII.GetString(listed));
+        Assert.Contains("-gr_movement"u8.ToArray(), opened);
+        Assert.Contains("wbomb1.png"u8.ToArray(), opened);
+    }
+
+    [Fact]
+    public void NcUpdatesWeaponScripts()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var runtime = new RuntimeServer();
+        var bridge = CreateBridge(serverRoot, runtime);
+        var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
+        _ = LoginNc(bridge, "YOURACCOUNT", 7);
+        var clientQueue = Gen3Queue();
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, NcWeaponAddPacket("testtool", "tool.png", "//#CLIENTSIDE\n//#GS2\nfunction onCreated() {\n}")));
+
+        var saved = File.ReadAllText(Path.Combine(serverRoot.Path, "weapons", "weapon-testtool.txt"));
+        Assert.Contains("REALNAME testtool", saved);
+        Assert.Contains("IMAGE tool.png", saved);
+        Assert.Single(result.Broadcasts);
+        Assert.True(IndexOf(DecodeLastSocketPayload(43, clientLogin.OutboundBytes, result.Broadcasts[0].OutboundBytes), [(byte)ServerToPlayerPacketId.RawData + 32]) >= 0);
+    }
+
+    [Fact]
+    public void NcUpdatesClasses()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        _ = LoginNc(bridge, "YOURACCOUNT", 7);
+        var clientQueue = Gen3Queue();
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, NcClassAddPacket("sample", "//#CLIENTSIDE\n//#GS2\nfunction onCreated() {\n}")));
+
+        Assert.Contains("function onCreated", File.ReadAllText(Path.Combine(serverRoot.Path, "classes", "sample.txt")));
+        Assert.True(IndexOf(DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, result.OutboundBytes), RcNcPackets.NcClassAdd("sample")) >= 0);
+    }
+
+    [Fact]
     public void RcAdminMessageBroadcastsToClientsAndRcs()
     {
         using var serverRoot = TestDefaultServerRoot();
@@ -1099,6 +1162,12 @@ public sealed class LoginAuthBridgeTests
         return bridge.HandleVerifyAccount2(VerifyAccount2Payload(account, id, PlayerSessionType.RemoteControl2, "SUCCESS"));
     }
 
+    private static ServerListLoginResponseResult LoginNc(LoginAuthBridge bridge, string account, ushort id)
+    {
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(id, "127.0.0.1"), NcLoginPacket(account));
+        return bridge.HandleVerifyAccount2(VerifyAccount2Payload(account, id, PlayerSessionType.NpcControl, "SUCCESS"));
+    }
+
     private static ServerListLoginResponseResult LoginClient(LoginAuthBridge bridge, string account, ushort id, byte key)
     {
         _ = bridge.HandleClientFrame(new ClientSocketSessionContext(id, "127.0.0.1"), Client3LoginPacket(account, key));
@@ -1124,6 +1193,19 @@ public sealed class LoginAuthBridgeTests
         var packet = new GraalBinaryWriter();
         packet.WriteGChar(6);
         packet.WriteGChar(key);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(versionToken));
+        packet.WriteGChar((byte)account.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(account));
+        packet.WriteGChar(2);
+        packet.WriteBytes("pw"u8);
+        packet.WriteBytes("win"u8);
+        return packet.ToArray();
+    }
+
+    private static byte[] NcLoginPacket(string account = "Ruan", string versionToken = "NCL21075")
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar(3);
         packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(versionToken));
         packet.WriteGChar((byte)account.Length);
         packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(account));
@@ -1176,6 +1258,21 @@ public sealed class LoginAuthBridgeTests
         var decoded = Array.Empty<byte>();
         foreach (var socketFrame in socketFrames)
             decoded = decoder.DecodeSocketFrame(socketFrame.AsSpan(2)).DecodedPayload;
+
+        return decoded;
+    }
+
+    private static byte[] DecodeLastSocketPayload(EncryptionGeneration generation, byte key, params byte[][] socketFrames)
+    {
+        var decoder = new InboundPacketDecoder(generation, key);
+        var decoded = Array.Empty<byte>();
+        foreach (var socketFrame in socketFrames)
+        {
+            if (socketFrame.Length == 0)
+                continue;
+
+            decoded = decoder.DecodeSocketFrame(socketFrame.AsSpan(2)).DecodedPayload;
+        }
 
         return decoded;
     }
@@ -1314,6 +1411,40 @@ public sealed class LoginAuthBridgeTests
             packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(value));
         }
 
+        packet.WriteByte((byte)'\n');
+        return packet.ToArray();
+    }
+
+    private static GraalFileQueue Gen3Queue()
+    {
+        var queue = new GraalFileQueue();
+        queue.SetCodec(EncryptionGeneration.Gen3, 0);
+        return queue;
+    }
+
+    private static byte[] NcPacket(PlayerToServerPacketId id, string payload = "") =>
+        RcPacket(id, payload);
+
+    private static byte[] NcWeaponAddPacket(string name, string image, string source)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)PlayerToServerPacketId.NcWeaponAdd);
+        packet.WriteGChar((byte)name.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(name));
+        packet.WriteGChar((byte)image.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(image));
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(source.Replace('\n', '\u00a7')));
+        packet.WriteByte((byte)'\n');
+        return packet.ToArray();
+    }
+
+    private static byte[] NcClassAddPacket(string name, string source)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)PlayerToServerPacketId.NcClassAdd);
+        packet.WriteGChar((byte)name.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(name));
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(source.Replace("\n", ",", StringComparison.Ordinal)));
         packet.WriteByte((byte)'\n');
         return packet.ToArray();
     }

@@ -9,33 +9,33 @@ public sealed record ScriptVisibleApiStatus(
 public static class ScriptVisibleApiCatalog
 {
     private const string RuntimeBlocker =
-        "Blocked until the exact V8NPCSERVER binding behavior is ported function-by-function from the original C++ source.";
+        "Pending GS2Engine binding coverage for the modular NPC-server runtime.";
 
     public static IReadOnlyList<ScriptVisibleApiStatus> All { get; } =
     [
-        Blocked("global", "V8FunctionsImpl.cpp"),
-        Blocked("environment", "V8EnvironmentImpl.cpp"),
-        Blocked("server", "V8ServerImpl.cpp"),
-        Blocked("server.flags", "V8ServerImpl.cpp"),
-        Blocked("player", "V8PlayerImpl.cpp"),
-        Blocked("player.attr", "V8PlayerImpl.cpp"),
-        Blocked("player.colors", "V8PlayerImpl.cpp"),
-        Blocked("player.flags", "V8PlayerImpl.cpp"),
-        Blocked("npc", "V8NPCImpl.cpp"),
-        Blocked("npc.attr", "V8NPCImpl.cpp"),
-        Blocked("npc.colors", "V8NPCImpl.cpp"),
-        Blocked("npc.flags", "V8NPCImpl.cpp"),
-        Blocked("npc.save", "V8NPCImpl.cpp"),
-        Blocked("level", "V8LevelImpl.cpp"),
-        Blocked("level.tiles", "V8LevelImpl.cpp"),
-        Blocked("level.links", "V8LevelImpl.cpp"),
-        Blocked("level.signs", "V8LevelImpl.cpp"),
-        Blocked("level.chests", "V8LevelImpl.cpp"),
-        Blocked("level.npcs", "V8LevelImpl.cpp"),
-        Blocked("level.link", "V8LevelLinkImpl.cpp"),
-        Blocked("level.sign", "V8LevelSignImpl.cpp"),
-        Blocked("level.chest", "V8LevelChestImpl.cpp"),
-        Blocked("weapon", "V8WeaponImpl.cpp")
+        Blocked("global", "GS2Engine"),
+        Blocked("environment", "GS2Engine"),
+        Blocked("server", "GS2Engine"),
+        Blocked("server.flags", "GS2Engine"),
+        Blocked("player", "GS2Engine"),
+        Blocked("player.attr", "GS2Engine"),
+        Blocked("player.colors", "GS2Engine"),
+        Blocked("player.flags", "GS2Engine"),
+        Blocked("npc", "GS2Engine"),
+        Blocked("npc.attr", "GS2Engine"),
+        Blocked("npc.colors", "GS2Engine"),
+        Blocked("npc.flags", "GS2Engine"),
+        Blocked("npc.save", "GS2Engine"),
+        Blocked("level", "GS2Engine"),
+        Blocked("level.tiles", "GS2Engine"),
+        Blocked("level.links", "GS2Engine"),
+        Blocked("level.signs", "GS2Engine"),
+        Blocked("level.chests", "GS2Engine"),
+        Blocked("level.npcs", "GS2Engine"),
+        Blocked("level.link", "GS2Engine"),
+        Blocked("level.sign", "GS2Engine"),
+        Blocked("level.chest", "GS2Engine"),
+        Blocked("weapon", "GS2Engine")
     ];
 
     private static ScriptVisibleApiStatus Blocked(string name, string sourceFile) =>

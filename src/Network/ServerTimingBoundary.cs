@@ -31,17 +31,17 @@ public sealed class ServerTimingScheduler
     private TimeSpan _lastThreeMinuteTimer;
     private TimeSpan _lastFiveMinuteTimer;
 
-    public ServerTimingScheduler(TimeSpan start, bool v8NpcServerEnabled = false)
+    public ServerTimingScheduler(TimeSpan start, bool gs2NpcServerEnabled = false)
     {
         _lastTimer = start;
         _lastNewWorldTimer = start;
         _lastOneMinuteTimer = start;
         _lastThreeMinuteTimer = start;
         _lastFiveMinuteTimer = start;
-        V8NpcServerEnabled = v8NpcServerEnabled;
+        Gs2NpcServerEnabled = gs2NpcServerEnabled;
     }
 
-    public bool V8NpcServerEnabled { get; }
+    public bool Gs2NpcServerEnabled { get; }
 
     public IReadOnlyList<ServerTimingAction> Tick(TimeSpan currentTimer)
     {
@@ -50,7 +50,7 @@ public sealed class ServerTimingScheduler
             ServerTimingAction.SocketManagerUpdate5ms
         };
 
-        if (V8NpcServerEnabled)
+        if (Gs2NpcServerEnabled)
             actions.Add(ServerTimingAction.RunScripts);
 
         if (currentTimer - _lastTimer < TimeSpan.FromSeconds(1))
@@ -96,7 +96,7 @@ public sealed class ServerTimingScheduler
             actions.Add(ServerTimingAction.LoadIpBans);
             actions.Add(ServerTimingAction.SaveWeapons);
 
-            if (V8NpcServerEnabled)
+            if (Gs2NpcServerEnabled)
                 actions.Add(ServerTimingAction.SaveNpcs);
 
             actions.Add(ServerTimingAction.CleanupEmptyInstancedGroupLevels);

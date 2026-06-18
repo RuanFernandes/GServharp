@@ -2,6 +2,7 @@ using Preagonal.GServer.Admin;
 using Preagonal.GServer.Game;
 using Preagonal.GServer.Persistence;
 using Preagonal.GServer.Protocol;
+using Preagonal.GServer.Scripting;
 
 namespace Preagonal.GServer.Network;
 
@@ -259,8 +260,8 @@ public sealed class LoginAuthBridge(
             var reader = new GraalBinaryReader(packet.Payload.Span);
             var packetId = reader.ReadGChar();
             packetNames.Add(((PlayerToServerPacketId)packetId).ToString());
-            if (IsRemoteControl(session.Type) &&
-                HandleRemoteControlPacket((PlayerToServerPacketId)packetId, packet.Payload.Span[1..], session, player, touched, forceEndSessions))
+            if (IsControl(session.Type) &&
+                HandleControlPacket((PlayerToServerPacketId)packetId, packet.Payload.Span[1..], session, player, touched, forceEndSessions))
             {
                 continue;
             }
@@ -533,7 +534,7 @@ public sealed class LoginAuthBridge(
         }
     }
 
-    private bool HandleRemoteControlPacket(
+    private bool HandleControlPacket(
         PlayerToServerPacketId packetId,
         ReadOnlySpan<byte> payload,
         ClientSessionSkeleton session,
@@ -543,10 +544,38 @@ public sealed class LoginAuthBridge(
     {
         switch (packetId)
         {
+            case PlayerToServerPacketId.NcWeaponListGet:
+                HandleNcWeaponListGet(session.Id, touched);
+                return true;
+            case PlayerToServerPacketId.NcWeaponGet:
+                HandleNcWeaponGet(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcWeaponAdd:
+                HandleNcWeaponAdd(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcWeaponDelete:
+                HandleNcWeaponDelete(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcClassEdit:
+                HandleNcClassEdit(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcClassAdd:
+                HandleNcClassAdd(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcClassDelete:
+                HandleNcClassDelete(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcLevelListGet:
+                HandleNcLevelListGet(session.Id, touched);
+                return true;
             case PlayerToServerPacketId.RcChat:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleRcChat(session.Id, sender.AccountName, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcAdminMessage:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 if (!HasRight(session.Id, AdminMessageRight))
                 {
                     QueueSelfPacket(session.Id, RcNcPackets.RcChat("Server: You are not authorized to send an admin message."), touched);
@@ -559,81 +588,133 @@ public sealed class LoginAuthBridge(
                     touched);
                 return true;
             case PlayerToServerPacketId.RcPrivateAdminMessage:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePrivateAdminMessage(payload, session.Id, sender.AccountName, touched);
                 return true;
             case PlayerToServerPacketId.RcServerOptionsGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 QueueSelfPacket(session.Id, RcNcPackets.ServerOptionsGet(ReadConfigFile("serveroptions.txt")), touched);
                 return true;
             case PlayerToServerPacketId.RcFolderConfigGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 QueueSelfPacket(session.Id, RcNcPackets.FolderConfigGet(ReadConfigFile("foldersconfig.txt")), touched);
                 return true;
             case PlayerToServerPacketId.RcServerFlagsGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 QueueSelfPacket(session.Id, RcNcPackets.ServerFlagsGet([]), touched);
                 return true;
             case PlayerToServerPacketId.RcAccountListGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleAccountListGet(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcAccountAdd:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleAccountAdd(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcAccountDelete:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleAccountDelete(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcAccountGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleAccountGet(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcAccountSet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleAccountSet(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerPropsGetById:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerPropsGetById(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerPropsGetByAccount:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerPropsGetByAccount(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerPropsSet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerPropsSetById(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerPropsSetById:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerPropsSetByAccount(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerRightsGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerRightsGet(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerRightsSet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerRightsSet(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerCommentsGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerCommentsGet(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerCommentsSet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerCommentsSet(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerBanGet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerBanGet(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcPlayerBanSet:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandlePlayerBanSet(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcDisconnectPlayer:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleDisconnectPlayer(session.Id, payload, sender.AccountName, touched, forceEndSessions);
                 return true;
             case PlayerToServerPacketId.RcWarpPlayer:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleWarpPlayer(session.Id, payload, touched);
                 return true;
             case PlayerToServerPacketId.RcListRemoteControls:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 foreach (var snapshot in _activeSnapshots.Values.Where(snapshot => IsRemoteControl(snapshot.Type)))
                     QueueSelfPacket(session.Id, BuildRcAddPlayer(snapshot), touched);
                 return true;
             case PlayerToServerPacketId.RcFileBrowserStart:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleFileBrowserStart(session.Id, touched);
                 return true;
             case PlayerToServerPacketId.RcFileBrowserChangeDirectory:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleFileBrowserChangeDirectory(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             case PlayerToServerPacketId.RcFileBrowserEnd:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 return true;
             case PlayerToServerPacketId.RcFileBrowserDownload:
+                if (!IsRemoteControl(session.Type))
+                    return false;
                 HandleFileBrowserDownload(session.Id, ReadAsciiPayload(payload), touched);
                 return true;
             default:
@@ -692,6 +773,253 @@ public sealed class LoginAuthBridge(
                 return;
         }
     }
+
+    private void HandleNcWeaponListGet(ushort playerId, ISet<ushort> touched)
+    {
+        QueueSelfPacket(playerId, RcNcPackets.NcWeaponList(ListWeaponNames()), touched);
+    }
+
+    private void HandleNcWeaponGet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        var weaponName = ReadAsciiPayload(payload);
+        if (TryLoadWeapon(weaponName, out var weapon))
+        {
+            QueueSelfPacket(playerId, RcNcPackets.NcWeaponGet(weapon.Name, weapon.Image, weapon.Source), touched);
+            return;
+        }
+
+        BroadcastToControlClients(RcNcPackets.RcChat($"{GetAccountName(playerId)} prob: weapon {weaponName} doesn't exist"), touched);
+    }
+
+    private void HandleNcWeaponAdd(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        var reader = new GraalBinaryReader(payload);
+        var weaponName = ReadGCharString(reader);
+        var imageName = ReadGCharString(reader);
+        var source = ReadAsciiPayload(reader.ReadBytes(reader.BytesLeft)).Replace('\u00a7', '\n');
+        if (weaponName.Length == 0 || IsDefaultWeaponName(weaponName))
+            return;
+
+        var existed = TryLoadWeapon(weaponName, out _);
+        SaveWeapon(new NcWeaponSource(weaponName, imageName, source));
+        CompileAndSendClientScript(playerId, "weapon", weaponName, source, touched);
+        BroadcastToControlClients(RcNcPackets.RcChat($"Weapon/GUI-script {weaponName} {(existed ? "updated" : "added")} by {GetAccountName(playerId)}"), touched);
+    }
+
+    private void HandleNcWeaponDelete(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        var weaponName = ReadAsciiPayload(payload);
+        var path = ResolveServerFile("weapons", WeaponFileName(weaponName));
+        if (path.Length != 0 && File.Exists(path))
+        {
+            File.Delete(path);
+            BroadcastToControlClients(RcNcPackets.RcChat($"Weapon {weaponName} deleted by {GetAccountName(playerId)}"), touched);
+        }
+        else
+        {
+            BroadcastToControlClients(RcNcPackets.RcChat($"{GetAccountName(playerId)} prob: weapon {weaponName} doesn't exist"), touched);
+        }
+    }
+
+    private void HandleNcClassEdit(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        var className = ReadAsciiPayload(payload);
+        var path = ResolveServerFile("classes", className + ".txt");
+        if (path.Length != 0 && File.Exists(path))
+            QueueSelfPacket(playerId, RcNcPackets.NcClassGet(className, File.ReadAllText(path)), touched);
+    }
+
+    private void HandleNcClassAdd(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        var reader = new GraalBinaryReader(payload);
+        var className = ReadGCharString(reader);
+        var source = GUntokenize(System.Text.Encoding.ASCII.GetString(reader.ReadBytes(reader.BytesLeft)));
+        if (className.Length == 0)
+            return;
+
+        var path = ResolveServerFile("classes", className + ".txt", createDirectory: true);
+        var existed = File.Exists(path);
+        File.WriteAllText(path, source.Replace("\r", "", StringComparison.Ordinal));
+        CompileAndSendClientScript(playerId, "class", className, source, touched);
+        if (!existed)
+            BroadcastToNpcControls(RcNcPackets.NcClassAdd(className), touched);
+        BroadcastToControlClients(RcNcPackets.RcChat($"Script {className} {(existed ? "updated" : "added")} by {GetAccountName(playerId)}"), touched);
+    }
+
+    private void HandleNcClassDelete(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        var className = ReadAsciiPayload(payload);
+        var path = ResolveServerFile("classes", className + ".txt");
+        if (path.Length != 0 && File.Exists(path))
+        {
+            File.Delete(path);
+            BroadcastToNpcControls(RcNcPackets.NcClassDelete(className), touched);
+            BroadcastToControlClients(RcNcPackets.RcChat($"{GetAccountName(playerId)} has deleted class {className}"), touched);
+        }
+        else
+        {
+            BroadcastToControlClients(RcNcPackets.RcChat($"error: {className} does not exist on this server!"), touched);
+        }
+    }
+
+    private void HandleNcLevelListGet(ushort playerId, ISet<ushort> touched)
+    {
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        if (root is null)
+            return;
+
+        var world = Path.Combine(root, "world");
+        var levels = Directory.Exists(world)
+            ? Directory.EnumerateFiles(world, "*.*", SearchOption.AllDirectories)
+                .Where(path => path.EndsWith(".nw", StringComparison.OrdinalIgnoreCase) ||
+                               path.EndsWith(".graal", StringComparison.OrdinalIgnoreCase))
+                .Select(path => Path.GetRelativePath(world, path).Replace('\\', '/'))
+                .Order(StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : [];
+
+        QueueSelfPacket(playerId, RcNcPackets.NcLevelList(levels), touched);
+    }
+
+    private void CompileAndSendClientScript(ushort playerId, string type, string name, string source, ISet<ushort> touched)
+    {
+        var slices = SourceCodeSlices.Parse(source, gs2Default: false, serverSideVm: true);
+        if (string.IsNullOrWhiteSpace(slices.ClientGs2))
+            return;
+
+        try
+        {
+            var result = new Gs2CompilerAdapter().Compile(slices.ClientGs2, type, name);
+            if (!result.Success || result.Bytecode.Length == 0)
+            {
+                BroadcastToControlClients(RcNcPackets.RcChat($"GS2 compile failed for {type} {name}: {result.Error}"), touched);
+                return;
+            }
+
+            BroadcastToClients(EntityPackets.NpcWeaponScriptRawData(result.Bytecode), touched);
+        }
+        catch (Exception ex)
+        {
+            BroadcastToControlClients(RcNcPackets.RcChat($"GS2 compile failed for {type} {name}: {ex.Message}"), touched);
+        }
+    }
+
+    private IReadOnlyList<string> ListWeaponNames()
+    {
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        if (root is null)
+            return [];
+
+        var folder = Path.Combine(root, "weapons");
+        if (!Directory.Exists(folder))
+            return [];
+
+        return Directory.EnumerateFiles(folder, "weapon-*.txt")
+            .Select(path => TryLoadWeaponFromPath(path, out var weapon)
+                ? weapon.Name
+                : Path.GetFileNameWithoutExtension(path)["weapon-".Length..])
+            .Where(name => !IsDefaultWeaponName(name))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private bool TryLoadWeapon(string weaponName, out NcWeaponSource weapon)
+    {
+        weapon = new NcWeaponSource(weaponName, "", "");
+        var path = ResolveServerFile("weapons", WeaponFileName(weaponName));
+        if (path.Length == 0 || !File.Exists(path))
+            return false;
+
+        var realName = weaponName;
+        var image = "";
+        var source = new System.Text.StringBuilder();
+        var inScript = false;
+        foreach (var raw in File.ReadAllLines(path))
+        {
+            var line = raw.Replace("\r", "", StringComparison.Ordinal);
+            if (line.Equals("SCRIPT", StringComparison.Ordinal))
+            {
+                inScript = true;
+                continue;
+            }
+
+            if (line.Equals("SCRIPTEND", StringComparison.Ordinal))
+            {
+                inScript = false;
+                continue;
+            }
+
+            if (inScript)
+            {
+                source.AppendLine(line);
+                continue;
+            }
+
+            if (line.StartsWith("IMAGE ", StringComparison.Ordinal))
+                image = line["IMAGE ".Length..].Trim();
+            else if (line.StartsWith("REALNAME ", StringComparison.Ordinal))
+                realName = line["REALNAME ".Length..].Trim();
+        }
+
+        weapon = new NcWeaponSource(realName, image, source.ToString().TrimEnd('\r', '\n'));
+        return true;
+    }
+
+    private bool TryLoadWeaponFromPath(string path, out NcWeaponSource weapon)
+    {
+        var name = Path.GetFileNameWithoutExtension(path);
+        if (!name.StartsWith("weapon-", StringComparison.OrdinalIgnoreCase))
+        {
+            weapon = new NcWeaponSource("", "", "");
+            return false;
+        }
+
+        return TryLoadWeapon(name["weapon-".Length..], out weapon);
+    }
+
+    private void SaveWeapon(NcWeaponSource weapon)
+    {
+        var path = ResolveServerFile("weapons", WeaponFileName(weapon.Name), createDirectory: true);
+        var text = string.Join(
+            '\n',
+            [
+                "GRAWP001",
+                $"REALNAME {weapon.Name}",
+                $"IMAGE {weapon.Image}",
+                "SCRIPT",
+                weapon.Source.Replace("\r", "", StringComparison.Ordinal),
+                "SCRIPTEND",
+                ""
+            ]);
+        File.WriteAllText(path, text);
+    }
+
+    private string ResolveServerFile(string folder, string fileName, bool createDirectory = false)
+    {
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        if (root is null)
+            return "";
+
+        var safeFolder = folder.Replace('\\', '/').Trim('/');
+        var safeFile = Path.GetFileName(fileName.Replace('\\', '/'));
+        if (safeFolder.Length == 0 || safeFile.Length == 0)
+            return "";
+
+        var directory = Path.Combine(root, safeFolder);
+        if (createDirectory)
+            Directory.CreateDirectory(directory);
+        return Path.Combine(directory, safeFile);
+    }
+
+    private static string WeaponFileName(string weaponName)
+    {
+        var safe = Path.GetFileName(weaponName.Replace('\\', '/'));
+        return safe.StartsWith("-", StringComparison.Ordinal) ? "weapon" + safe + ".txt" : "weapon-" + safe + ".txt";
+    }
+
+    private static bool IsDefaultWeaponName(string weaponName) =>
+        weaponName.Equals("Bomb", StringComparison.OrdinalIgnoreCase) ||
+        weaponName.Equals("Bow", StringComparison.OrdinalIgnoreCase);
 
     private void HandleAccountListGet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
     {
@@ -1400,6 +1728,39 @@ public sealed class LoginAuthBridge(
         }
     }
 
+    private void BroadcastToNpcControls(byte[] packet, ISet<ushort> touched)
+    {
+        foreach (var (playerId, session) in _activeSessions)
+        {
+            if ((session.Type & PlayerSessionType.AnyNpcControl) == 0)
+                continue;
+
+            QueueSelfPacket(playerId, packet, touched);
+        }
+    }
+
+    private void BroadcastToControlClients(byte[] packet, ISet<ushort> touched)
+    {
+        foreach (var (playerId, session) in _activeSessions)
+        {
+            if (!IsControl(session.Type))
+                continue;
+
+            QueueSelfPacket(playerId, packet, touched);
+        }
+    }
+
+    private void BroadcastToClients(byte[] packet, ISet<ushort> touched)
+    {
+        foreach (var (playerId, session) in _activeSessions)
+        {
+            if (!IsClient(session.Type))
+                continue;
+
+            QueueSelfPacket(playerId, packet, touched);
+        }
+    }
+
     private void BroadcastToAllExcept(ushort senderId, byte[] packet, ISet<ushort> touched)
     {
         foreach (var playerId in _activeSessions.Keys)
@@ -1965,6 +2326,9 @@ public sealed class LoginAuthBridge(
             if (IsClient(otherSnapshot.Type))
                 joiningSession.QueuePacket(BuildOtherPlayerProps(otherSnapshot));
 
+            if (!IsClient(joiningSnapshot.Type) && !IsRemoteControl(otherSession.Type))
+                continue;
+
             otherSession.QueuePacket(IsRemoteControl(otherSession.Type)
                 ? BuildRcAddPlayer(joiningSnapshot)
                 : BuildOtherPlayerProps(joiningSnapshot));
@@ -1996,6 +2360,11 @@ public sealed class LoginAuthBridge(
 
     private static bool IsRemoteControl(PlayerSessionType type) =>
         (type & PlayerSessionType.AnyRemoteControl) != 0;
+
+    private static bool IsControl(PlayerSessionType type) =>
+        (type & (PlayerSessionType.AnyRemoteControl | PlayerSessionType.AnyNpcControl)) != 0;
+
+    private sealed record NcWeaponSource(string Name, string Image, string Source);
 
     private sealed class ClientSessionSink(ClientSessionSkeleton session) : ILiveWorldSessionSink
     {
@@ -2051,6 +2420,8 @@ public sealed class LoginAuthBridge(
         if (session.LoginPacket?.Type is PlayerSessionType.Client3 or PlayerSessionType.RemoteControl2 &&
             session.LoginPacket.EncryptionKey is { } key)
             queue.SetCodec(EncryptionGeneration.Gen5, key);
+        else if (session.LoginPacket?.Type is PlayerSessionType.NpcControl or PlayerSessionType.RemoteControl)
+            queue.SetCodec(EncryptionGeneration.Gen3, key: 0);
         else if (session.LoginPacket?.Type == PlayerSessionType.Web)
             queue.SetCodec(EncryptionGeneration.Gen1, key: 0);
 

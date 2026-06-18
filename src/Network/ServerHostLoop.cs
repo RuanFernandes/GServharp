@@ -16,7 +16,7 @@ public sealed class ServerHostLoop
     {
         _runtime = runtime;
         _timeSource = timeSource ?? StaticTime;
-        _timingScheduler = new ServerTimingScheduler(start ?? _timeSource(), runtime.V8NpcServerEnabled);
+        _timingScheduler = new ServerTimingScheduler(start ?? _timeSource(), runtime.Gs2NpcServerEnabled);
     }
 
     public bool IsRunning => _isRunning;

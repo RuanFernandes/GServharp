@@ -7,14 +7,14 @@ public sealed record SourceCodeSlices(
     string ClientGs1,
     string ClientGs2)
 {
-    public static SourceCodeSlices Parse(string source, bool gs2Default, bool v8NpcServer)
+    public static SourceCodeSlices Parse(string source, bool gs2Default, bool serverSideVm)
     {
         var clientSide = string.Empty;
         var serverSide = string.Empty;
         var clientGs1 = string.Empty;
         var clientGs2 = string.Empty;
 
-        if (v8NpcServer)
+        if (serverSideVm)
         {
             var clientSep = source.IndexOf("//#CLIENTSIDE", StringComparison.Ordinal);
             if (clientSep != -1)

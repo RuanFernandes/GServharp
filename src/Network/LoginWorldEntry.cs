@@ -33,7 +33,7 @@ public static class LoginWorldEntry
 
         var account = accountLogin.Account;
         snapshot = BuildSnapshot(session, account, options.AccountLoginOptions.RemoteIp);
-        if (IsRemoteControl(session.Type))
+        if (IsControl(session.Type))
         {
             var rcPostLogin = PostLoginWorldEntryBoundary.BeginRemoteControl(
                 session,
@@ -256,8 +256,8 @@ public static class LoginWorldEntry
         return value.Equals("true", StringComparison.OrdinalIgnoreCase) || value == "1";
     }
 
-    private static bool IsRemoteControl(PlayerSessionType type) =>
-        (type & PlayerSessionType.AnyRemoteControl) != 0;
+    private static bool IsControl(PlayerSessionType type) =>
+        (type & PlayerSessionType.AnyControl) != 0;
 
     private static byte[] GCharString(string value)
     {
