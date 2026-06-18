@@ -50,6 +50,48 @@ public sealed class RcNcPacketTests
     }
 
     [Fact]
+    public void RcControlPacketsUseConfirmedOpcodes()
+    {
+        Assert.Equal(
+            Encoding.ASCII.GetBytes("CAdmin Moon:\u00a7hello\n"),
+            RcNcPackets.RcAdminMessage("Admin Moon:\u00a7hello"));
+        Assert.Equal(
+            Encoding.ASCII.GetBytes("l\"name = GSharp\",\"serverport = 14899\"\n"),
+            RcNcPackets.ServerOptionsGet("name = GSharp\nserverport = 14899\n"));
+        Assert.Equal(
+            Encoding.ASCII.GetBytes("m\"level *.nw\",\"level levels/*.graal\"\n"),
+            RcNcPackets.FolderConfigGet("level *.nw\nlevel levels/*.graal\n"));
+        Assert.Equal(
+            new byte[] { 93, 32, 33, 41, 116, 101, 115, 116, 61, 116, 114, 117, 101, 10 },
+            RcNcPackets.ServerFlagsGet([new KeyValuePair<string, string>("test", "true")]));
+    }
+
+    [Fact]
+    public void RcAddPlayerUsesCppPlayerListShape()
+    {
+        var bytes = RcNcPackets.AddPlayer(
+            7,
+            "pc:Ruan",
+            "start.nw",
+            statusMessage: 0,
+            nickname: "Ruan",
+            communityName: "Ruan");
+
+        Assert.Equal(
+            new byte[]
+            {
+                87, 32, 39,
+                39, 112, 99, 58, 82, 117, 97, 110,
+                52, 40, 115, 116, 97, 114, 116, 46, 110, 119,
+                85, 32,
+                32, 36, 82, 117, 97, 110,
+                114, 36, 82, 117, 97, 110,
+                10
+            },
+            bytes);
+    }
+
+    [Fact]
     public void FileBrowserDirPacketMatchesCppFieldOrder()
     {
         var bytes = RcNcPackets.FileBrowserDir(

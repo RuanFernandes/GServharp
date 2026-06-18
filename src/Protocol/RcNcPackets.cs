@@ -55,6 +55,50 @@ public static class RcNcPackets
     public static byte[] FileBrowserMessage(string message) =>
         PacketWithAsciiPayload(ServerToPlayerPacketId.RcFileBrowserMessage, message);
 
+    public static byte[] RcAdminMessage(string message) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.RcAdminMessage, message);
+
+    public static byte[] ServerOptionsGet(string optionsText) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.RcServerOptionsGet, GTokenize(optionsText));
+
+    public static byte[] FolderConfigGet(string folderConfigText) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.RcFolderConfigGet, GTokenize(folderConfigText));
+
+    public static byte[] ServerFlagsGet(IReadOnlyList<KeyValuePair<string, string>> flags)
+    {
+        var writer = NewServerPacket(ServerToPlayerPacketId.RcServerFlagsGet);
+        writer.WriteGShort((ushort)flags.Count);
+        foreach (var flag in flags)
+        {
+            var value = flag.Value.Length == 0 ? flag.Key : $"{flag.Key}={flag.Value}";
+            WriteGCharString(writer, value);
+        }
+
+        return WithTrailingNewline(writer);
+    }
+
+    public static byte[] AddPlayer(
+        ushort playerId,
+        string accountName,
+        string levelName,
+        byte statusMessage,
+        string nickname,
+        string communityName)
+    {
+        var writer = NewServerPacket(ServerToPlayerPacketId.AddPlayer);
+        writer.WriteGShort(playerId);
+        WriteGCharString(writer, accountName);
+        writer.WriteGChar((byte)PlayerPropertyId.CurrentLevel);
+        WriteGCharString(writer, string.IsNullOrEmpty(levelName) ? " " : levelName);
+        writer.WriteGChar((byte)PlayerPropertyId.PlayerStatusMessage);
+        writer.WriteGChar(statusMessage);
+        writer.WriteGChar((byte)PlayerPropertyId.Nickname);
+        WriteGCharString(writer, nickname);
+        writer.WriteGChar((byte)PlayerPropertyId.CommunityName);
+        WriteGCharString(writer, communityName);
+        return WithTrailingNewline(writer);
+    }
+
     public static byte[] FileBrowserDirList(string tokenizedFolders) =>
         PacketWithAsciiPayload(ServerToPlayerPacketId.RcFileBrowserDirList, tokenizedFolders);
 

@@ -155,6 +155,122 @@ public sealed class LoginAuthBridgeTests
         Assert.NotEmpty(gateway.SentPlayerAdds);
     }
 
+    [Fact]
+    public void RcChatBroadcastsToRemoteControls()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        File.Copy(
+            Path.Combine(serverRoot.Path, "accounts", "YOURACCOUNT.txt"),
+            Path.Combine(serverRoot.Path, "accounts", "YOURACCOUNT2.txt"),
+            overwrite: true);
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+
+        var firstLogin = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+        var secondLogin = LoginRc(bridge, "YOURACCOUNT2", 8, 43);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(RcChatPacket("hello"), 42));
+
+        Assert.True(result.ContinueSession);
+        var secondLoginBroadcast = Assert.Single(secondLogin.Broadcasts);
+        Assert.Equal(7, secondLoginBroadcast.PlayerId);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, firstLogin.OutboundBytes, secondLoginBroadcast.OutboundBytes, result.OutboundBytes), RcNcPackets.RcChat("YOURACCOUNT: hello")) >= 0);
+        var broadcast = Assert.Single(result.Broadcasts);
+        Assert.Equal(8, broadcast.PlayerId);
+        Assert.True(IndexOf(DecodeLastSocketPayload(43, secondLogin.OutboundBytes, broadcast.OutboundBytes), RcNcPackets.RcChat("YOURACCOUNT: hello")) >= 0);
+    }
+
+    [Fact]
+    public void RcButtonsReturnServerTextPackets()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        File.WriteAllText(Path.Combine(serverRoot.Path, "config", "serveroptions.txt"), "name = GSharp\nserverport = 14899\n");
+        File.WriteAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt"), "level *.nw\nlevel levels/*.graal\n");
+        var bridge = CreateBridge(
+            serverRoot,
+            new RuntimeServer(),
+            new AccountLoadSettings(new Dictionary<string, string>
+            {
+                ["staffguilds"] = "Server",
+                ["statuslist"] = "Online"
+            }));
+        var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+        var clientQueue = new GraalFileQueue();
+        clientQueue.SetCodec(EncryptionGeneration.Gen5, 42);
+
+        var options = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), SocketPayload(clientQueue, RcPacket(PlayerToServerPacketId.RcServerOptionsGet)));
+        var folders = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), SocketPayload(clientQueue, RcPacket(PlayerToServerPacketId.RcFolderConfigGet)));
+        var flags = bridge.HandleClientFrame(new ClientSocketSessionContext(7, "127.0.0.1"), SocketPayload(clientQueue, RcPacket(PlayerToServerPacketId.RcServerFlagsGet)));
+
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, login.OutboundBytes, options.OutboundBytes), RcNcPackets.ServerOptionsGet("name = GSharp\nserverport = 14899\n")) >= 0);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, login.OutboundBytes, options.OutboundBytes, folders.OutboundBytes), RcNcPackets.FolderConfigGet("level *.nw\nlevel levels/*.graal\n")) >= 0);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, login.OutboundBytes, options.OutboundBytes, folders.OutboundBytes, flags.OutboundBytes), RcNcPackets.ServerFlagsGet([])) >= 0);
+    }
+
+    [Fact]
+    public void RcFileBrowserStartReturnsFolderListAndDirectory()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        Directory.CreateDirectory(Path.Combine(serverRoot.Path, "accounts"));
+        File.WriteAllText(Path.Combine(serverRoot.Path, "accounts", "sample.txt"), "data");
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(RcPacket(PlayerToServerPacketId.RcFileBrowserStart), 42));
+        var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
+
+        Assert.True(IndexOf(decoded, RcNcPackets.FileBrowserMessage("Welcome to the File Browser.")) >= 0);
+        Assert.True(IndexOf(decoded, FileBrowserDirPrefix("accounts/")) >= 0);
+    }
+
+    [Fact]
+    public void RcAdminMessageBroadcastsToClientsAndRcs()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var runtimeServer = new RuntimeServer();
+        var bridge = CreateBridge(serverRoot, runtimeServer);
+        _ = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+        var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(RcPacket(PlayerToServerPacketId.RcAdminMessage, "maintenance"), 42));
+
+        var broadcast = Assert.Single(result.Broadcasts);
+        Assert.Equal(8, broadcast.PlayerId);
+        Assert.True(IndexOf(DecodeLastSocketPayload(43, clientLogin.OutboundBytes, broadcast.OutboundBytes), RcNcPackets.RcAdminMessage("Admin YOURACCOUNT:\u00a7maintenance")) >= 0);
+    }
+
+    [Fact]
+    public void RcLoginReceivesExistingPlayers()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        _ = LoginClient(bridge, "Ruan", 8, 43);
+
+        var rcLogin = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+        var decoded = DecodeSocketPayload(rcLogin.OutboundBytes, 42);
+
+        Assert.True(IndexOf(decoded, RcAddPlayerPrefix(8, "pc:Ruan")) >= 0);
+    }
+
+    [Fact]
+    public void ExistingRcReceivesJoiningClientAddPlayer()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var rcLogin = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+
+        var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
+
+        var broadcast = Assert.Single(clientLogin.Broadcasts);
+        Assert.Equal(7, broadcast.PlayerId);
+        Assert.True(IndexOf(DecodeLastSocketPayload(42, rcLogin.OutboundBytes, broadcast.OutboundBytes), RcAddPlayerPrefix(8, "pc:Ruan")) >= 0);
+    }
+
 
     [Fact]
     public void SecondClientLoginExchangesPlayerPropsWithFirstClient()
@@ -745,6 +861,39 @@ public sealed class LoginAuthBridgeTests
             AllowedVersions: ["G3D0311C"],
             AllowedVersionText: "6.037");
 
+    private static LoginAuthBridge CreateBridge(
+        TempServerRoot serverRoot,
+        RuntimeServer runtimeServer,
+        IAccountLoadSettings? settings = null)
+    {
+        var resources = ServerResourceFileSystems.LoadFolderConfig(
+            serverRoot.Path,
+            File.ReadAllText(Path.Combine(serverRoot.Path, "config", "foldersconfig.txt")));
+        var levelLoader = new NwLevelFileLoader(resources.Get(ServerFileSystemKind.All));
+        return new LoginAuthBridge(
+            new RecordingGateway { IsConnected = true },
+            AuthOptions(),
+            new LoginWorldEntryOptions(
+                new DiskAccountFileSystem(serverRoot.Path),
+                settings ?? Gs2Settings.LoadFile(Path.Combine(serverRoot.Path, "config", "serveroptions.txt")),
+                levelLoader,
+                new FileLevelLookup(levelLoader),
+                new AccountLoginOptions(false, "My Server", [], ["YOURACCOUNT", "YOURACCOUNT2"], "")),
+            runtimeServer);
+    }
+
+    private static ServerListLoginResponseResult LoginRc(LoginAuthBridge bridge, string account, ushort id, byte key)
+    {
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(id, "127.0.0.1"), Rc2LoginPacket(account, key));
+        return bridge.HandleVerifyAccount2(VerifyAccount2Payload(account, id, PlayerSessionType.RemoteControl2, "SUCCESS"));
+    }
+
+    private static ServerListLoginResponseResult LoginClient(LoginAuthBridge bridge, string account, ushort id, byte key)
+    {
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(id, "127.0.0.1"), Client3LoginPacket(account, key));
+        return bridge.HandleVerifyAccount2(VerifyAccount2Payload("pc:" + account, id, PlayerSessionType.Client3, "SUCCESS"));
+    }
+
     private static byte[] Client3LoginPacket(string account = "Ruan", byte key = 42, string versionToken = "G3D0311C")
     {
         var packet = new GraalBinaryWriter();
@@ -867,6 +1016,25 @@ public sealed class LoginAuthBridgeTests
         return packet.ToArray();
     }
 
+    private static byte[] RcAddPlayerPrefix(ushort playerId, string accountName)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.AddPlayer);
+        packet.WriteGShort(playerId);
+        packet.WriteGChar((byte)accountName.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(accountName));
+        return packet.ToArray();
+    }
+
+    private static byte[] FileBrowserDirPrefix(string folder)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.RcFileBrowserDir);
+        packet.WriteGChar((byte)folder.Length);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(folder));
+        return packet.ToArray();
+    }
+
     private static byte[] PlayerPropsPacket(PlayerPropertyId first, byte firstValue, PlayerPropertyId second, byte secondValue)
     {
         var packet = new GraalBinaryWriter();
@@ -906,6 +1074,18 @@ public sealed class LoginAuthBridgeTests
         foreach (var target in targets)
             packet.WriteGShort(target);
         packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(message));
+        packet.WriteByte((byte)'\n');
+        return packet.ToArray();
+    }
+
+    private static byte[] RcChatPacket(string message) =>
+        RcPacket(PlayerToServerPacketId.RcChat, message);
+
+    private static byte[] RcPacket(PlayerToServerPacketId id, string payload = "")
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)id);
+        packet.WriteBytes(System.Text.Encoding.ASCII.GetBytes(payload));
         packet.WriteByte((byte)'\n');
         return packet.ToArray();
     }

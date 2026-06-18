@@ -49,6 +49,7 @@ public sealed class LoginAuthBridge(
     private readonly Dictionary<string, RuntimeLevel> _levels = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ushort, string> _loginFrameDebug = [];
     private readonly Random _rng = new();
+    private const int AdminMessageRight = 0x00200;
 
     public ClientFrameBridgeResult HandleClientFrame(
         ClientSocketSessionContext context,
@@ -246,6 +247,12 @@ public sealed class LoginAuthBridge(
             var reader = new GraalBinaryReader(packet.Payload.Span);
             var packetId = reader.ReadGChar();
             packetNames.Add(((PlayerToServerPacketId)packetId).ToString());
+            if (IsRemoteControl(session.Type) &&
+                HandleRemoteControlPacket((PlayerToServerPacketId)packetId, packet.Payload.Span[1..], session, player, touched))
+            {
+                continue;
+            }
+
             if (packetId == (byte)PlayerToServerPacketId.ServerWarp)
             {
                 var serverName = System.Text.Encoding.ASCII.GetString(packet.Payload.Span[1..]).TrimEnd('\n', '\r');
@@ -507,6 +514,208 @@ public sealed class LoginAuthBridge(
             QueueSelfPacket(targetId, packet, touched);
         }
     }
+
+    private bool HandleRemoteControlPacket(
+        PlayerToServerPacketId packetId,
+        ReadOnlySpan<byte> payload,
+        ClientSessionSkeleton session,
+        RuntimePlayer sender,
+        ISet<ushort> touched)
+    {
+        switch (packetId)
+        {
+            case PlayerToServerPacketId.RcChat:
+                BroadcastToRemoteControls(RcNcPackets.RcChat($"{sender.AccountName}: {ReadAsciiPayload(payload)}"), touched);
+                return true;
+            case PlayerToServerPacketId.RcAdminMessage:
+                if (!HasRight(session.Id, AdminMessageRight))
+                {
+                    QueueSelfPacket(session.Id, RcNcPackets.RcChat("Server: You are not authorized to send an admin message."), touched);
+                    return true;
+                }
+
+                BroadcastToAllExcept(
+                    session.Id,
+                    RcNcPackets.RcAdminMessage($"Admin {sender.AccountName}:\u00a7{ReadAsciiPayload(payload)}"),
+                    touched);
+                return true;
+            case PlayerToServerPacketId.RcPrivateAdminMessage:
+                HandlePrivateAdminMessage(payload, session.Id, sender.AccountName, touched);
+                return true;
+            case PlayerToServerPacketId.RcServerOptionsGet:
+                QueueSelfPacket(session.Id, RcNcPackets.ServerOptionsGet(ReadConfigFile("serveroptions.txt")), touched);
+                return true;
+            case PlayerToServerPacketId.RcFolderConfigGet:
+                QueueSelfPacket(session.Id, RcNcPackets.FolderConfigGet(ReadConfigFile("foldersconfig.txt")), touched);
+                return true;
+            case PlayerToServerPacketId.RcServerFlagsGet:
+                QueueSelfPacket(session.Id, RcNcPackets.ServerFlagsGet([]), touched);
+                return true;
+            case PlayerToServerPacketId.RcFileBrowserStart:
+                HandleFileBrowserStart(session.Id, touched);
+                return true;
+            case PlayerToServerPacketId.RcFileBrowserChangeDirectory:
+                HandleFileBrowserChangeDirectory(session.Id, ReadAsciiPayload(payload), touched);
+                return true;
+            case PlayerToServerPacketId.RcFileBrowserEnd:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void HandlePrivateAdminMessage(
+        ReadOnlySpan<byte> payload,
+        ushort senderId,
+        string senderAccount,
+        ISet<ushort> touched)
+    {
+        if (!HasRight(senderId, AdminMessageRight))
+        {
+            QueueSelfPacket(senderId, RcNcPackets.RcChat("Server: You are not authorized to send an admin message."), touched);
+            return;
+        }
+
+        if (payload.Length < 2)
+            return;
+
+        var reader = new GraalBinaryReader(payload);
+        var targetId = reader.ReadGShort();
+        var message = System.Text.Encoding.ASCII.GetString(reader.ReadBytes(reader.BytesLeft)).TrimEnd('\r', '\n');
+        QueueSelfPacket(targetId, RcNcPackets.RcAdminMessage($"Admin {senderAccount}:\u00a7{message}"), touched);
+    }
+
+    private void HandleFileBrowserStart(ushort playerId, ISet<ushort> touched)
+    {
+        if (!_activeAccounts.TryGetValue(playerId, out var account) || account.FolderRights.Count == 0)
+            return;
+
+        var folders = account.FolderRights
+            .Select(ParseFolderRight)
+            .Select(static entry => entry.Folder)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        QueueSelfPacket(playerId, RcNcPackets.FileBrowserDirList(string.Join(",", folders)), touched);
+        QueueSelfPacket(playerId, RcNcPackets.FileBrowserMessage("Welcome to the File Browser."), touched);
+        QueueSelfPacket(playerId, BuildFileBrowserDir(account, account.LastFolder.Length == 0 ? folders[0] : account.LastFolder), touched);
+    }
+
+    private void HandleFileBrowserChangeDirectory(ushort playerId, string folder, ISet<ushort> touched)
+    {
+        if (!_activeAccounts.TryGetValue(playerId, out var account))
+            return;
+
+        var normalized = NormalizeFolder(folder);
+        var allowed = account.FolderRights
+            .Select(ParseFolderRight)
+            .Any(entry => string.Equals(entry.Folder, normalized, StringComparison.Ordinal));
+        if (!allowed)
+            return;
+
+        account.LastFolder = normalized;
+        QueueSelfPacket(playerId, RcNcPackets.FileBrowserMessage($"Folder changed to {normalized}"), touched);
+        QueueSelfPacket(playerId, BuildFileBrowserDir(account, normalized), touched);
+    }
+
+    private byte[] BuildFileBrowserDir(AccountFileData account, string folder)
+    {
+        var normalized = NormalizeFolder(folder);
+        var entries = new List<RcFileBrowserEntry>();
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        var path = root is null ? "" : Path.Combine(root, normalized.Replace('/', Path.DirectorySeparatorChar));
+        var rights = account.FolderRights
+            .Select(ParseFolderRight)
+            .FirstOrDefault(entry => string.Equals(entry.Folder, normalized, StringComparison.Ordinal))?.Rights ?? "r";
+        if (Directory.Exists(path))
+        {
+            foreach (var file in Directory.EnumerateFiles(path))
+            {
+                var info = new FileInfo(file);
+                entries.Add(new RcFileBrowserEntry(
+                    info.Name,
+                    rights,
+                    unchecked((uint)Math.Min(info.Length, uint.MaxValue)),
+                    unchecked((uint)new DateTimeOffset(info.LastWriteTimeUtc).ToUnixTimeSeconds())));
+            }
+        }
+
+        return RcNcPackets.FileBrowserDir(normalized, entries);
+    }
+
+    private string ReadConfigFile(string fileName)
+    {
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        if (root is null)
+            return "";
+
+        var path = Path.Combine(root, "config", fileName);
+        return File.Exists(path) ? File.ReadAllText(path).Replace("\r", "", StringComparison.Ordinal) : "";
+    }
+
+    private bool HasRight(ushort playerId, int right) =>
+        _activeAccounts.TryGetValue(playerId, out var account) &&
+        (account.AdminRights & right) != 0;
+
+    private void BroadcastToRemoteControls(byte[] packet, ISet<ushort> touched)
+    {
+        foreach (var (playerId, session) in _activeSessions)
+        {
+            if (!IsRemoteControl(session.Type))
+                continue;
+
+            QueueSelfPacket(playerId, packet, touched);
+        }
+    }
+
+    private void BroadcastToAllExcept(ushort senderId, byte[] packet, ISet<ushort> touched)
+    {
+        foreach (var playerId in _activeSessions.Keys)
+        {
+            if (playerId == senderId)
+                continue;
+
+            QueueSelfPacket(playerId, packet, touched);
+        }
+    }
+
+    private static string ReadAsciiPayload(ReadOnlySpan<byte> payload) =>
+        System.Text.Encoding.ASCII.GetString(payload).TrimEnd('\r', '\n');
+
+    private static string NormalizeFolder(string folder)
+    {
+        var normalized = folder.Replace('\\', '/').Trim();
+        if (normalized.Length != 0 && !normalized.EndsWith("/", StringComparison.Ordinal))
+            normalized += "/";
+        return normalized;
+    }
+
+    private static RcFolderRight ParseFolderRight(string line)
+    {
+        var trimmed = line.Trim();
+        if (trimmed.Length == 0)
+            return new RcFolderRight("r", "*", "*");
+
+        var splitAt = trimmed.IndexOf(' ');
+        var rights = splitAt < 0 ? trimmed : trimmed[..splitAt];
+        var folder = splitAt < 0 ? "*" : trimmed[(splitAt + 1)..].Trim();
+        rights = rights.Trim().ToLowerInvariant();
+        folder = folder.Replace('\\', '/');
+
+        var wildcard = "*";
+        if (!folder.EndsWith("/", StringComparison.Ordinal))
+        {
+            var lastSlash = folder.LastIndexOf('/');
+            if (lastSlash >= 0)
+            {
+                wildcard = folder[(lastSlash + 1)..];
+                folder = folder[..(lastSlash + 1)];
+            }
+        }
+
+        return new RcFolderRight(rights, folder, wildcard);
+    }
+
+    private sealed record RcFolderRight(string Rights, string Folder, string Wildcard);
 
     private string HandleWeaponAdd(GraalBinaryReader reader, ushort playerId)
     {
@@ -782,20 +991,42 @@ public sealed class LoginAuthBridge(
         ClientSessionSkeleton joiningSession,
         PostLoginPlayerSnapshot joiningSnapshot)
     {
-        if (!IsClient(joiningSession.Type))
+        if (IsRemoteControl(joiningSession.Type))
+        {
+            foreach (var (otherId, otherSnapshot) in _activeSnapshots.ToArray())
+            {
+                if (otherId == joiningSession.Id || otherSnapshot.Type == PlayerSessionType.NpcControl)
+                    continue;
+
+                joiningSession.QueuePacket(BuildRcAddPlayer(otherSnapshot));
+
+                if (!_activeSessions.TryGetValue(otherId, out var otherSession) || !IsRemoteControl(otherSession.Type))
+                    continue;
+
+                otherSession.QueuePacket(BuildRcAddPlayer(joiningSnapshot));
+                otherSession.QueuePacket(RcNcPackets.RcChat($"New RC: {joiningSnapshot.LoginPropertySource.AccountName}"));
+                var outbound = FlushOutboundBytes(otherSession);
+                if (outbound.Length != 0)
+                    yield return new ClientSessionOutbound(otherId, outbound);
+            }
+
             yield break;
+        }
 
         foreach (var (otherId, otherSnapshot) in _activeSnapshots.ToArray())
         {
-            if (otherId == joiningSession.Id || !IsClient(otherSnapshot.Type))
+            if (otherId == joiningSession.Id)
                 continue;
-
-            joiningSession.QueuePacket(BuildOtherPlayerProps(otherSnapshot));
 
             if (!_activeSessions.TryGetValue(otherId, out var otherSession))
                 continue;
 
-            otherSession.QueuePacket(BuildOtherPlayerProps(joiningSnapshot));
+            if (IsClient(otherSnapshot.Type))
+                joiningSession.QueuePacket(BuildOtherPlayerProps(otherSnapshot));
+
+            otherSession.QueuePacket(IsRemoteControl(otherSession.Type)
+                ? BuildRcAddPlayer(joiningSnapshot)
+                : BuildOtherPlayerProps(joiningSnapshot));
             var outbound = FlushOutboundBytes(otherSession);
             if (outbound.Length != 0)
                 yield return new ClientSessionOutbound(otherId, outbound);
@@ -810,8 +1041,20 @@ public sealed class LoginAuthBridge(
         return PlayerPropertySerializer.BuildOtherPlayerPropsPacket(snapshot.PlayerId, payload, appendNewline: true);
     }
 
+    private static byte[] BuildRcAddPlayer(PostLoginPlayerSnapshot snapshot) =>
+        RcNcPackets.AddPlayer(
+            snapshot.PlayerId,
+            snapshot.LoginPropertySource.AccountName,
+            snapshot.LoginPropertySource.CurrentLevel,
+            snapshot.LoginPropertySource.StatusMessage,
+            snapshot.LoginPropertySource.Nickname,
+            snapshot.LoginPropertySource.CommunityName);
+
     private static bool IsClient(PlayerSessionType type) =>
         (type & PlayerSessionType.AnyClient) != 0;
+
+    private static bool IsRemoteControl(PlayerSessionType type) =>
+        (type & PlayerSessionType.AnyRemoteControl) != 0;
 
     private sealed class ClientSessionSink(ClientSessionSkeleton session) : ILiveWorldSessionSink
     {
