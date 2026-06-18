@@ -392,6 +392,23 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
+    public void NcLoginSendsDbNpcs()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var npcPath = Path.Combine(serverRoot.Path, "npcs", "npcControl-NPC.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(npcPath)!);
+        File.WriteAllText(
+            npcPath,
+            "GRNPC001\nNAME Control-NPC\nID 10000\nTYPE CONTROL\nSCRIPTER moondeath\nSTARTLEVEL \nSTARTX 30.00\nSTARTY 30.00\nNPCSCRIPT\nNPCSCRIPTEND\n");
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+
+        var login = LoginNc(bridge, "YOURACCOUNT", 7);
+
+        var decoded = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, login.OutboundBytes);
+        Assert.True(IndexOf(decoded, RcNcPackets.NcNpcAdd(10000, "Control-NPC", "CONTROL", "")) >= 0);
+    }
+
+    [Fact]
     public void RcFileBrowserStartReturnsFolderListAndDirectory()
     {
         using var serverRoot = TestDefaultServerRoot();
@@ -624,7 +641,37 @@ public sealed class LoginAuthBridgeTests
 
         var rcBroadcast = Assert.Single(result.Broadcasts, packet => packet.PlayerId == 8);
         var rcDecoded = DecodeLastSocketPayload(42, rcLogin.OutboundBytes, ncLoginRcBroadcast.OutboundBytes, rcBroadcast.OutboundBytes);
-        Assert.True(IndexOf(rcDecoded, RcNcPackets.RcChat("GS2 -gr_movement: 1")) >= 0);
+        Assert.True(
+            IndexOf(rcDecoded, RcNcPackets.RcChat("GS2 -gr_movement: 1")) >= 0,
+            System.Text.Encoding.Latin1.GetString(rcDecoded));
+    }
+
+    [Fact]
+    public void ServerOptionsSetReloadsScriptCall()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var rcLogin = LoginRc(bridge, "YOURACCOUNT", 8, 42);
+        var ncLogin = LoginNc(bridge, "YOURACCOUNT", 7);
+        var ncLoginRcBroadcast = Assert.Single(ncLogin.Broadcasts, packet => packet.PlayerId == 8);
+        var setOptions = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(8, "127.0.0.1"),
+            SocketPayload(RcPacket(PlayerToServerPacketId.RcServerOptionsSet, GTokenize("name = GSharp\nserverport = 14899\nscriptcall = debug\n")), 42));
+        Assert.Contains("scriptcall = debug", File.ReadAllText(Path.Combine(serverRoot.Path, "config", "serveroptions.txt")));
+        var clientQueue = Gen3Queue();
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, NcWeaponAddPacket(
+                "-gr_movement",
+                "tool.png",
+                "echo(1);\n//#CLIENTSIDE\n//#GS2\nfunction onCreated() {\n}")));
+
+        var rcBroadcast = Assert.Single(result.Broadcasts, packet => packet.PlayerId == 8);
+        var rcDecoded = DecodeLastSocketPayload(42, rcLogin.OutboundBytes, ncLoginRcBroadcast.OutboundBytes, setOptions.OutboundBytes, rcBroadcast.OutboundBytes);
+        Assert.True(
+            IndexOf(rcDecoded, RcNcPackets.RcChat("GS2 -gr_movement: 1")) >= 0,
+            System.Text.Encoding.Latin1.GetString(rcDecoded));
     }
 
     [Fact]

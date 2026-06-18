@@ -54,6 +54,7 @@ public sealed class LoginAuthBridge(
     private readonly Dictionary<ushort, GraalFileQueue> _outboundQueues = [];
     private readonly Gs2ServerScriptHost _serverScripts = new();
     private readonly Dictionary<uint, DatabaseNpc> _databaseNpcs = [];
+    private Gs2Settings? _serverOptionsOverride;
     private Dictionary<string, string>? _serverFlags;
     private readonly Dictionary<string, RuntimeLevel> _levels = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ushort, string> _loginFrameDebug = [];
@@ -140,6 +141,7 @@ public sealed class LoginAuthBridge(
             EnsureNpcServerPlayer() &&
             LoginWorldEntry.Complete(session, worldEntryOptions with
             {
+                AccountSettings = EffectiveAccountSettings(),
                 AccountLoginOptions = worldEntryOptions.AccountLoginOptions with
                 {
                     ActiveSessions = BuildActiveSessions(),
@@ -591,7 +593,7 @@ public sealed class LoginAuthBridge(
             if (IsJailedLevel(player.CurrentLevelName))
                 return false;
 
-            var level = worldEntryOptions?.AccountSettings.GetString("unstickmelevel", "onlinestartlocal.nw") ?? "onlinestartlocal.nw";
+            var level = EffectiveAccountSettings().GetString("unstickmelevel", "onlinestartlocal.nw");
             WarpClient(player, level, GetFloatOption("unstickmex", 30.0f), GetFloatOption("unstickmey", 30.5f), touched);
             QueueSelfPacket(player.Id, PlayerPropertySerializer.BuildPlayerPropsPacket(ChatProp("Warped!"), appendNewline: true), touched);
             return true;
@@ -657,7 +659,7 @@ public sealed class LoginAuthBridge(
 
     private bool IsJailedLevel(string levelName)
     {
-        var jailLevels = worldEntryOptions?.AccountSettings.GetString("jaillevels", "") ?? "";
+        var jailLevels = EffectiveAccountSettings().GetString("jaillevels", "");
         return jailLevels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Any(level => level.Equals(levelName, StringComparison.OrdinalIgnoreCase));
     }
@@ -1083,6 +1085,13 @@ public sealed class LoginAuthBridge(
         BroadcastToRemoteControls(RcNcPackets.RcChat($"NPC {npc.Name} updated by {GetAccountName(playerId)}"), touched);
     }
 
+    private void SendDatabaseNpcList(ushort playerId, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        foreach (var npc in _databaseNpcs.Values.OrderBy(static npc => npc.Id))
+            QueueSelfPacket(playerId, RcNcPackets.NcNpcAdd(npc.Id, npc.Name, npc.Type, npc.LevelName), touched);
+    }
+
     private void HandleNcLevelListGet(ushort playerId, ISet<ushort> touched)
     {
         var root = worldEntryOptions?.AccountFileSystem.ServerPath;
@@ -1506,6 +1515,73 @@ public sealed class LoginAuthBridge(
 
     private uint NextDatabaseNpcId() =>
         _databaseNpcs.Count == 0 ? 10000u : Math.Max(10000u, _databaseNpcs.Keys.Max() + 1);
+
+    private void HydrateDatabaseNpcs()
+    {
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        if (root is null)
+            return;
+
+        var folder = Path.Combine(root, "npcs");
+        if (!Directory.Exists(folder))
+            return;
+
+        foreach (var path in Directory.EnumerateFiles(folder, "npc*.txt"))
+        {
+            if (TryLoadDatabaseNpc(path, out var npc))
+                _databaseNpcs[npc.Id] = npc;
+        }
+    }
+
+    private static bool TryLoadDatabaseNpc(string path, out DatabaseNpc npc)
+    {
+        var name = "";
+        var type = "";
+        var owner = "";
+        var level = "";
+        var x = "";
+        var y = "";
+        var id = 0u;
+
+        foreach (var rawLine in File.ReadLines(path))
+        {
+            var line = rawLine.TrimEnd('\r');
+            var space = line.IndexOf(' ', StringComparison.Ordinal);
+            var key = space < 0 ? line : line[..space];
+            var value = space < 0 ? "" : line[(space + 1)..].Trim();
+            switch (key.ToUpperInvariant())
+            {
+                case "NAME":
+                    name = value;
+                    break;
+                case "ID":
+                    uint.TryParse(value, out id);
+                    break;
+                case "TYPE":
+                    type = value;
+                    break;
+                case "OWNER":
+                case "SCRIPTER":
+                    owner = value;
+                    break;
+                case "STARTLEVEL":
+                    level = value;
+                    break;
+                case "STARTX":
+                    x = value;
+                    break;
+                case "STARTY":
+                    y = value;
+                    break;
+                case "NPCSCRIPT":
+                    npc = new DatabaseNpc(id, name, type, owner, level, x, y);
+                    return id != 0 && name.Length != 0;
+            }
+        }
+
+        npc = new DatabaseNpc(id, name, type, owner, level, x, y);
+        return id != 0 && name.Length != 0;
+    }
 
     private void SaveDatabaseNpc(DatabaseNpc npc)
     {
@@ -2093,7 +2169,7 @@ public sealed class LoginAuthBridge(
         var load = AccountLoadService.Load(
             accountName,
             worldEntryOptions.AccountFileSystem,
-            worldEntryOptions.AccountSettings,
+            EffectiveAccountSettings(),
             ignoreNickname: false);
         if (!load.Success || load.Account is null)
             return false;
@@ -2261,6 +2337,8 @@ public sealed class LoginAuthBridge(
 
         var options = NormalizeConfigText(GUntokenize(ReadAsciiPayload(payload)));
         WriteConfigFile("serveroptions.txt", options);
+        _serverOptionsOverride = LoadServerOptions();
+        RefreshNpcServerPlayer(touched);
         BroadcastToRemoteControls(RcNcPackets.RcChat($"{accountName} has updated the server options."), touched);
         BroadcastNpcAddresses(touched);
     }
@@ -2384,6 +2462,20 @@ public sealed class LoginAuthBridge(
         }
     }
 
+    private IAccountLoadSettings EffectiveAccountSettings() =>
+        _serverOptionsOverride is null
+            ? worldEntryOptions?.AccountSettings ?? AccountLoadSettings.Empty
+            : new OverlayAccountLoadSettings(_serverOptionsOverride, worldEntryOptions?.AccountSettings);
+
+    private Gs2Settings? LoadServerOptions()
+    {
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        if (root is null)
+            return null;
+
+        return Gs2Settings.LoadFile(Path.Combine(root, "config", "serveroptions.txt"));
+    }
+
     private void QueueNpcServerAddress(ClientSessionSkeleton session, AccountFileData? account, ISet<ushort>? touched = null)
     {
         if (!IsRemoteControl(session.Type) || account is null || (account.AdminRights & NpcControlRight) == 0)
@@ -2399,7 +2491,7 @@ public sealed class LoginAuthBridge(
     private NpcServerEndpoint? LoadNpcServerEndpoint()
     {
         var root = worldEntryOptions?.AccountFileSystem.ServerPath;
-        var settings = worldEntryOptions?.AccountSettings;
+        var settings = EffectiveAccountSettings();
         if (root is null || settings is null)
             return null;
 
@@ -2835,7 +2927,7 @@ public sealed class LoginAuthBridge(
         if (worldEntryOptions is null)
             return defaultValue;
 
-        var value = worldEntryOptions.AccountSettings.GetString(key, defaultValue ? "true" : "false");
+        var value = EffectiveAccountSettings().GetString(key, defaultValue ? "true" : "false");
         return value.Equals("true", StringComparison.OrdinalIgnoreCase) ||
                value.Equals("1", StringComparison.OrdinalIgnoreCase) ||
                value.Equals("yes", StringComparison.OrdinalIgnoreCase);
@@ -2846,7 +2938,7 @@ public sealed class LoginAuthBridge(
         if (worldEntryOptions is null)
             return defaultValue;
 
-        var value = worldEntryOptions.AccountSettings.GetString(key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var value = EffectiveAccountSettings().GetString(key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
         return int.TryParse(value, out var parsed) ? parsed : defaultValue;
     }
 
@@ -2855,7 +2947,7 @@ public sealed class LoginAuthBridge(
         if (worldEntryOptions is null)
             return defaultValue;
 
-        var value = worldEntryOptions.AccountSettings.GetString(key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var value = EffectiveAccountSettings().GetString(key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
         return float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
             ? parsed
             : defaultValue;
@@ -2890,10 +2982,8 @@ public sealed class LoginAuthBridge(
         if (_activeSnapshots.ContainsKey(NpcServerPlayerId))
             return true;
 
-        var nicknameBase = worldEntryOptions.AccountSettings.GetString("nickname", "NPC-Server");
-        if (string.IsNullOrWhiteSpace(nicknameBase))
-            nicknameBase = "NPC-Server";
-        var nickname = nicknameBase.Trim() + " (Server)";
+        var settings = EffectiveAccountSettings();
+        var nickname = BuildNpcServerNickname(settings);
         var source = new PlayerPropertySource(
             Nickname: nickname,
             MaxPower: 3,
@@ -2907,7 +2997,7 @@ public sealed class LoginAuthBridge(
             ShieldPower: 0,
             ShieldImage: "",
             Gani: "idle",
-            HeadImage: worldEntryOptions.AccountSettings.GetString("staffhead", "head25.png"),
+            HeadImage: settings.GetString("staffhead", "head25.png"),
             ChatMessage: "",
             Colors: [0, 0, 0, 0, 0],
             PlayerId: NpcServerPlayerId,
@@ -2965,6 +3055,35 @@ public sealed class LoginAuthBridge(
 
         serverList.SendPlayerAdd(PostLoginWorldEntryBoundary.BuildServerListAddPlayerPacket(snapshot));
         return true;
+    }
+
+    private void RefreshNpcServerPlayer(ISet<ushort> touched)
+    {
+        if (!_activeSnapshots.TryGetValue(NpcServerPlayerId, out var snapshot) ||
+            snapshot.Type != PlayerSessionType.NpcServer)
+            return;
+
+        var settings = EffectiveAccountSettings();
+        var source = snapshot.LoginPropertySource with
+        {
+            Nickname = BuildNpcServerNickname(settings),
+            HeadImage = settings.GetString("staffhead", "head25.png")
+        };
+        var updated = snapshot with
+        {
+            NicknameProperty = GCharString(source.Nickname),
+            LoginPropertySource = source
+        };
+        _activeSnapshots[NpcServerPlayerId] = updated;
+        BroadcastToRemoteControls(BuildRcAddPlayer(updated), touched);
+    }
+
+    private static string BuildNpcServerNickname(IAccountLoadSettings settings)
+    {
+        var nicknameBase = settings.GetString("nickname", "NPC-Server");
+        if (string.IsNullOrWhiteSpace(nicknameBase))
+            nicknameBase = "NPC-Server";
+        return nicknameBase.Trim() + " (Server)";
     }
 
     private IReadOnlyList<ActivePlayerSession> BuildActiveSessions() =>
@@ -3241,6 +3360,9 @@ public sealed class LoginAuthBridge(
         if ((joiningSession.Type & PlayerSessionType.AnyNpcControl) == 0)
             yield break;
 
+        var touched = new HashSet<ushort>();
+        SendDatabaseNpcList(joiningSession.Id, touched);
+
         foreach (var (otherId, otherSnapshot) in _activeSnapshots.ToArray())
         {
             if (otherId == joiningSession.Id || (otherSnapshot.Type & PlayerSessionType.AnyNpcControl) == 0)
@@ -3302,7 +3424,7 @@ public sealed class LoginAuthBridge(
             IsControl(snapshot.Type) || snapshot.Type == PlayerSessionType.NpcServer ? (byte)1 : null);
 
     private string FormatScriptOutput(string scriptName, string line) =>
-        worldEntryOptions?.AccountSettings.GetString("scriptcall", "echo").Trim().Equals("debug", StringComparison.OrdinalIgnoreCase) == true
+        EffectiveAccountSettings().GetString("scriptcall", "echo").Trim().Equals("debug", StringComparison.OrdinalIgnoreCase)
             ? $"GS2 {scriptName}: {line}"
             : line;
 
@@ -3330,6 +3452,24 @@ public sealed class LoginAuthBridge(
         {
             session.QueuePacket(packet);
         }
+    }
+
+    private sealed class OverlayAccountLoadSettings(
+        IAccountLoadSettings current,
+        IAccountLoadSettings? fallback) : IAccountLoadSettings
+    {
+        public bool Exists(string key) =>
+            current.Exists(key) || fallback?.Exists(key) == true;
+
+        public string GetString(string key, string defaultValue) =>
+            current.Exists(key)
+                ? current.GetString(key, defaultValue)
+                : fallback?.GetString(key, defaultValue) ?? defaultValue;
+
+        public float GetFloat(string key, float defaultValue) =>
+            current.Exists(key)
+                ? current.GetFloat(key, defaultValue)
+                : fallback?.GetFloat(key, defaultValue) ?? defaultValue;
     }
 
     private ClientLoginAuthResult Finish(ClientSessionSkeleton session, bool accepted)
