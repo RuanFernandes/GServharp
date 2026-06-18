@@ -3,6 +3,7 @@ using System.Net;
 using Preagonal.GServer.Game;
 using Preagonal.GServer.Persistence;
 using Preagonal.GServer.Protocol;
+using Preagonal.GServer.Scripting;
 
 namespace Preagonal.GServer.Network;
 
@@ -251,13 +252,47 @@ public static class LoginWorldEntry
             }
 
             if (TryLoadServerWeapon(serverPath, weaponName, out var image, out var source))
+            {
                 packets.Add(new LoginWeaponPacket(
                     weaponName,
                     EntityPackets.NpcWeaponAdd(weaponName, image, source.Replace('\n', '\u00a7'))));
+
+                if (TryCompileClientGs2(weaponName, source, out var bytecode))
+                    packets.Add(new LoginWeaponPacket(
+                        weaponName,
+                        EntityPackets.NpcWeaponScriptRawData(bytecode)));
+            }
         }
 
         return packets;
     }
+
+    private static bool TryCompileClientGs2(string weaponName, string source, out byte[] bytecode)
+    {
+        bytecode = [];
+        try
+        {
+            var clientGs2 = SourceCodeSlices.Parse(source, gs2Default: true, serverSideVm: false).ClientGs2;
+            if (string.IsNullOrWhiteSpace(clientGs2) || LooksLikeGs1ClientScript(clientGs2))
+                return false;
+
+            var result = new Gs2CompilerAdapter().Compile(clientGs2, "weapon", weaponName);
+            if (!result.Success || result.Bytecode.Length == 0)
+                return false;
+
+            bytecode = result.Bytecode;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool LooksLikeGs1ClientScript(string source) =>
+        source.Contains("setplayerprop #", StringComparison.OrdinalIgnoreCase) ||
+        source.Contains("setstring ", StringComparison.OrdinalIgnoreCase) ||
+        source.Contains("timeout=", StringComparison.OrdinalIgnoreCase);
 
     private static bool TryLoadServerWeapon(string serverPath, string weaponName, out string image, out string source)
     {

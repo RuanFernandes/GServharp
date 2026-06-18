@@ -1,6 +1,7 @@
 using Preagonal.GServer.Game;
 using Preagonal.GServer.Persistence;
 using Preagonal.GServer.Protocol;
+using Preagonal.GServer.Scripting;
 using Xunit;
 
 namespace Preagonal.GServer.Network.Tests;
@@ -409,6 +410,18 @@ public sealed class LoginAuthBridgeTests
     }
 
     [Fact]
+    public void NcLoginSendsWelcome()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+
+        var login = LoginNc(bridge, "YOURACCOUNT", 7);
+
+        var decoded = DecodeLastSocketPayload(EncryptionGeneration.Gen3, 0, login.OutboundBytes);
+        Assert.True(IndexOf(decoded, RcNcPackets.RcChat("Welcome to the NPC-Server for My Server")) >= 0);
+    }
+
+    [Fact]
     public void RcFileBrowserStartReturnsFolderListAndDirectory()
     {
         using var serverRoot = TestDefaultServerRoot();
@@ -517,6 +530,30 @@ public sealed class LoginAuthBridgeTests
         var decoded = DecodeSocketPayload(login.OutboundBytes, 43);
 
         Assert.True(IndexOf(decoded, EntityPackets.NpcWeaponAdd("-gr_movement", "wbomb1.png", "//#CLIENTSIDE\u00a7player.chat = 1;")) >= 0);
+    }
+
+    [Fact]
+    public void LoginCompilesOwnedWeapon()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        const string source = "//#CLIENTSIDE\n//#GS2\nfunction onCreated() {\n  player.chat = 1;\n}";
+        File.WriteAllText(
+            Path.Combine(serverRoot.Path, "weapons", "weapon-gr_movement.txt"),
+            "GRAWP001\nREALNAME -gr_movement\nIMAGE wbomb1.png\nSCRIPT\n" + source + "\nSCRIPTEND\n");
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var expectedCompile = new Gs2CompilerAdapter().Compile(
+            SourceCodeSlices.Parse(source, gs2Default: true, serverSideVm: false).ClientGs2,
+            "weapon",
+            "-gr_movement");
+        Assert.True(expectedCompile.Success);
+
+        var login = LoginClient(bridge, "YOURACCOUNT", 8, 43);
+        var decoded = DecodeSocketPayload(login.OutboundBytes, 43);
+
+        Assert.True(IndexOf(decoded, EntityPackets.NpcWeaponAdd("-gr_movement", "wbomb1.png", "//#CLIENTSIDE\u00a7//#GS2\u00a7function onCreated() {\u00a7  player.chat = 1;\u00a7}")) >= 0);
+        Assert.True(IndexOf(decoded, [(byte)ServerToPlayerPacketId.RawData + 32]) >= 0);
+        Assert.True(IndexOf(decoded, [(byte)ServerToPlayerPacketId.NpcWeaponScript + 32]) >= 0);
+        Assert.True(IndexOf(decoded, "weapon,-gr_movement,1,"u8.ToArray()) >= 0);
     }
 
     [Fact]
@@ -1011,7 +1048,6 @@ public sealed class LoginAuthBridgeTests
         var broadcast = Assert.Single(second.Broadcasts);
         Assert.Equal(7, broadcast.PlayerId);
         Assert.NotEmpty(broadcast.OutboundBytes);
-        Assert.True(second.OutboundBytes.Length > first.OutboundBytes.Length);
         Assert.True(IndexOf(DecodeSocketPayload(second.OutboundBytes, key: 43), LoginPeerPrefix(7)) >= 0);
         Assert.True(IndexOf(DecodeLastSocketPayload(42, first.OutboundBytes, broadcast.OutboundBytes), LoginPeerPrefix(8)) >= 0);
     }

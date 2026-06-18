@@ -3360,6 +3360,8 @@ public sealed class LoginAuthBridge(
         if ((joiningSession.Type & PlayerSessionType.AnyNpcControl) == 0)
             yield break;
 
+        joiningSession.QueuePacket(RcNcPackets.RcChat($"Welcome to the NPC-Server for {worldEntryOptions?.AccountLoginOptions.ServerName ?? "GServer"}"));
+
         var touched = new HashSet<ushort>();
         SendDatabaseNpcList(joiningSession.Id, touched);
 

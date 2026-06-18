@@ -35,6 +35,25 @@ public sealed class FileQueueCompatibilityTests
     }
 
     [Fact]
+    public void ForcedFileFlushKeepsNormalPacketsFirst()
+    {
+        var writer = new GraalBinaryWriter();
+        writer.WriteGChar((byte)ServerToPlayerPacketId.RawData);
+        writer.WriteGInt(3);
+        writer.WriteByte((byte)'\n');
+        writer.WriteGChar((byte)ServerToPlayerPacketId.NpcWeaponScript);
+        writer.WriteBytes("abc"u8);
+
+        var queue = new GraalFileQueue();
+        queue.AddPacket(writer.ToArray());
+        queue.AddPacket("normal\n"u8);
+
+        var flushed = queue.FlushUncompressed(forceSendFiles: true);
+        Assert.True(flushed.AsSpan(0, 7).SequenceEqual("normal\n"u8));
+        Assert.True(flushed.AsSpan(7).SequenceEqual(writer.ToArray()));
+    }
+
+    [Fact]
     public void PartialSocketSendLeavesRemainingOutputBufferedForNextFlush()
     {
         var queue = new GraalFileQueue();

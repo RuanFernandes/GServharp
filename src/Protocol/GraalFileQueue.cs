@@ -43,10 +43,13 @@ public sealed class GraalFileQueue
 
             if (_previousRawData)
             {
-                var payloadLength = Math.Clamp(_rawDataSize, 0, packet.Length - position);
+                var firstPayloadId = packet.Length == position ? (byte)0 : unchecked((byte)(packet[position] - 32));
+                var rawPayloadSize = firstPayloadId == (byte)ServerToPlayerPacketId.BoardPacket
+                    ? _rawDataSize
+                    : _rawDataSize + 1;
+                var payloadLength = Math.Clamp(rawPayloadSize, 0, packet.Length - position);
                 var payload = packet[position..(position + payloadLength)];
                 var combined = Combine(_rawDataHeader, payload);
-                var firstPayloadId = payload.Length == 0 ? (byte)0 : unchecked((byte)(payload[0] - 32));
                 if (firstPayloadId == (byte)ServerToPlayerPacketId.BoardPacket)
                     _normalBuffer.Enqueue(combined);
                 else
@@ -122,14 +125,6 @@ public sealed class GraalFileQueue
         if (_normalBuffer.Count != 0 && _normalBuffer.Peek().Length > 0xF000)
             pending.AddRange(_normalBuffer.Dequeue());
 
-        if (pending.Count == 0 &&
-            (_bytesSentWithoutFile > 0x7FFF || forceSendFiles || _sendCallsWithoutData >= 4) &&
-            _fileBuffer.Count != 0)
-        {
-            _bytesSentWithoutFile = 0;
-            pending.AddRange(_fileBuffer.Dequeue());
-        }
-
         while (pending.Count < 0xC000 && _normalBuffer.Count != 0)
         {
             if (pending.Count + _normalBuffer.Peek().Length > 0xF000)
@@ -137,6 +132,14 @@ public sealed class GraalFileQueue
             pending.AddRange(_normalBuffer.Dequeue());
         }
         _bytesSentWithoutFile += pending.Count;
+
+        if (pending.Count == 0 &&
+            (_bytesSentWithoutFile > 0x7FFF || forceSendFiles || _sendCallsWithoutData >= 4) &&
+            _fileBuffer.Count != 0)
+        {
+            _bytesSentWithoutFile = 0;
+            pending.AddRange(_fileBuffer.Dequeue());
+        }
 
         if (pending.Count < 0x4000 && _fileBuffer.Count != 0)
         {
