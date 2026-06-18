@@ -635,6 +635,7 @@ public sealed class LoginAuthBridge(
         var split = message.IndexOf(' ');
         var command = (split < 0 ? message : message[..split]).ToLowerInvariant();
         var argument = split < 0 ? "" : message[(split + 1)..].Trim();
+        var targetAccount = argument.Length == 0 ? accountName : argument;
 
         switch (command)
         {
@@ -648,20 +649,20 @@ public sealed class LoginAuthBridge(
             case "/credits":
                 QueueSelfPacket(playerId, RcNcPackets.RcChat("Programmed by Preagonal contributors"), touched);
                 return;
-            case "/open" when argument.Length != 0:
-                HandlePlayerPropsGetByAccount(playerId, GCharPayload(argument), touched);
+            case "/open":
+                HandlePlayerPropsGetByAccount(playerId, GCharPayload(targetAccount), touched);
                 return;
-            case "/openacc" when argument.Length != 0:
-                HandleAccountGet(playerId, argument, touched);
+            case "/openacc":
+                HandleAccountGet(playerId, targetAccount, touched);
                 return;
-            case "/opencomments" when argument.Length != 0:
-                HandlePlayerCommentsGet(playerId, argument, touched);
+            case "/opencomments":
+                HandlePlayerCommentsGet(playerId, targetAccount, touched);
                 return;
-            case "/openban" when argument.Length != 0:
-                HandlePlayerBanGet(playerId, argument, touched);
+            case "/openban":
+                HandlePlayerBanGet(playerId, targetAccount, touched);
                 return;
-            case "/openrights" when argument.Length != 0:
-                HandlePlayerRightsGet(playerId, argument, touched);
+            case "/openrights":
+                HandlePlayerRightsGet(playerId, targetAccount, touched);
                 return;
             case "/reset" when argument.Length != 0:
                 QueueSelfPacket(playerId, RcNcPackets.RcChat("Server: Account reset is not implemented yet."), touched);
@@ -1008,7 +1009,7 @@ public sealed class LoginAuthBridge(
             .Select(static entry => entry.Folder)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        QueueSelfPacket(playerId, RcNcPackets.FileBrowserDirList(string.Join(",", folders)), touched);
+        QueueSelfPacket(playerId, RcNcPackets.FileBrowserDirList(string.Join('\n', account.FolderRights) + "\n"), touched);
         QueueSelfPacket(playerId, RcNcPackets.FileBrowserMessage("Welcome to the File Browser."), touched);
         QueueSelfPacket(playerId, BuildFileBrowserDir(account, account.LastFolder.Length == 0 ? folders[0] : account.LastFolder), touched);
     }

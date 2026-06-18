@@ -223,6 +223,7 @@ public sealed class LoginAuthBridgeTests
         var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
 
         Assert.True(IndexOf(decoded, RcNcPackets.FileBrowserMessage("Welcome to the File Browser.")) >= 0);
+        Assert.True(IndexOf(decoded, RcNcPackets.FileBrowserDirList("rw accounts/*\nrw config/*\nrw documents/*\nrw guilds/*\nrw logs/*\nrw npcprops/*\nrw translations/*\nr weapons/*\nrw world/*\nrw world/levels/*\nrw world/bodies/*\nrw world/ganis/*\nrw world/global/*\nrw world/global/heads/*\nrw world/global/bodies/*\nrw world/global/swords/*\nrw world/global/shields/*\nrw world/hats/*\nrw world/heads/*\nrw world/images/*\nrw world/shields/*\nrw world/swords/*\nrw world/sounds/*\n")) >= 0);
         Assert.True(IndexOf(decoded, FileBrowserDirPrefix("accounts/")) >= 0);
     }
 
@@ -362,6 +363,24 @@ public sealed class LoginAuthBridgeTests
         AssertPacketId(DecodeLastSocketPayload(42, login.OutboundBytes, props.OutboundBytes, account.OutboundBytes, comments.OutboundBytes), ServerToPlayerPacketId.RcPlayerCommentsGet);
         AssertPacketId(DecodeLastSocketPayload(42, login.OutboundBytes, props.OutboundBytes, account.OutboundBytes, comments.OutboundBytes, ban.OutboundBytes), ServerToPlayerPacketId.RcPlayerBanGet);
         AssertPacketId(DecodeLastSocketPayload(42, login.OutboundBytes, props.OutboundBytes, account.OutboundBytes, comments.OutboundBytes, ban.OutboundBytes, rights.OutboundBytes), ServerToPlayerPacketId.RcPlayerRightsGet);
+    }
+
+    [Fact]
+    public void RcSlashOpenCommandsDefaultToSelf()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+        var clientQueue = new GraalFileQueue();
+        clientQueue.SetCodec(EncryptionGeneration.Gen5, 42);
+
+        var rights = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(clientQueue, RcChatPacket("/openrights")));
+
+        var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, rights.OutboundBytes);
+        AssertPacketId(decoded, ServerToPlayerPacketId.RcPlayerRightsGet);
+        Assert.True(IndexOf(decoded, RcNcPackets.RcChat("Server: Unknown command: /openrights")) < 0);
     }
 
     [Fact]

@@ -160,8 +160,8 @@ public static class RcNcPackets
         return WithTrailingNewline(writer);
     }
 
-    public static byte[] FileBrowserDirList(string tokenizedFolders) =>
-        PacketWithAsciiPayload(ServerToPlayerPacketId.RcFileBrowserDirList, tokenizedFolders);
+    public static byte[] FileBrowserDirList(string folders) =>
+        PacketWithAsciiPayload(ServerToPlayerPacketId.RcFileBrowserDirList, GTokenize(folders));
 
     public static byte[] FileBrowserDir(string folder, IReadOnlyList<RcFileBrowserEntry> entries)
     {
