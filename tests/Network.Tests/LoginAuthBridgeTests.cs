@@ -214,6 +214,7 @@ public sealed class LoginAuthBridgeTests
         using var serverRoot = TestDefaultServerRoot();
         Directory.CreateDirectory(Path.Combine(serverRoot.Path, "accounts"));
         File.WriteAllText(Path.Combine(serverRoot.Path, "accounts", "sample.txt"), "data");
+        File.WriteAllText(Path.Combine(serverRoot.Path, "accounts", ".empty"), "");
         var bridge = CreateBridge(serverRoot, new RuntimeServer());
         var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
 
@@ -225,6 +226,25 @@ public sealed class LoginAuthBridgeTests
         Assert.True(IndexOf(decoded, RcNcPackets.FileBrowserMessage("Welcome to the File Browser.")) >= 0);
         Assert.True(IndexOf(decoded, RcNcPackets.FileBrowserDirList("rw accounts/*\nrw config/*\nrw documents/*\nrw guilds/*\nrw logs/*\nrw npcprops/*\nrw translations/*\nr weapons/*\nrw world/*\nrw world/levels/*\nrw world/bodies/*\nrw world/ganis/*\nrw world/global/*\nrw world/global/heads/*\nrw world/global/bodies/*\nrw world/global/swords/*\nrw world/global/shields/*\nrw world/hats/*\nrw world/heads/*\nrw world/images/*\nrw world/shields/*\nrw world/swords/*\nrw world/sounds/*\n")) >= 0);
         Assert.True(IndexOf(decoded, FileBrowserDirPrefix("accounts/")) >= 0);
+        Assert.DoesNotContain(".empty"u8.ToArray(), decoded);
+    }
+
+    [Fact]
+    public void RcFileBrowserDownloadSendsFile()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var filePath = Path.Combine(serverRoot.Path, "accounts", "sample.txt");
+        File.WriteAllText(filePath, "data");
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(RcPacket(PlayerToServerPacketId.RcFileBrowserDownload, "sample.txt"), 42));
+        var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
+
+        Assert.NotEmpty(result.OutboundBytes);
+        Assert.Contains("sample.txt"u8.ToArray(), decoded);
     }
 
     [Fact]

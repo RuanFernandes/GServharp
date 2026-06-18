@@ -1,3 +1,4 @@
+using Preagonal.GServer.Admin;
 using Preagonal.GServer.Game;
 using Preagonal.GServer.Persistence;
 using Preagonal.GServer.Protocol;
@@ -616,6 +617,9 @@ public sealed class LoginAuthBridge(
                 return true;
             case PlayerToServerPacketId.RcFileBrowserEnd:
                 return true;
+            case PlayerToServerPacketId.RcFileBrowserDownload:
+                HandleFileBrowserDownload(session.Id, ReadAsciiPayload(payload), touched);
+                return true;
             default:
                 return false;
         }
@@ -1153,6 +1157,9 @@ public sealed class LoginAuthBridge(
             foreach (var file in Directory.EnumerateFiles(path))
             {
                 var info = new FileInfo(file);
+                if (info.Name.StartsWith(".", StringComparison.Ordinal))
+                    continue;
+
                 entries.Add(new RcFileBrowserEntry(
                     info.Name,
                     rights,
@@ -1162,6 +1169,68 @@ public sealed class LoginAuthBridge(
         }
 
         return RcNcPackets.FileBrowserDir(normalized, entries);
+    }
+
+    private void HandleFileBrowserDownload(ushort playerId, string fileName, ISet<ushort> touched)
+    {
+        if (!_activeAccounts.TryGetValue(playerId, out var account) ||
+            !_activeSessions.TryGetValue(playerId, out var session) ||
+            fileName.Length == 0)
+        {
+            return;
+        }
+
+        var folder = NormalizeFolder(account.LastFolder.Length == 0 ? "accounts/" : account.LastFolder);
+        var safeFileName = Path.GetFileName(fileName.Replace('\\', Path.DirectorySeparatorChar));
+        if (safeFileName.Length == 0)
+            return;
+
+        var relativePath = NormalizeFolder(folder + safeFileName);
+        var decision = RcProtectedFiles.EvaluateDownload(relativePath, (AdminRight)account.AdminRights);
+        if (!decision.Allowed)
+        {
+            QueueSelfPacket(playerId, RcNcPackets.FileBrowserMessage(decision.Message ?? $"Insufficient rights to download/view {relativePath}"), touched);
+            return;
+        }
+
+        var root = worldEntryOptions?.AccountFileSystem.ServerPath;
+        var path = root is null ? "" : Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(path))
+        {
+            QueueSelfPacket(playerId, FileTransferPackets.FileSendFailed(safeFileName), touched);
+            return;
+        }
+
+        var data = File.ReadAllBytes(path);
+        if (data.Length == 0)
+        {
+            QueueSelfPacket(playerId, FileTransferPackets.FileSendFailed(safeFileName), touched);
+            return;
+        }
+
+        var modTime = new DateTimeOffset(File.GetLastWriteTimeUtc(path)).ToUnixTimeSeconds();
+        var isBigFile = data.Length > FileTransferPackets.ChunkSize;
+        if (isBigFile)
+        {
+            QueueSelfPacket(playerId, FileTransferPackets.LargeFileStart(safeFileName), touched);
+            QueueSelfPacket(playerId, FileTransferPackets.LargeFileSize(data.Length), touched);
+        }
+
+        var offset = 0;
+        while (offset < data.Length)
+        {
+            var sendSize = Math.Min(FileTransferPackets.ChunkSize, data.Length - offset);
+            QueueSelfPacket(
+                playerId,
+                FileTransferPackets.BuildFileChunk(safeFileName, data.AsSpan(offset, sendSize), modTime, includeModTime: true),
+                touched);
+            offset += sendSize;
+        }
+
+        if (isBigFile)
+            QueueSelfPacket(playerId, FileTransferPackets.LargeFileEnd(safeFileName), touched);
+
+        QueueSelfPacket(playerId, RcNcPackets.FileBrowserMessage($"Downloaded file {safeFileName}"), touched);
     }
 
     private string ReadConfigFile(string fileName)
