@@ -3721,8 +3721,7 @@ public sealed class LoginAuthBridge(
             snapshot.LoginPropertySource.CurrentLevel,
             snapshot.LoginPropertySource.StatusMessage,
             snapshot.LoginPropertySource.Nickname,
-            snapshot.LoginPropertySource.CommunityName,
-            IsControl(snapshot.Type) || snapshot.Type == PlayerSessionType.NpcServer ? (byte)1 : null);
+            snapshot.LoginPropertySource.CommunityName);
 
     private string FormatScriptOutput(string scriptName, string line) =>
         EffectiveAccountSettings().GetString("scriptcall", "echo").Trim().Equals("debug", StringComparison.OrdinalIgnoreCase)

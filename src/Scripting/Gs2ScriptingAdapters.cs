@@ -277,7 +277,7 @@ public sealed class Gs2ServerScriptHost
     private static int Echo(Script script, IStackEntry[] args)
     {
         if (Owners.TryGetValue(script, out var host))
-            host._output.Add(args.Length == 0 ? "" : args[0]?.GetValue()?.ToString() ?? "");
+            host._output.Add(args.Length == 0 ? "" : StackValueToString(args[0]));
 
         return 0;
     }
@@ -356,7 +356,12 @@ public sealed class Gs2ServerScriptHost
     private static string StackValueToString(IStackEntry? entry)
     {
         var value = entry?.GetValue();
-        return value is IEnumerable<string> strings ? string.Join(",", strings) : value?.ToString() ?? "";
+        return value switch
+        {
+            IEnumerable<string> strings => string.Join(",", strings),
+            IEnumerable<object?> objects => string.Join(",", objects.Select(static item => item?.ToString() ?? "")),
+            _ => value?.ToString() ?? ""
+        };
     }
 
     private static void RegisterGlobalObject(string name, ScriptVariable obj)
@@ -390,7 +395,7 @@ public sealed class Gs2ServerScriptHost
     private static IStackEntry ValueEntry(string value)
     {
         var parts = value.Split(',', StringSplitOptions.None);
-        return parts.Length > 1 ? parts.Cast<object?>().ToList().ToStackEntry() : value.ToStackEntry();
+        return parts.Cast<object?>().ToList().ToStackEntry();
     }
 
     private static string NormalizeSingleLineFunction(string source)

@@ -306,7 +306,7 @@ public sealed class LoginAuthBridgeTests
         var login = LoginRc(bridge, "YOURACCOUNT", 8, 42);
         var decoded = DecodeSocketPayload(login.OutboundBytes, 42);
 
-        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(8, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT", 1)));
+        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(8, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
         Assert.Equal(1, CountOf(decoded, RcNcPackets.RcChat("Welcome to the Graal Reborn GServer Remote Control")));
         Assert.Equal(1, CountOf(decoded, RcNcPackets.RcChat("Say /help for a list of available commands")));
         Assert.Equal(1, CountOf(decoded, RcNcPackets.RcChat("New RC: YOURACCOUNT")));
@@ -326,8 +326,8 @@ public sealed class LoginAuthBridgeTests
         var relog = LoginRc(bridge, "YOURACCOUNT", 3, 43);
         var decoded = DecodeSocketPayload(relog.OutboundBytes, 43);
 
-        Assert.Equal(0, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT", 1)));
-        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(3, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT", 1)));
+        Assert.Equal(0, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
+        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(3, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
     }
 
     [Fact]
@@ -340,8 +340,8 @@ public sealed class LoginAuthBridgeTests
         var login = LoginRc(bridge, "YOURACCOUNT", 3, 42);
         var decoded = DecodeSocketPayload(login.OutboundBytes, 42);
 
-        Assert.Equal(0, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT", 1)));
-        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(3, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT", 1)));
+        Assert.Equal(0, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
+        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(3, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
     }
 
     [Fact]
@@ -359,7 +359,7 @@ public sealed class LoginAuthBridgeTests
             SocketPayload(RcPacket(PlayerToServerPacketId.RcListRemoteControls), 42));
 
         var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
-        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)", 1)) >= 0);
+        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)")) >= 0);
     }
 
     [Fact]
@@ -374,7 +374,7 @@ public sealed class LoginAuthBridgeTests
         var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
         var decoded = DecodeSocketPayload(login.OutboundBytes, 42);
 
-        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)", 1)) >= 0);
+        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)")) >= 0);
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public sealed class LoginAuthBridgeTests
         var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
         var decoded = DecodeSocketPayload(login.OutboundBytes, 42);
 
-        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(44, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)", 1)) >= 0);
+        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(44, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)")) >= 0);
     }
 
     [Fact]
@@ -412,7 +412,7 @@ public sealed class LoginAuthBridgeTests
             SocketPayload(clientQueue, RcPacket(PlayerToServerPacketId.RcServerOptionsSet, GTokenize("name = GSharp\nserverport = 14899\nserverside = true\nnickname = Testbed\n"))));
         var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
 
-        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)", 1)) >= 0);
+        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)")) >= 0);
     }
 
     [Fact]
@@ -1024,7 +1024,7 @@ public sealed class LoginAuthBridgeTests
         var rcLogin = LoginRc(bridge, "YOURACCOUNT", 7, 42);
         var decoded = DecodeSocketPayload(rcLogin.OutboundBytes, 42);
 
-        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(7, "YOURACCOUNT", " ", 0, "Not Denveous", "YOURACCOUNT", 1)) >= 0);
+        Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(7, "YOURACCOUNT", " ", 0, "Not Denveous", "YOURACCOUNT")) >= 0);
     }
 
     [Fact]
