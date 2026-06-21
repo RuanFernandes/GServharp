@@ -12,9 +12,9 @@ Core ownership:
 
 C# mapping:
 
-- Keep protocol encoding and packet IDs isolated in `GServ.Protocol`.
-- Keep socket/session orchestration in `GServ.Network`.
-- Keep gameplay state in `GServ.Game`, but do not implement gameplay until each C++ subsystem is recovered.
-- Keep file/account persistence in `GServ.Persistence`, preserving text-file behavior before changing storage.
-- Keep RC/NC/admin packets in `GServ.Admin`.
-- Keep scripting separate in `GServ.Scripting`; it must preserve GS2/V8 behavior when implemented.
+- Keep protocol encoding and packet IDs isolated in `Preagonal.GServer.Protocol`.
+- Keep socket/session orchestration in `Preagonal.GServer.Network`.
+- Keep gameplay state in `Preagonal.GServer.Game`, but do not implement gameplay until each C++ subsystem is recovered.
+- Keep file/account persistence in `Preagonal.GServer.Persistence`, preserving text-file behavior before changing storage.
+- Keep RC/NC/admin packets in `Preagonal.GServer.Admin`.
+- Keep scripting separate in `Preagonal.GServer.Scripting`; it must preserve GS2/V8 behavior when implemented.

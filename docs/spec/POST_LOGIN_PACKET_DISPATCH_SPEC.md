@@ -39,7 +39,7 @@ The default `TPLFunc` entry is `Player::msgPLI_NULL`.
 
 ## Implemented C# Boundary
 
-`ProductionPostLoginPacketDispatcher` is a production-safe decoded-packet
+`PostLoginPacketDispatcher` is a production-safe decoded-packet
 dispatcher below the socket frame decoder and above gameplay/runtime handlers.
 
 Implemented:
@@ -67,17 +67,17 @@ Implemented:
 This dispatcher intentionally accepts already-decoded inner packet bytes. It
 does not perform socket-frame buffering, encryption, compression, newline
 splitting, or `PLI_RAWDATA` state transitions. Those remain in
-`ProductionSocketReceiveBuffer`, `InboundPacketDecoder`, and
+`SocketReceiveBuffer`, `InboundPacketDecoder`, and
 `ClientPacketStreamFramer`.
 
-`ProductionPostLoginFrameHandler` wires the dispatcher to the production TCP
-skeleton's `IProductionSocketFrameHandler` interface for already-authenticated
+`PostLoginFrameHandler` wires the dispatcher to the production TCP
+skeleton's `IClientSocketFrameHandler` interface for already-authenticated
 post-login sessions:
 
 - decodes one socket frame with `InboundPacketDecoder`
 - logs any source-compatible decode warnings
 - splits decoded bytes with stateful `ClientPacketStreamFramer`
-- dispatches each inner packet through `ProductionPostLoginPacketDispatcher`
+- dispatches each inner packet through `PostLoginPacketDispatcher`
 - logs each dispatch result with the dispatch status
 - continues after handled and non-fatal invalid packets
 - stops without outbound bytes for assigned-but-unimplemented blocked packets
@@ -88,7 +88,7 @@ post-login sessions:
 
 - Production auth/login wiring into the TCP listener.
 - Production multi-session socket manager.
-- A production session factory that creates `ProductionPostLoginFrameHandler`
+- A production session factory that creates `PostLoginFrameHandler`
   only after real login/auth/world-entry prerequisites have been satisfied.
 - Dispatch for assigned gameplay/admin packets other than the confirmed
   `PLI_PLAYERPROPS` subset.

@@ -96,7 +96,7 @@ production-compatible.
 
 ## Tests
 
-`tests/GServ.Game.Tests/LevelRuntimeOwnershipTests.cs` covers:
+`tests/Game.Tests/LevelRuntimeOwnershipTests.cs` covers:
 
 - append order and returned index from `Level::addPlayer`
 - all-matching-id erase behavior from `Level::removePlayer`
@@ -106,7 +106,7 @@ production-compatible.
 - deferred deletion until cleanup
 - leaving the previous level before joining a new level
 
-`tests/GServ.Game.Tests/RuntimeLevelCacheTests.cs` covers:
+`tests/Game.Tests/RuntimeLevelCacheTests.cs` covers:
 
 - case-insensitive first cached match without loading
 - no append on load failure

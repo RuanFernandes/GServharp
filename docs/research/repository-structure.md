@@ -18,4 +18,4 @@ Important C++ paths:
 - `server/src/scripting/*`, `server/include/scripting/*`: GS2/V8 scripting boundary.
 - `external/gs2lib/include/IEnums.h`, `CString.h`, `CEncryption.h`, `CFileQueue.h`, `CSocket.h`: protocol-critical library surface.
 
-The C# foundation mirrors this split with professional internal boundaries: `GServ.Core`, `GServ.Protocol`, `GServ.Network`, `GServ.Game`, `GServ.Scripting`, `GServ.Persistence`, `GServ.Admin`, and `GServ`.
+The C# foundation mirrors this split with professional internal boundaries: `Preagonal.GServer.Core`, `Preagonal.GServer.Protocol`, `Preagonal.GServer.Network`, `Preagonal.GServer.Game`, `Preagonal.GServer.Scripting`, `Preagonal.GServer.Persistence`, `Preagonal.GServer.Admin`, and `Preagonal.GServer`.

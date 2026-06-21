@@ -162,7 +162,7 @@ systems have their own C++-confirmed fixtures.
 
 ## Production Dispatcher Guard
 
-`ProductionPostLoginPacketDispatcher` applies parsed player-property updates in
+`PostLoginPacketDispatcher` applies parsed player-property updates in
 wire order, one confirmed update at a time. If a parsed update reaches a C++
 branch whose byte encoding is known but whose runtime side effects are still
 blocked in C#, the dispatcher returns a blocked result instead of allowing

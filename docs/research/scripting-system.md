@@ -24,7 +24,7 @@ Behavior confirmed but not implemented:
 
 Current C# status:
 
-- `GServ.Scripting` is a boundary only.
+- `Preagonal.GServer.Scripting` is a boundary only.
 - `ScriptingRuntimeStatus.IsRuntimeImplemented` is intentionally `false`.
 - `SourceCodeSlices` implements only source classification.
 - `BlockedGs2CompilerAdapter` and `BlockedScriptRuntime` intentionally reject compile/execute calls.

@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement source-confirmed live player registry, level membership, visibility selection, and packet forwarding across sessions.
-**Architecture:** `GServ.Game` manages world/session state; `GServ.Network` exposes session sinks; `GServ.Protocol` builds exact packet payloads.
+**Architecture:** `Preagonal.GServer.Game` manages world/session state; `Preagonal.GServer.Network` exposes session sinks; `Preagonal.GServer.Protocol` builds exact packet payloads.
 **Tech Stack:** C#/.NET, xUnit multi-session tests, C++ server/player/level sources.
 
 ---
@@ -23,9 +23,9 @@
 - [x] Add tests for player ID allocation, same-level membership order, removal behavior, area visibility selection, and forwarding packet order.
 - [x] Implement live multi-session forwarding only for confirmed packet types.
 - [x] Add guards for gameplay packet types that are not yet ported.
-- [x] Ensure dev-only single-client behavior remains opt-in.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Ensure local-debug single-client behavior remains opt-in.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement live world session forwarding`.
 

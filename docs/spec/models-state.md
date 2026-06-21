@@ -10,9 +10,9 @@ Confirmed model surfaces:
 
 Current C# state:
 
-- `GServ.Core` only records source references.
-- `GServ.Protocol` implements confirmed low-level protocol primitives.
-- `GServ.Network` contains only a session skeleton matching the initial `PLTYPE_AWAIT` to parsed-login-prelude transition.
-- `GServ.Game`, `GServ.Persistence`, `GServ.Admin`, and `GServ.Scripting` are boundary projects only.
+- `Preagonal.GServer.Core` only records source references.
+- `Preagonal.GServer.Protocol` implements confirmed low-level protocol primitives.
+- `Preagonal.GServer.Network` contains only a session skeleton matching the initial `PLTYPE_AWAIT` to parsed-login-prelude transition.
+- `Preagonal.GServer.Game`, `Preagonal.GServer.Persistence`, `Preagonal.GServer.Admin`, and `Preagonal.GServer.Scripting` are boundary projects only.
 
 Do not add gameplay state until the matching C++ subsystem has been documented and tested.

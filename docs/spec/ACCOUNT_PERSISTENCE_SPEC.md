@@ -133,7 +133,7 @@ future compatibility test proves the exact compiled/runtime behavior.
 
 ## Implemented C# Boundary
 
-`GServ.Persistence` now contains:
+`Preagonal.GServer.Persistence` now contains:
 
 - `AccountFileParser`, a pure `GRACC001` parser for confirmed fields and C++
   defaults.
@@ -144,7 +144,7 @@ future compatibility test proves the exact compiled/runtime behavior.
   filename selection, disk write attempts, and default-account add-file
   signaling.
 
-`GServ.Network` now contains `ProductionAccountLoginBoundary`, which loads the
+`Preagonal.GServer.Network` now contains `AccountLoginBoundary`, which loads the
 server-list-approved account, maps confirmed account fields into the existing
 `PlayerSendLoginAccount` snapshot, applies the default-account save/add-file
 side effect when requested by `AccountLoadService`, and then runs the

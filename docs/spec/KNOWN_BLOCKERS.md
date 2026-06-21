@@ -16,7 +16,7 @@
   list-server auth, full config loaders, filesystem scans, and gameplay. The
   C++ production listener/session lifecycle is now documented in
   `PRODUCTION_SOCKET_SESSION_SPEC.md`, and the C# port has an accept-one
-  `ProductionTcpServer` skeleton plus `ProductionSocketReceiveBuffer` for
+  `ClientTcpServer` skeleton plus `SocketReceiveBuffer` for
   confirmed TCP chunk buffering and raw two-byte length-prefixed frame
   extraction. It also has decoded post-login dispatcher/frame-handler
   boundaries for the confirmed `PLI_PLAYERPROPS` subset plus C++ `msgPLI_NULL`
@@ -41,11 +41,11 @@
 - Exact `CString::guntokenize()` behavior for ban reasons remains blocked; current C# tests cover plain reasons and the confirmed newline-to-carriage-return replacement path only.
 - Real account/password validation must not be invented. The C++ server delegates password/auth verification to the list server through `SVO_VERIACC2`/`SVI_VERIACC2`.
 - Production auth now has confirmed list-server packet body builders for
-  registration/HQ/version config and a non-fake `IProductionServerListGateway`
+  registration/HQ/version config and a non-fake `IServerListGateway`
   boundary for `SVO_VERIACC2`. A source-confirmed
-  `ProductionServerListLifecycle` now sequences connect/register packets,
+  `ServerListLifecycle` now sequences connect/register packets,
   local-IP selection, and gen1-to-gen2 codec transition timing behind
-  `IProductionServerListSocket`. The production auth response boundary now
+  `IServerListSocket`. The production auth response boundary now
   parses `SVI_VERIACC2` success/rejection messages and applies them to pending
   sessions without fake local validation. The concrete remote TCP client, live
   zlib-framed list-server receive loop, reconnect host wiring, and player
@@ -67,7 +67,7 @@
   inbound gen4/gen5 bzip2 decode are implemented. WebSocket frame
   wrapping/unwrapping is implemented at the protocol helper boundary, but HTTP
   handshake and production session integration remain blocked.
-- A dev-only TCP/session shell exists for length-prefixed TCP input and a
+- A local-debug TCP/session shell exists for length-prefixed TCP input and a
   filesystem-backed `.nw` `sendLevel` boundary. It is not production-compatible:
   it uses explicit fake auth, stops on unsupported post-login frames before
   gameplay/runtime dispatch, and selects the current-modtime level branch so
@@ -141,7 +141,7 @@
   that confirmed subset exist. Confirmed inbound gen1/gen2/gen3, gen4 bzip2,
   and gen5 uncompressed/zlib/bzip2 frame decode exists, gen5 invalid compression
   type now follows the C++ log-and-continue decrypted-payload behavior, and the
-  dev-only TCP shell preserves source-confirmed `PLI_RAWDATA` state for decoded
+  local-debug TCP shell preserves source-confirmed `PLI_RAWDATA` state for decoded
   gen1/gen2/gen4/gen5/gen6 post-login payloads. Inbound bundle dispatch, full
   `setProps`, NPC/combat side effects, and invalid-update behavior remain
   blocked. Pure inclusive link hit-testing, client-triggered
@@ -157,7 +157,7 @@
 - Production timing boundaries now cover the source-confirmed `Server::doMain`
   one-second gate, 5s/60s/180s/300s periodic server jobs, server-list reconnect
   backoff, `Player::doTimedEvents` idle/no-data/save/reset gates, and
-  `PLO_NEWWORLDTIME` packet bytes. `ProductionHostLoop` now initializes and
+  `PLO_NEWWORLDTIME` packet bytes. `ServerHostLoop` now initializes and
   shuts down deterministically. Concrete player/level/server-list repository
   wiring, `cleanupDeletedPlayers` V8 retention, AP/singleplayer runtime execution,
   and production shutdown side effects remain blocked until the surrounding runtime

@@ -23,8 +23,8 @@
 - [ ] Add integration tests for login, warp, movement, chat, file transfer, combat, inventory, NPCs, RC/NC, and shutdown.
 - [x] Add a compatibility matrix in `docs/spec/CLIENT_COMPATIBILITY_MATRIX.md`.
 - [ ] Fix any mismatches by returning to the relevant earlier milestone source files.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [ ] Run manual closed-source client certification and document exact client version/date used.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Certify client compatibility harness`.

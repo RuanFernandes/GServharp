@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port production folder configuration, file indexing, resource lookup, and static level file loading semantics.
-**Architecture:** Keep filesystem/index services in `GServ.Persistence`, static level models in `GServ.Game`, and packet serialization in `GServ.Protocol`.
+**Architecture:** Keep filesystem/index services in `Preagonal.GServer.Persistence`, static level models in `Preagonal.GServer.Game`, and packet serialization in `Preagonal.GServer.Protocol`.
 **Tech Stack:** C#/.NET, xUnit, C++ filesystem and level sources.
 
 ---
@@ -24,8 +24,8 @@
 - [x] Implement `.graal`, `.zelda`, `.gmap`, and package/resource parsing only after source-confirmed tests exist.
 - [x] Keep runtime NPC/baddy execution blocked; preserve static payload bytes when behavior is not yet ported.
 - [x] Wire production filesystem into the existing dev sendLevel boundary where safe.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement production filesystem resource loading`.
 

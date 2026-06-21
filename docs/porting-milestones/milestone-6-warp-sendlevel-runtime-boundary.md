@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Finish source-confirmed `Player::warp`, `Player::setLevel`, `Player::sendLevel`, and old-client level-send behavior while stopping before unported gameplay runtimes.
-**Architecture:** `GServ.Game` owns warp/level state; `GServ.Protocol` owns packet bytes; `GServ.Network` only flushes ordered output.
+**Architecture:** `Preagonal.GServer.Game` owns warp/level state; `Preagonal.GServer.Protocol` owns packet bytes; `Preagonal.GServer.Network` only flushes ordered output.
 **Tech Stack:** C#/.NET, xUnit golden packet sequences, C++ player/level sources.
 
 ---
@@ -24,8 +24,8 @@
 - [x] Implement source-confirmed `warp` and `setLevel` state changes.
 - [x] Implement `sendLevel141` only if packet bytes and branches are fully confirmed.
 - [x] Guard NPC/baddy/script execution branches behind documented blocked interfaces.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement warp sendlevel runtime boundary`.
 

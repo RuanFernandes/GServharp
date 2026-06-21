@@ -15,7 +15,7 @@
 `main.cpp` selects the server directory in this order:
 
 1. Command-line or environment override.
-2. Non-empty `startupserver.txt` in the gserver home path.
+2. Non-empty `startupserver.txt` in the GServer home path.
 3. Exactly one directory under `servers/`.
 4. Failure with `ERR_SETTINGS`.
 
@@ -126,11 +126,11 @@ Confirmed from `external/gs2lib/src/CSettings.cpp` and `external/gs2lib/include/
 
 ## Implemented C# Boundary
 
-- `GServ.Persistence.Gs2Settings` implements the source-confirmed parsing and typed accessors above.
-- `GServ.Persistence.ProductionStartupCommandLine` implements confirmed CLI/environment override rules.
-- `GServ.Persistence.ProductionStartupResolver` implements override, `startupserver.txt`, and single-directory selection.
-- `GServ.Persistence.ProductionStartupLoader` loads `config/serveroptions.txt` and `config/adminconfig.txt` after a server root resolves.
-- `src/GServ/Program.cs` now reports production startup resolution and then stops before unported production runtime.
+- `Preagonal.GServer.Persistence.Gs2Settings` implements the source-confirmed parsing and typed accessors above.
+- `Preagonal.GServer.Persistence.ServerStartupCommandLine` implements confirmed CLI/environment override rules.
+- `Preagonal.GServer.Persistence.ServerStartupResolver` implements override, `startupserver.txt`, and single-directory selection.
+- `Preagonal.GServer.Persistence.ServerStartupLoader` loads `config/serveroptions.txt` and `config/adminconfig.txt` after a server root resolves.
+- `src/Server/Program.cs` now reports production startup resolution and then stops before unported production runtime.
 
 ## Blocked Runtime
 

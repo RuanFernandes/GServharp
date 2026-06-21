@@ -93,7 +93,7 @@ Implemented C# boundary:
   subset, including legacy/precise mirror props and sender-version ordering.
   It now also forwards `PLPROP_APCOUNTER` using `getProp` semantics, which
   serializes the stored counter plus one.
-- The dev-only TCP shell accepts decoded `PLI_PLAYERPROPS` frames after the
+- The local-debug TCP shell accepts decoded `PLI_PLAYERPROPS` frames after the
   login/level boundary and applies the local mutation. It now decodes confirmed
   gen4 bzip2 and gen5 uncompressed/zlib/bzip2 post-login frame payloads before
   this parser. It still does not send live multi-session movement broadcasts.

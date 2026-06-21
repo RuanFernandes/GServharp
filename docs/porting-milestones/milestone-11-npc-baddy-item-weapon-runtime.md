@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port level runtime entities excluding the full scripting VM: NPC containers, baddies, level items, horses, weapons/classes, and related packet serialization.
-**Architecture:** Runtime models live in `GServ.Game`; scripts remain inert until milestone 12; packet serialization stays byte-for-byte in `GServ.Protocol`.
+**Architecture:** Runtime models live in `Preagonal.GServer.Game`; scripts remain inert until milestone 12; packet serialization stays byte-for-byte in `Preagonal.GServer.Protocol`.
 **Tech Stack:** C#/.NET, xUnit, C++ level/entity sources.
 
 ---
@@ -23,8 +23,8 @@
 - [x] Implement inert NPC/baddy/item/weapon runtime state only where C++ behavior is confirmed.
 - [x] Implement packet builders for confirmed add/remove/update packets.
 - [x] Keep script execution, AI behavior, combat effects, and inventory rewards blocked unless proven in this milestone.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement npc baddy item weapon runtime boundary`.
 

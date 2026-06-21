@@ -7,8 +7,8 @@
 
 **Goal:** Port only durable gameplay/chat/guild behavior that is directly
 confirmed in the original C++ server.
-**Architecture:** Domain rules live in `GServ.Game`; persistence formats in
-`GServ.Persistence`; network packet builders in `GServ.Protocol`.
+**Architecture:** Domain rules live in `Preagonal.GServer.Game`; persistence formats in
+`Preagonal.GServer.Persistence`; network packet builders in `Preagonal.GServer.Protocol`.
 **Tech Stack:** C#/.NET, xUnit state/packet/persistence tests, C++ gameplay and
 account sources.
 
@@ -34,8 +34,8 @@ account sources.
   handlers and confirmed packet/persistence formats.
 - [ ] Preserve account save/load side effects and ordering where those systems touch account state.
 - [x] Keep behavior absent when no C++ source path exists.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 
 ## Removed From Scope Unless Source Is Recovered

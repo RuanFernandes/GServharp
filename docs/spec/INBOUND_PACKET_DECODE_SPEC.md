@@ -110,10 +110,10 @@ Implemented:
 - newline splitting into inner packets without the trailing newline
 - `ClientPacketStreamFramer` statefully preserves the confirmed `PLI_RAWDATA`
   next-packet length transition across decoded payload calls
-- dev-only TCP shell integration after login using the session's inbound
+- local-debug TCP shell integration after login using the session's inbound
   generation and login encryption key
 
-The dev-only shell now feeds decoded post-login packets into the existing
+The local-debug shell now feeds decoded post-login packets into the existing
 `PLI_PLAYERPROPS` boundary. Unsupported packet ids still stop before gameplay
 runtime dispatch.
 

@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port player-facing gameplay rules for hearts, damage, death, AP, bombs/arrows, hit detection, spar, and related packets.
-**Architecture:** Rules live in `GServ.Game`; packet bytes in `GServ.Protocol`; persistence writes behind `GServ.Persistence`; scripts called only through milestone-12 confirmed hooks.
+**Architecture:** Rules live in `Preagonal.GServer.Game`; packet bytes in `Preagonal.GServer.Protocol`; persistence writes behind `Preagonal.GServer.Persistence`; scripts called only through milestone-12 confirmed hooks.
 **Tech Stack:** C#/.NET, xUnit formula/packet tests, C++ gameplay sources.
 
 ---
@@ -24,8 +24,8 @@
 - [x] Implement health/hearts, hurt/death, AP, bombs/arrows, hit detection, and spar behavior only where C++ is confirmed.
 - [x] Wire persistence changes only if account save behavior is already confirmed.
 - [x] Keep NPC/script side effects blocked if their source-confirmed dependencies are missing.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement combat player gameplay rules`.
 

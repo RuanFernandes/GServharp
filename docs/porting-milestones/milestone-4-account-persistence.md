@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port C++ account loading, saving, default account behavior, guest handling, and pre-world player data semantics.
-**Architecture:** Keep file-format parsers in `GServ.Persistence`; expose typed account/player DTOs to `GServ.Game`; avoid gameplay side effects outside confirmed boundaries.
+**Architecture:** Keep file-format parsers in `Preagonal.GServer.Persistence`; expose typed account/player DTOs to `Preagonal.GServer.Game`; avoid gameplay side effects outside confirmed boundaries.
 **Tech Stack:** C#/.NET, xUnit, account golden fixtures derived from C++ format.
 
 ---
@@ -25,8 +25,8 @@
 - [x] Add failing tests for parse, round-trip save, missing file, default account load, banned/staff/admin fields, and guest account behavior where confirmed.
 - [x] Implement account repository behavior only for source-confirmed filesystem semantics.
 - [x] Wire account DTOs into the existing pre-world login boundary without inventing gameplay defaults.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement account persistence boundary`.
 
@@ -44,7 +44,7 @@
 
 - `AccountFileSerializer` and `AccountSaveService` now cover the
   source-confirmed account save text format and filesystem side effects.
-- `ProductionAccountLoginBoundary` now loads account files through
+- `AccountLoginBoundary` now loads account files through
   `AccountLoadService`, maps source-confirmed account fields into
   `PlayerSendLoginAccount`, invokes the existing `Player::sendLogin`
   continuation boundary, and applies the source-confirmed default-account

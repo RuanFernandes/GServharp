@@ -37,7 +37,7 @@ Confirmed from `ai_resources/GServer-CPP-ORIGINAL/README.md` and CMake:
   - `dependencies/gs2lib`
   - `dependencies/gs2compiler`
 - Docker build path exists for Linux GNU:
-  - `ai_resources/GServer-CPP-ORIGINAL/docker/gserver-x86_64-linux-gnu.dockerfile`
+  - `ai_resources/GServer-CPP-ORIGINAL/docker/GServer-x86_64-linux-gnu.dockerfile`
   - CMake command in that Dockerfile uses:
     - `-DSTATIC=ON`
     - `-DV8NPCSERVER=${NPCSERVER}`
@@ -51,9 +51,9 @@ certification copy should be created outside `ai_resources/`.
 
 The C# codebase now includes a passive diagnostic harness:
 
-- `GServ.Network.ClientCaptureStep`
-- `GServ.Network.ClientCaptureFlow`
-- `GServ.Network.ClientCertificationHarness`
+- `Preagonal.GServer.Network.ClientCaptureStep`
+- `Preagonal.GServer.Network.ClientCaptureFlow`
+- `Preagonal.GServer.Network.ClientCertificationHarness`
 
 The harness compares expected C++ capture bytes against actual C# capture bytes
 step-by-step. It certifies only exact byte equality.

@@ -204,17 +204,17 @@ player-dropped items. Confirmed rules:
 
 ## C# Mapping
 
-- `src/GServ.Game/InventoryItemRules.cs`
+- `src/Game/InventoryItemRules.cs`
   - `DurablePlayerInventoryState`
   - `InventoryItemRules.BuildPickupPlayerProps`
   - `InventoryItemRules.ApplyPickupPlayerProps`
   - `InventoryItemRules.TryRemoveForPlayerDrop`
-- `src/GServ.Game/LevelInteraction.cs`
+- `src/Game/LevelInteraction.cs`
   - `LevelInteraction.TryOpenChestAndApplyReward`
-- `src/GServ.Game/EntityRuntime.cs`
+- `src/Game/EntityRuntime.cs`
   - `LevelItemRuntime.SpawnLevelItem`
   - `LevelItemRuntime.DeleteOrTakeLevelItem`
-- `tests/GServ.Game.Tests/InventoryItemRulesTests.cs`
+- `tests/Game.Tests/InventoryItemRulesTests.cs`
   - golden byte payload tests for confirmed item rules.
 
 ## Chest Reward Application

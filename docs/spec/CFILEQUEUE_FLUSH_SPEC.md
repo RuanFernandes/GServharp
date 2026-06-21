@@ -146,7 +146,7 @@ The C# boundary still queues normal newline packets, `PLO_RAWDATA` headers,
 pre-serialized board/layer payload bytes, dynamic level packets, and first
 post-dynamic runtime packets in the same order C++ calls `Player::sendPacket`.
 
-The dev-only TCP shell now uses this boundary for its confirmed small/medium
+The local-debug TCP shell now uses this boundary for its confirmed small/medium
 login and pre-runtime level response. Client3/RC2 sessions with a login key are
 sent through gen5 socket framing; web sessions use gen1 passthrough.
 

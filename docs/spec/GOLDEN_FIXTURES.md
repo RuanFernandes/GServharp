@@ -842,9 +842,9 @@ Existing account lookup:
 
 ```txt
 input account: "pc-ruan"
-account fs findi: "pc-ruan.txt" => "C:\gserver\accounts\PC-Ruan.TXT"
+account fs findi: "pc-ruan.txt" => "C:\GServer\accounts\PC-Ruan.TXT"
 file header: GRACC001
-result: LoadedFromDefault=false, SourcePath="C:\gserver\accounts\PC-Ruan.TXT"
+result: LoadedFromDefault=false, SourcePath="C:\GServer\accounts\PC-Ruan.TXT"
 result: ShouldSaveCreatedAccount=false
 ```
 
@@ -853,7 +853,7 @@ Missing account fallback:
 ```txt
 input account: "NewAccount"
 account fs findi: "NewAccount.txt" => empty
-fallback path: "C:\gserver\accounts\defaultaccount.txt"
+fallback path: "C:\GServer\accounts\defaultaccount.txt"
 settings: startlevel=onlinestartlocal.nw, startx=30, starty=30.5
 result: LoadedFromDefault=true
 result level: onlinestartlocal.nw
@@ -900,7 +900,7 @@ Z 1.5\r\n
 ```
 
 Confirmed full-order fixture is locked by
-`tests/GServ.Persistence.Tests/AccountFileSerializerTests.cs`.
+`tests/Persistence.Tests/AccountFileSerializerTests.cs`.
 
 Load-only account save:
 
@@ -915,7 +915,7 @@ Existing case-preserved filename:
 ```txt
 account name: pc:Ruan
 fileExistsAs("pc:Ruan.txt") => "PC-Ruan.TXT"
-write path: C:\gserver\accounts\PC-Ruan.TXT
+write path: C:\GServer\accounts\PC-Ruan.TXT
 ```
 
 Disk write failure after serialization:
@@ -1377,7 +1377,7 @@ UNKNOWN! => unknown
 ```
 
 The confirmed signature and representative level packet fixtures are also
-cataloged in `tests/GServ.Game.Tests/LevelGoldenFixtures.cs` and verified by
+cataloged in `tests/Game.Tests/LevelGoldenFixtures.cs` and verified by
 `LevelGoldenFixtureCatalogTests`. The catalog intentionally stays in the test
 project because it is compatibility evidence, not runtime behavior.
 
@@ -1545,12 +1545,12 @@ GCHAR 2 "pw"
 "win"
 ```
 
-With `EnableDevOnlyAuth=true` and a filesystem-loaded `start.nw`, the diagnostic
+With `EnableLocalDebugAuth=true` and a filesystem-loaded `start.nw`, the diagnostic
 pipeline reaches:
 
 ```txt
 SessionLifecycle.DynamicLevelPayloadSent
-DevOnlyLocalStopPoint.BeforeRuntimeWorldSimulation
+LocalDebugStopPoint.BeforeRuntimeWorldSimulation
 ```
 
 The outbound byte stream includes:
@@ -1572,7 +1572,7 @@ Unsupported second length-prefixed frame after the login boundary:
 input: first Client3 login frame, then a second frame [0x20, 0x0A]
 result: Accepted=true
 log contains:
-"Unsupported post-login frame received by dev-only shell; continuous loop stopped before gameplay/runtime packet handling."
+"Unsupported post-login frame received by local-debug shell; continuous loop stopped before gameplay/runtime packet handling."
 ```
 
 Decoded post-login `PLI_PLAYERPROPS` movement frame:
@@ -1586,7 +1586,7 @@ PLPROP_Y GCHAR(71)
 bytes:
 [34, 47, 102, 48, 103]
 
-dev-only applied state:
+local-debug applied state:
 x=560
 y=568
 ```
@@ -1893,7 +1893,7 @@ GSHORT(7)
 COMPRESS_UNCOMPRESSED
 encrypted payload
 
-dev-only result:
+local-debug result:
 log contains "Decoded inbound gen5 frame into 1 packet(s)."
 log contains "Applied decoded PLI_PLAYERPROPS"
 ```

@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port client file/resource transfer, wanted-file handling, update packages, cache checks, and raw-data file payload behavior.
-**Architecture:** Resource lookup in `GServ.Persistence`, packet/file queue building in `GServ.Protocol`, socket flush in `GServ.Network`.
+**Architecture:** Resource lookup in `Preagonal.GServer.Persistence`, packet/file queue building in `Preagonal.GServer.Protocol`, socket flush in `Preagonal.GServer.Network`.
 **Tech Stack:** C#/.NET, xUnit golden fixtures, C++ file queue and player file-transfer sources.
 
 ---
@@ -24,8 +24,8 @@
 - [x] Add tests for queue ordering, raw-data boundaries, file-not-found behavior, and client cache response packets.
 - [x] Implement confirmed file transfer packet builders and session state transitions.
 - [x] Keep upload/write paths blocked until exact C++ security and overwrite behavior is confirmed.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement file transfer cache boundary`.
 

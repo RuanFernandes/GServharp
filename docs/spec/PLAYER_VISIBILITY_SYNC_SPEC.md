@@ -89,20 +89,20 @@ integration blocker.
 
 ## Tests
 
-`tests/GServ.Game.Tests/LevelEntryVisibilitySelectionTests.cs` covers:
+`tests/Game.Tests/LevelEntryVisibilitySelectionTests.cs` covers:
 
 - no-map same-level selection using level player-list order
 - singleplayer levels skipping visibility sync
 - GMAP/group-map filtering by client type, same map object, group, and
   `abs(delta) < 2`
 
-`tests/GServ.Protocol.Tests/IncomingPlayerPropsParserTests.cs` covers:
+`tests/Protocol.Tests/IncomingPlayerPropsParserTests.cs` covers:
 
 - decoded incoming movement/player prop parsing
 - stopping at the first unconfirmed property
 - forwarded `PLO_OTHERPLPROPS` bytes for a precise-movement sender
 
-`tests/GServ.Network.Tests/LiveWorldSessionForwardingTests.cs` covers:
+`tests/Network.Tests/LiveWorldSessionForwardingTests.cs` covers:
 
 - live level-area packet delivery in level membership order
 - map/group/distance filtering

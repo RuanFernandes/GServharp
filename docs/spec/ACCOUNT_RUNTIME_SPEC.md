@@ -145,7 +145,7 @@ Implemented:
   selection, write attempt reporting, and default-account add-file signalling.
 - `CandidateGuestIdentitySelector` for the deterministic, source-confirmed
   part of guest `pc:` identity selection.
-- `ProductionAccountLoginBoundary` wiring for account load/save, default-account
+- `AccountLoginBoundary` wiring for account load/save, default-account
   creation side effects, staff/admin-IP mapping, and optional guest identity
   selection.
 

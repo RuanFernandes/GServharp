@@ -49,7 +49,7 @@ PLPERM_NPCCONTROL         0x80000
 PLPERM_ANYRIGHT           0xFFFFFF
 ```
 
-The full flag table is captured in `GServ.Admin.AdminRight`.
+The full flag table is captured in `Preagonal.GServer.Admin.AdminRight`.
 
 ## RC/NC Login Gate
 
@@ -71,7 +71,7 @@ PLO_DISCMESSAGE "You do not have RC rights."
 ```
 
 The C# milestone implements only the decision boundary in
-`GServ.Admin.ControlLoginGate`; it does not perform production account loading
+`Preagonal.GServer.Admin.ControlLoginGate`; it does not perform production account loading
 or socket disconnects.
 
 ## Confirmed RC Packet IDs

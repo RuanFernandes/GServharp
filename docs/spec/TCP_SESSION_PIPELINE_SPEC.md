@@ -9,7 +9,7 @@ Authoritative sources:
 
 See also `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md` for the recovered
 production listener/session lifecycle. This file documents the currently
-implemented dev-only diagnostic pipeline and shared decode/queue boundaries.
+implemented local-debug diagnostic pipeline and shared decode/queue boundaries.
 See `docs/spec/POST_LOGIN_PACKET_DISPATCH_SPEC.md` for the reusable decoded
 post-login dispatcher boundary.
 
@@ -32,12 +32,12 @@ packet dispatch.
 
 Implemented:
 
-- `DevOnlyLocalSessionPipeline`
+- `LocalDebugSessionPipeline`
   - reads source-confirmed length-prefixed frames through `PacketFramer`
   - parses the first login packet through `ClientSessionSkeleton`
   - runs existing pre-world auth checks
-  - injects a clearly dev-only server-list success response only when
-    `EnableDevOnlyAuth=true`
+  - injects a clearly local-debug server-list success response only when
+    `EnableLocalDebugAuth=true`
   - enters `PlayerSendLoginContinuation`, `PostLoginWorldEntryBoundary`,
     `WarpWorldEntryBoundary`, `NwLevelFileLoader`, and `SendLevelBoundary`
   - stops at `DynamicLevelPayloadSent` before live world simulation
@@ -54,7 +54,7 @@ Implemented:
   - logs and stops cleanly when a decoded player prop has source-confirmed
     bytes but unported runtime side effects, such as `PLPROP_NICKNAME`,
     instead of throwing inside the diagnostic session path
-- `DevOnlyLocalTcpServer`
+- `LocalDebugTcpServer`
   - accepts one TCP client at a time
   - reads length-prefixed frames in a continuous per-connection loop
   - reuses one `ClientSessionSkeleton` for all frames on that connection
@@ -78,7 +78,7 @@ that do not depend on unverified compression output:
   compression type `0x04`, and iterator-XOR encrypted zlib payload bytes.
 - Partial socket writes preserve remaining framed bytes for the next flush.
 
-The dev-only TCP shell now routes confirmed login/level boundary output through
+The local-debug TCP shell now routes confirmed login/level boundary output through
 `FlushSocket`.
 
 For Client3 and RC2 login packets with a confirmed login encryption key, the
@@ -87,19 +87,19 @@ confirmed gen5 length prefix, compression type, zlib/uncompressed choice, and
 iterator-XOR encryption. For web-client login packets, it uses confirmed gen1
 passthrough behavior.
 
-The shell deliberately asks the send-level boundary for the source-confirmed
-"client already has this level modtime" branch. That keeps small diagnostic
-`.nw` payloads in the gen5 zlib range. It also means a fresh closed-source
-client may not receive a full board payload yet.
+The shell asks the send-level boundary for the full static `.nw` payload, so a
+fresh closed-source client can receive the raw board packet during diagnostic
+login. For even tiny `.nw` levels this normally crosses the Gen5 bzip2 threshold
+because a full 64x64 board is sent as raw level data.
 
 ## Known Gaps
 
 - A production listener/session loop is still missing. The recovered C++ shape
   is documented in `docs/spec/PRODUCTION_SOCKET_SESSION_SPEC.md`. The C# port
-  now has `ProductionTcpServer` plus `ProductionSocketReceiveBuffer` for the
+  now has `ClientTcpServer` plus `SocketReceiveBuffer` for the
   source-confirmed accept-one TCP skeleton and raw two-byte length frame
-  buffering portion, plus `ProductionPostLoginPacketDispatcher` and
-  `ProductionPostLoginFrameHandler` for the first decoded post-login dispatch
+  buffering portion, plus `PostLoginPacketDispatcher` and
+  `PostLoginFrameHandler` for the first decoded post-login dispatch
   boundary. Multi-session scheduling, deferred cleanup, and production
   auth/gameplay dispatch are still missing.
 - The TCP shell processes multiple frames for one connection and can decode
@@ -128,7 +128,7 @@ Current compatibility tests cover:
 
 - production receive-buffer partial header, partial payload, and multiple-frame
   extraction
-- loopback `ProductionTcpServer` accept, `TCP_NODELAY` session dispatch,
+- loopback `ClientTcpServer` accept, `TCP_NODELAY` session dispatch,
   client disconnect, handler outbound writes, and handler-requested stop
 - loopback post-login `PLI_PLAYERPROPS` movement dispatch through the
   production TCP skeleton

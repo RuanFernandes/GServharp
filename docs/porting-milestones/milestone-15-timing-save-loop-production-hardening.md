@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port production server loop timing, autosave, shutdown, websocket/TLS branches, logging, signal handling, and operational hardening.
-**Architecture:** `GServ` owns host lifecycle; `GServ.Core` owns clocks/logging abstractions; network transports remain source-compatible wrappers.
+**Architecture:** `Preagonal.GServer` owns host lifecycle; `Preagonal.GServer.Core` owns clocks/logging abstractions; network transports remain source-compatible wrappers.
 **Tech Stack:** C#/.NET, xUnit fake-clock tests, C++ server/socket sources.
 
 ---
@@ -15,7 +15,7 @@
 - `external/gs2lib/src/CSocket.cpp`
 - `external/gs2lib/include/CSocket.h`
 - C++ websocket branches gated by `WOLFSSL_ENABLED`.
-- Existing docs: `docs/research/startup-runtime.md`, `docs/spec/TCP_SESSION_PIPELINE_SPEC.md`, `KNOWN_BLOCKERS.md`.
+- Existing docs: `docs/research/startup-runtime.md`, `docs/spec/TCP_SESSION_PIPELINE_SPEC.md`, `docs/KNOWN_BLOCKERS.md`.
 
 ## Required Work
 
@@ -25,8 +25,8 @@
 - [x] Implement source-confirmed autosave, heartbeat, cleanup, idle timeout, and shutdown order.
 - [x] Recover websocket/TLS behavior only from C++/gs2lib; keep it blocked if dependencies or byte behavior are unclear.
 - [ ] Add production logging messages only where they do not change client-facing behavior.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement timing save loop hardening`.
 

@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Port source-confirmed movement property updates, touch/link traversal, signs, and chest-opening boundary behavior.
-**Architecture:** Movement and level interaction rules live in `GServ.Game`; packets remain in `GServ.Protocol`; persistence writes stay behind interfaces.
+**Architecture:** Movement and level interaction rules live in `Preagonal.GServer.Game`; packets remain in `Preagonal.GServer.Protocol`; persistence writes stay behind interfaces.
 **Tech Stack:** C#/.NET, xUnit, C++ `PlayerProps`, `Player`, and `Level` sources.
 
 ---
@@ -27,8 +27,8 @@
   blocked until a direct C++ player call path is proven.
 - [x] Implement chest/sign packet responses only where bytes and state changes are confirmed.
 - [x] Keep combat/NPC/script triggers blocked unless explicitly confirmed in this milestone.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Implement movement links chests boundary`.
 

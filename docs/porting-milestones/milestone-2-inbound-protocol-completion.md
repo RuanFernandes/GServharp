@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Complete confirmed inbound packet decoding before gameplay dispatch: raw data, bundles, encrypted/compressed generations, malformed packets, and session routing.
-**Architecture:** Keep byte-level codecs in `GServ.Protocol`; session integration belongs in `GServ.Network`; gameplay dispatch remains blocked behind interfaces.
+**Architecture:** Keep byte-level codecs in `Preagonal.GServer.Protocol`; session integration belongs in `Preagonal.GServer.Network`; gameplay dispatch remains blocked behind interfaces.
 **Tech Stack:** C#/.NET, xUnit golden fixtures, C++ `Player` packet parsing, `gs2lib` codecs.
 
 ---
@@ -27,8 +27,8 @@
 - [x] Implement only branches with source-confirmed byte layout.
 - [x] Keep unsupported branches throwing documented compatibility exceptions instead of guessing.
 - [x] Integrate confirmed branches into the TCP dev shell without adding gameplay dispatch.
-- [x] Run `dotnet build GServharp.sln`.
-- [x] Run `dotnet test GServharp.sln`.
+- [x] Run `dotnet build GServerSharp.sln`.
+- [x] Run `dotnet test GServerSharp.sln`.
 - [x] Confirm `git status --short ai_resources` is empty.
 - [x] Commit with message `Complete confirmed inbound protocol decoding`.
 
