@@ -30,6 +30,7 @@ public static class TriggerActionPackets
         writer.WriteGChar(x);
         writer.WriteGChar(y);
         writer.WriteBytes(Encoding.ASCII.GetBytes(action));
+        writer.WriteByte((byte)'\n');
         return writer.ToArray();
     }
 }

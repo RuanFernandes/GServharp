@@ -38,7 +38,7 @@ public sealed class TriggerActionPacketTests
             32,
             32,
             32,
-            .. Encoding.ASCII.GetBytes("clientside,-gr_movement,kek")
+            .. Encoding.ASCII.GetBytes("clientside,-gr_movement,kek\n")
         ], packet);
     }
 }
