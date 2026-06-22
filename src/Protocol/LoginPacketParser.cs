@@ -55,7 +55,16 @@ public static class LoginPacketParser
             if (IsAnyClient(type))
                 clientVersionId = GraalVersionCatalog.GetClientVersionId(versionToken);
             else if (IsAnyRemoteControl(type))
+            {
                 rcVersionId = GraalVersionCatalog.GetRemoteControlVersionId(versionToken);
+                var legacyClientVersionId = GraalVersionCatalog.GetClientVersionId(versionToken);
+                if (legacyClientVersionId != ClientVersionId.Unknown)
+                {
+                    type = PlayerSessionType.Client;
+                    clientVersionId = legacyClientVersionId;
+                    rcVersionId = RemoteControlVersionId.Unknown;
+                }
+            }
             else if (type == PlayerSessionType.NpcControl)
                 ncVersionId = GraalVersionCatalog.GetNpcControlVersionId(versionToken);
         }
