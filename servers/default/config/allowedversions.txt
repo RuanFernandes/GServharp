@@ -42,3 +42,8 @@ G3D3007A  // 6.0.1.5
 G3D2505C  // 6.0.3.4
 G3D0311C  // 6.0.3.7 (Windows)
 G3D0511C  // 6.0.3.7 (Linux)
+
+G3D04048  // iPhone 1.1
+G3D18010  // iPhone 1.5
+G3D29090  // iPhone 1.11
+G3D2504D  // iPhone Belote 1.5

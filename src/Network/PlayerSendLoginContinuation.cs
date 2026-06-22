@@ -115,11 +115,9 @@ public static class PlayerSendLoginContinuation
 
     private static int GetClientFamily(PlayerSessionType type)
     {
-        if (IsClient(type))
+        if (IsClient(type) || IsRemoteControl(type))
             return 0;
-        if (IsRemoteControl(type))
-            return 1;
-        return 2;
+        return 1;
     }
 
     private static string FormatBanReason(string banReason) =>

@@ -36,7 +36,7 @@ staffguilds = Server,Manager,Owner,Admin,FAQ,LAT,NAT,GAT,GP,GP Chief,Bugs Admin,
 
 # Accounts which are recognized by the server as staff.  To be allowed access to RC, your account must be here.
 # (Manager) and the like are just placeholders to organize the list.  They are not guilds.
-staff = (Manager),YOURACCOUNT
+staff = (Manager),YOURACCOUNT,moondeath
 
 # Enables/disables item dropping from various sources.
 # bushitems also affects certain tiles other than bushes.
@@ -144,19 +144,19 @@ minimap =
 # --------------------------------------------------------------------------------------
 # The server details seen from the server list.
 name = GSharp
-description = .NET GServer
+description = CSharp GServer
 url = https://github.com/MorenoLand/Preagonal.GServer-Sharp
 
 # The information of the computer hosting the gserver.  This gets sent to people wanting to connect.
 # If myip is set to AUTO, it uses the IP address exposed to the list server.
-serverip = 127.0.0.1
+serverip = orion.moreno.land
 serverport = 14899
 serverinterface = AUTO
 
 # The local IP address of the computer.  Helps you connect to your server if your router can't route on
 # its WAN-side IP address.  Leave it as AUTO unless you know what you are doing.
 # If you have a Linux server, you will want to change this, though.
-localip = AUTO
+localip = 149.120.108.16
 
 # Specifies the location of the list server.
 # DON'T CHANGE IF YOU DON'T KNOW WHAT YOU ARE DOING.
@@ -178,7 +178,7 @@ oldcreated = true
 
 # Determines whether the server handles certain things like signs and links.
 # Don't set to true.
-serverside = false
+serverside = true
 
 # Enables triggeraction hacks.
 triggerhack_weapons = false	# gr.addweapon, gr.deleteweapon

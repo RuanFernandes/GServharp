@@ -41,7 +41,7 @@ public sealed class LoginAuthBridge(
 {
     private sealed record NpcServerEndpoint(ushort Id, string Host, int Port);
     private sealed record ScriptCompileFeedback(bool Success, byte[] ClientBytecode);
-    private sealed record DatabaseNpc(uint Id, string Name, string Type, string Owner, string LevelName, string X, string Y);
+    private sealed record DatabaseNpc(uint Id, string Name, string Type, string Owner, string LevelName, string X, string Y, string Script, string Flags);
 
     private readonly Dictionary<(ushort PlayerId, PlayerSessionType Type), ClientSessionSkeleton> _pendingSessions = [];
     private readonly Dictionary<(ushort PlayerId, PlayerSessionType Type), string> _remoteAddresses = [];
@@ -298,6 +298,9 @@ public sealed class LoginAuthBridge(
             if (packetId == (byte)PlayerToServerPacketId.ServerWarp)
             {
                 var serverName = System.Text.Encoding.ASCII.GetString(packet.Payload.Span[1..]).TrimEnd('\n', '\r');
+                if (TryQueueLocalServerWarp(context.PlayerId, serverName, session, touched))
+                    continue;
+
                 serverList.SendServerInfoForPlayer(ServerListAuthPackets.ServerInfoForPlayer(context.PlayerId, serverName));
                 continue;
             }
@@ -329,6 +332,12 @@ public sealed class LoginAuthBridge(
             if (packetId == (byte)PlayerToServerPacketId.ShowImg)
             {
                 HandleShowImg(packet.Payload.Span[1..], player, touched);
+                continue;
+            }
+
+            if (packetId == (byte)PlayerToServerPacketId.TriggerAction)
+            {
+                notes.Add(HandleTriggerAction(packet.Payload.Span, player, touched));
                 continue;
             }
 
@@ -547,6 +556,44 @@ public sealed class LoginAuthBridge(
         QueueLevelPacket(player, packet.ToArray(), touched);
     }
 
+    private string HandleTriggerAction(ReadOnlySpan<byte> packet, RuntimePlayer player, ISet<ushort> touched)
+    {
+        TriggerActionRequest action;
+        try
+        {
+            action = TriggerActionPackets.ParseIncoming(packet);
+        }
+        catch (Exception ex)
+        {
+            return $"triggeraction=invalid:{ex.Message}";
+        }
+
+        if (action.Tokens.Count == 0)
+            return "triggeraction=empty";
+
+        if (!action.Tokens[0].Equals("serverside", StringComparison.OrdinalIgnoreCase))
+            return $"triggeraction={action.Tokens[0]}:ignored";
+
+        if (action.Tokens.Count < 2)
+            return "triggeraction=serverside:missing-weapon";
+
+        var weaponName = action.Tokens[1];
+        var args = action.Tokens.Skip(2).ToArray();
+        _serverScripts.SetEnvironment(BuildScriptServerFlags(), BuildScriptServerOptions());
+        _serverScripts.SetPlayer(player.AccountName, player.Nickname, player.CurrentLevelName);
+        var run = _serverScripts.Call(weaponName, "onActionServerSide", args).GetAwaiter().GetResult();
+        foreach (var line in run.Output)
+            BroadcastToRemoteControls(RcNcPackets.RcChat(FormatScriptOutput(weaponName, line)), touched);
+
+        foreach (var trigger in run.ClientTriggers)
+            QueueSelfPacket(player.Id, TriggerActionPackets.BuildClient(0, 0, 0, 0, trigger), touched);
+        ApplyScriptSideEffects(run, player.Id, touched);
+
+        return run.Success
+            ? $"triggeraction=serverside:{weaponName}:{args.Length}:clienttriggers={run.ClientTriggers.Count}"
+            : $"triggeraction=serverside:{weaponName}:error:{run.Error}";
+    }
+
     private void HandlePrivateMessage(
         GraalBinaryReader reader,
         RuntimePlayer sender,
@@ -743,6 +790,30 @@ public sealed class LoginAuthBridge(
             case PlayerToServerPacketId.NcNpcAdd:
                 HandleNcNpcAdd(session.Id, payload, touched);
                 return true;
+            case PlayerToServerPacketId.NcNpcGet:
+                HandleNcNpcGet(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcDelete:
+                HandleNcNpcDelete(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcReset:
+                HandleNcNpcReset(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcScriptGet:
+                HandleNcNpcScriptGet(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcWarp:
+                HandleNcNpcWarp(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcFlagsGet:
+                HandleNcNpcFlagsGet(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcScriptSet:
+                HandleNcNpcScriptSet(session.Id, payload, touched);
+                return true;
+            case PlayerToServerPacketId.NcNpcFlagsSet:
+                HandleNcNpcFlagsSet(session.Id, payload, touched);
+                return true;
             case PlayerToServerPacketId.NcClassDelete:
                 HandleNcClassDelete(session.Id, payload, touched);
                 return true;
@@ -891,8 +962,8 @@ public sealed class LoginAuthBridge(
             case PlayerToServerPacketId.RcListRemoteControls:
                 if (!IsRemoteControl(session.Type))
                     return false;
-                foreach (var snapshot in _activeSnapshots.Values.Where(snapshot =>
-                    IsRemoteControl(snapshot.Type) || snapshot.Type == PlayerSessionType.NpcServer))
+                EnsureNpcServerPlayer(touched);
+                foreach (var snapshot in _activeSnapshots.Values.Where(snapshot => snapshot.Type != PlayerSessionType.NpcControl))
                     QueueSelfPacket(session.Id, BuildRcAddPlayer(snapshot), touched);
                 return true;
             case PlayerToServerPacketId.RcFileBrowserStart:
@@ -1040,12 +1111,8 @@ public sealed class LoginAuthBridge(
 
         var path = ResolveServerFile("classes", className + ".txt", createDirectory: true);
         var existed = File.Exists(path);
-        var compile = CompileScriptForNc(playerId, "class", className, source, touched);
-        if (!compile.Success)
-            return;
 
         File.WriteAllText(path, source.Replace("\r", "", StringComparison.Ordinal));
-        SendClientScriptBytecode(compile.ClientBytecode, touched);
         if (!existed)
             BroadcastToNpcControls(RcNcPackets.NcClassAdd(className), touched);
         BroadcastToRemoteControls(RcNcPackets.RcChat($"Script {className} {(existed ? "updated" : "added")} by {GetAccountName(playerId)}"), touched);
@@ -1079,11 +1146,115 @@ public sealed class LoginAuthBridge(
         var id = uint.TryParse(parts[1], out var parsedId) && parsedId != 0
             ? parsedId
             : NextDatabaseNpcId();
-        var npc = new DatabaseNpc(id, parts[0], parts[2], parts[3], parts[4], parts[5], parts[6]);
+        var npc = new DatabaseNpc(id, parts[0], parts[2], parts[3], parts[4], parts[5], parts[6], "", "");
         _databaseNpcs[id] = npc;
         SaveDatabaseNpc(npc);
         BroadcastToNpcControls(RcNcPackets.NcNpcAdd(npc.Id, npc.Name, npc.Type, npc.LevelName), touched);
         BroadcastToRemoteControls(RcNcPackets.RcChat($"NPC {npc.Name} updated by {GetAccountName(playerId)}"), touched);
+    }
+
+    private void HandleNcNpcGet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        if (_databaseNpcs.TryGetValue(npcId, out var npc))
+            QueueSelfPacket(playerId, RcNcPackets.NcNpcAttributes(npc.Id, npc.Name, npc.Type, npc.Owner, npc.LevelName, npc.X, npc.Y), touched);
+    }
+
+    private void HandleNcNpcDelete(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        if (!_databaseNpcs.TryGetValue(npcId, out var npc))
+            return;
+
+        _databaseNpcs.Remove(npcId);
+        var path = ResolveServerFile("npcs", "npc" + npc.Name + ".txt");
+        if (path.Length != 0 && File.Exists(path))
+            File.Delete(path);
+        BroadcastToNpcControls(RcNcPackets.NcNpcDelete(npcId), touched);
+        BroadcastToControlClients(RcNcPackets.RcChat($"NPC {npc.Name} deleted by {GetAccountName(playerId)}"), touched);
+    }
+
+    private void HandleNcNpcReset(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        if (!_databaseNpcs.TryGetValue(npcId, out var npc))
+            return;
+
+        var updated = npc with { Script = "" };
+        _databaseNpcs[npcId] = updated;
+        SaveDatabaseNpc(updated);
+        BroadcastToControlClients(RcNcPackets.RcChat($"NPC script of {updated.Name} reset by {GetAccountName(playerId)}"), touched);
+    }
+
+    private void HandleNcNpcScriptGet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        if (_databaseNpcs.TryGetValue(npcId, out var npc))
+            QueueSelfPacket(playerId, RcNcPackets.NcNpcScript(npc.Id, npc.Script), touched);
+    }
+
+    private void HandleNcNpcScriptSet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        var source = GUntokenize(System.Text.Encoding.ASCII.GetString(reader.ReadBytes(reader.BytesLeft)));
+        if (!_databaseNpcs.TryGetValue(npcId, out var npc))
+            return;
+
+        var updated = npc with { Script = source.Replace("\r", "", StringComparison.Ordinal) };
+        _databaseNpcs[npcId] = updated;
+        SaveDatabaseNpc(updated);
+        BroadcastToNpcControls(RcNcPackets.RcChat($"NPC script of {updated.Name} updated by {GetAccountName(playerId)}"), touched);
+    }
+
+    private void HandleNcNpcWarp(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        var x = (reader.ReadGChar() / 2f).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        var y = (reader.ReadGChar() / 2f).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+        var levelName = System.Text.Encoding.ASCII.GetString(reader.ReadBytes(reader.BytesLeft)).TrimEnd('\r', '\n');
+        if (!_databaseNpcs.TryGetValue(npcId, out var npc))
+            return;
+
+        var updated = npc with { X = x, Y = y, LevelName = levelName };
+        _databaseNpcs[npcId] = updated;
+        SaveDatabaseNpc(updated);
+        BroadcastToNpcControls(RcNcPackets.NcNpcAdd(updated.Id, updated.Name, updated.Type, updated.LevelName), touched);
+    }
+
+    private void HandleNcNpcFlagsGet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        if (_databaseNpcs.TryGetValue(npcId, out var npc))
+            QueueSelfPacket(playerId, RcNcPackets.NcNpcFlags(npc.Id, npc.Flags), touched);
+    }
+
+    private void HandleNcNpcFlagsSet(ushort playerId, ReadOnlySpan<byte> payload, ISet<ushort> touched)
+    {
+        HydrateDatabaseNpcs();
+        var reader = new GraalBinaryReader(payload);
+        var npcId = reader.ReadGUInt();
+        var flags = GUntokenize(System.Text.Encoding.ASCII.GetString(reader.ReadBytes(reader.BytesLeft))).Replace("\r", "", StringComparison.Ordinal);
+        if (!_databaseNpcs.TryGetValue(npcId, out var npc))
+            return;
+
+        var updated = npc with { Flags = flags };
+        _databaseNpcs[npcId] = updated;
+        SaveDatabaseNpc(updated);
+        BroadcastToControlClients(RcNcPackets.RcChat($"NPC flags of {updated.Name} updated by {GetAccountName(playerId)}"), touched);
     }
 
     private void SendDatabaseNpcList(ushort playerId, ISet<ushort> touched)
@@ -1141,15 +1312,14 @@ public sealed class LoginAuthBridge(
                     return new ScriptCompileFeedback(false, []);
                 }
 
+                _serverScripts.SetEnvironment(BuildScriptServerFlags(), BuildScriptServerOptions());
                 var run = _serverScripts.Call(name, "onCreated").GetAwaiter().GetResult();
                 foreach (var line in run.Output)
                     BroadcastToRemoteControls(RcNcPackets.RcChat(FormatScriptOutput(name, line)), touched);
+                ApplyScriptSideEffects(run, NpcServerPlayerId, touched);
 
                 if (!run.Success)
-                {
                     SendCompilerOutputToNc($"{origin} server-side", "error", run.Error, touched);
-                    return new ScriptCompileFeedback(false, []);
-                }
             }
 
             if (string.IsNullOrWhiteSpace(slices.ClientGs2))
@@ -1187,6 +1357,50 @@ public sealed class LoginAuthBridge(
     {
         if (!bytecode.IsEmpty)
             BroadcastToClients(EntityPackets.NpcWeaponScriptRawData(bytecode), touched);
+    }
+
+    private void ApplyScriptSideEffects(Gs2ScriptRunResult run, ushort senderId, ISet<ushort> touched)
+    {
+        foreach (var message in run.PlayerMessages.Where(static message => message.Account.Length != 0 && message.Message.Length != 0))
+        {
+            foreach (var playerId in FindActiveAccounts(message.Account))
+                QueueSelfPacket(playerId, BuildPrivateMessagePacket(senderId, false, System.Text.Encoding.ASCII.GetBytes(message.Message)), touched);
+        }
+
+        foreach (var action in run.WeaponActions.Where(static action => action.Account.Length != 0 && action.WeaponName.Length != 0))
+        {
+            foreach (var playerId in FindActiveAccounts(action.Account))
+                ApplyScriptWeaponAction(playerId, action, touched);
+        }
+    }
+
+    private IEnumerable<ushort> FindActiveAccounts(string accountOrNick) =>
+        _activeAccounts
+            .Where(entry =>
+                entry.Value.AccountName.Equals(accountOrNick, StringComparison.OrdinalIgnoreCase) ||
+                entry.Value.Nickname.Equals(accountOrNick, StringComparison.OrdinalIgnoreCase))
+            .Select(static entry => entry.Key)
+            .ToArray();
+
+    private void ApplyScriptWeaponAction(ushort playerId, Gs2WeaponAction action, ISet<ushort> touched)
+    {
+        if (!_activeAccounts.TryGetValue(playerId, out var account))
+            return;
+
+        if (action.Add)
+        {
+            if (!account.Weapons.Contains(action.WeaponName, StringComparer.Ordinal))
+                account.Weapons.Add(action.WeaponName);
+            if (TryLoadWeapon(action.WeaponName, out var weapon))
+                QueueSelfPacket(playerId, EntityPackets.NpcWeaponAdd(weapon.Name, weapon.Image, weapon.Source.Replace('\n', '\u00a7')), touched);
+        }
+        else
+        {
+            account.Weapons.RemoveAll(weapon => weapon.Equals(action.WeaponName, StringComparison.Ordinal));
+            QueueSelfPacket(playerId, EntityPackets.NpcWeaponDelete(action.WeaponName), touched);
+        }
+
+        SaveAccount(account);
     }
 
     private void RefreshWeaponForClients(string weaponName, string imageName, string source, ReadOnlySpan<byte> bytecode, ISet<ushort> touched)
@@ -1543,10 +1757,38 @@ public sealed class LoginAuthBridge(
         var x = "";
         var y = "";
         var id = 0u;
+        var script = new System.Text.StringBuilder();
+        var flags = new System.Text.StringBuilder();
+        var inScript = false;
+        var inFlags = false;
 
         foreach (var rawLine in File.ReadLines(path))
         {
             var line = rawLine.TrimEnd('\r');
+            if (inScript)
+            {
+                if (line.Equals("NPCSCRIPTEND", StringComparison.OrdinalIgnoreCase))
+                {
+                    inScript = false;
+                    continue;
+                }
+
+                script.AppendLine(line);
+                continue;
+            }
+
+            if (inFlags)
+            {
+                if (line.Equals("NPCFLAGSEND", StringComparison.OrdinalIgnoreCase))
+                {
+                    inFlags = false;
+                    continue;
+                }
+
+                flags.AppendLine(line);
+                continue;
+            }
+
             var space = line.IndexOf(' ', StringComparison.Ordinal);
             var key = space < 0 ? line : line[..space];
             var value = space < 0 ? "" : line[(space + 1)..].Trim();
@@ -1575,12 +1817,15 @@ public sealed class LoginAuthBridge(
                     y = value;
                     break;
                 case "NPCSCRIPT":
-                    npc = new DatabaseNpc(id, name, type, owner, level, x, y);
-                    return id != 0 && name.Length != 0;
+                    inScript = true;
+                    break;
+                case "NPCFLAGS":
+                    inFlags = true;
+                    break;
             }
         }
 
-        npc = new DatabaseNpc(id, name, type, owner, level, x, y);
+        npc = new DatabaseNpc(id, name, type, owner, level, x, y, script.ToString().TrimEnd('\r', '\n'), flags.ToString().TrimEnd('\r', '\n'));
         return id != 0 && name.Length != 0;
     }
 
@@ -1591,21 +1836,29 @@ public sealed class LoginAuthBridge(
             return;
 
         var path = ResolveServerFile("npcs", "npc" + safeName + ".txt", createDirectory: true);
+        var lines = new List<string>
+        {
+            "GRNPC001",
+            $"NAME {npc.Name}",
+            $"ID {npc.Id}",
+            $"TYPE {npc.Type}",
+            $"OWNER {npc.Owner}",
+            $"STARTLEVEL {npc.LevelName}",
+            $"STARTX {npc.X}",
+            $"STARTY {npc.Y}",
+            "NPCSCRIPT"
+        };
+        if (npc.Script.Length != 0)
+            lines.AddRange(npc.Script.Replace("\r", "", StringComparison.Ordinal).Split('\n'));
+        lines.Add("NPCSCRIPTEND");
+        lines.Add("NPCFLAGS");
+        if (npc.Flags.Length != 0)
+            lines.AddRange(npc.Flags.Replace("\r", "", StringComparison.Ordinal).Split('\n'));
+        lines.Add("NPCFLAGSEND");
+        lines.Add("");
         var text = string.Join(
             '\n',
-            [
-                "GRNPC001",
-                $"NAME {npc.Name}",
-                $"ID {npc.Id}",
-                $"TYPE {npc.Type}",
-                $"OWNER {npc.Owner}",
-                $"STARTLEVEL {npc.LevelName}",
-                $"STARTX {npc.X}",
-                $"STARTY {npc.Y}",
-                "NPCSCRIPT",
-                "NPCSCRIPTEND",
-                ""
-            ]);
+            lines);
         File.WriteAllText(path, text);
     }
 
@@ -2503,7 +2756,10 @@ public sealed class LoginAuthBridge(
         if (!enabled)
             return null;
 
-        var id = (ushort)Math.Clamp(config.GetInt("id", NpcServerPlayerId), ushort.MinValue, ushort.MaxValue);
+        var configuredId = config.GetInt("id", NpcServerPlayerId);
+        var id = configuredId <= 0
+            ? NpcServerPlayerId
+            : (ushort)Math.Clamp(configuredId, ushort.MinValue, ushort.MaxValue);
         var host = config.GetString("host", "AUTO");
         if (IsAuto(host))
             host = config.GetString("ns_ip", settings.GetString("ns_ip", "AUTO"));
@@ -2975,12 +3231,13 @@ public sealed class LoginAuthBridge(
             entry => entry.Key,
             entry => (ILiveWorldSessionSink)new ClientSessionSink(entry.Value));
 
-    private bool EnsureNpcServerPlayer()
+    private bool EnsureNpcServerPlayer(ISet<ushort>? touched = null)
     {
         if (worldEntryOptions is null || !GetBoolOption("serverside", defaultValue: false))
             return true;
 
-        if (_activeSnapshots.ContainsKey(NpcServerPlayerId))
+        var npcServerPlayerId = LoadNpcServerEndpoint()?.Id ?? NpcServerPlayerId;
+        if (_activeSnapshots.ContainsKey(npcServerPlayerId))
             return true;
 
         var settings = EffectiveAccountSettings();
@@ -3001,7 +3258,7 @@ public sealed class LoginAuthBridge(
             HeadImage: settings.GetString("staffhead", "head25.png"),
             ChatMessage: "",
             Colors: [0, 0, 0, 0, 0],
-            PlayerId: NpcServerPlayerId,
+            PlayerId: npcServerPlayerId,
             X: 112 * 16,
             Y: 112 * 16,
             Sprite: 0,
@@ -3032,7 +3289,7 @@ public sealed class LoginAuthBridge(
             BowImage: "",
             Language: "English");
         var snapshot = new PostLoginPlayerSnapshot(
-            NpcServerPlayerId,
+            npcServerPlayerId,
             PlayerSessionType.NpcServer,
             GCharString("(npcserver)"),
             GCharString(nickname),
@@ -3045,24 +3302,33 @@ public sealed class LoginAuthBridge(
             [],
             [],
             []);
-        _activeSnapshots[NpcServerPlayerId] = snapshot;
+        _activeSnapshots[npcServerPlayerId] = snapshot;
         if (runtimeServer is not null)
         {
-            var player = new RuntimePlayer(NpcServerPlayerId, "(npcserver)", RuntimePlayerKind.NpcServer);
+            var player = new RuntimePlayer(npcServerPlayerId, "(npcserver)", RuntimePlayerKind.NpcServer);
             player.InitializeFromLogin(source);
-            runtimeServer.AddPlayer(player, NpcServerPlayerId);
-            _activePlayers[NpcServerPlayerId] = player;
+            runtimeServer.AddPlayer(player, npcServerPlayerId);
+            _activePlayers[npcServerPlayerId] = player;
         }
 
         serverList.SendPlayerAdd(PostLoginWorldEntryBoundary.BuildServerListAddPlayerPacket(snapshot));
+        if (touched is not null)
+        {
+            BroadcastToRemoteControls(BuildRcAddPlayer(snapshot), touched);
+            BroadcastToClients(BuildOtherPlayerProps(snapshot), touched);
+        }
         return true;
     }
 
     private void RefreshNpcServerPlayer(ISet<ushort> touched)
     {
-        if (!_activeSnapshots.TryGetValue(NpcServerPlayerId, out var snapshot) ||
+        var npcServerPlayerId = LoadNpcServerEndpoint()?.Id ?? NpcServerPlayerId;
+        if (!_activeSnapshots.TryGetValue(npcServerPlayerId, out var snapshot) ||
             snapshot.Type != PlayerSessionType.NpcServer)
+        {
+            EnsureNpcServerPlayer(touched);
             return;
+        }
 
         var settings = EffectiveAccountSettings();
         var source = snapshot.LoginPropertySource with
@@ -3075,8 +3341,9 @@ public sealed class LoginAuthBridge(
             NicknameProperty = GCharString(source.Nickname),
             LoginPropertySource = source
         };
-        _activeSnapshots[NpcServerPlayerId] = updated;
+        _activeSnapshots[npcServerPlayerId] = updated;
         BroadcastToRemoteControls(BuildRcAddPlayer(updated), touched);
+        BroadcastToClients(BuildOtherPlayerProps(updated), touched);
     }
 
     private static string BuildNpcServerNickname(IAccountLoadSettings settings)
@@ -3246,6 +3513,21 @@ public sealed class LoginAuthBridge(
         return writer.ToArray();
     }
 
+    private bool TryQueueLocalServerWarp(ushort playerId, string serverName, ClientSessionSkeleton session, ISet<ushort> touched)
+    {
+        var settings = EffectiveAccountSettings();
+        var localName = settings.GetString("name", "");
+        if (serverName.Length == 0 || !serverName.Equals(localName, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var ip = settings.GetString("serverip", "127.0.0.1");
+        if (IsAuto(ip))
+            ip = "127.0.0.1";
+        var port = settings.GetString("serverport", "0");
+        QueueSelfPacket(playerId, BuildServerWarpPacket(System.Text.Encoding.ASCII.GetBytes($"P {localName} {ip}:{port}")), touched);
+        return true;
+    }
+
     private static byte[] GCharString(string value)
     {
         var writer = new GraalBinaryWriter();
@@ -3300,7 +3582,20 @@ public sealed class LoginAuthBridge(
 
                 joiningSession.QueuePacket(BuildRcAddPlayer(otherSnapshot));
 
-                if (!_activeSessions.TryGetValue(otherId, out var otherSession) || !IsRemoteControl(otherSession.Type))
+                if (!_activeSessions.TryGetValue(otherId, out var otherSession))
+                    continue;
+
+                if (IsClient(otherSession.Type))
+                {
+                    otherSession.QueuePacket(BuildOtherPlayerProps(joiningSnapshot));
+                    var clientOutbound = FlushOutboundBytes(otherSession);
+                    if (clientOutbound.Length != 0)
+                        yield return new ClientSessionOutbound(otherId, clientOutbound);
+
+                    continue;
+                }
+
+                if (!IsRemoteControl(otherSession.Type))
                     continue;
 
                 otherSession.QueuePacket(BuildRcAddPlayer(joiningSnapshot));
@@ -3317,10 +3612,13 @@ public sealed class LoginAuthBridge(
             if (otherId == joiningSession.Id)
                 continue;
 
+            if (otherSnapshot.Type == PlayerSessionType.NpcServer && IsClient(joiningSession.Type))
+                joiningSession.QueuePacket(BuildOtherPlayerProps(otherSnapshot));
+
             if (!_activeSessions.TryGetValue(otherId, out var otherSession))
                 continue;
 
-            if (IsClient(otherSnapshot.Type))
+            if (IsClient(otherSnapshot.Type) || IsRemoteControl(otherSnapshot.Type))
                 joiningSession.QueuePacket(BuildOtherPlayerProps(otherSnapshot));
 
             if (!IsClient(joiningSnapshot.Type) && !IsRemoteControl(otherSession.Type))
@@ -3423,13 +3721,46 @@ public sealed class LoginAuthBridge(
             snapshot.LoginPropertySource.CurrentLevel,
             snapshot.LoginPropertySource.StatusMessage,
             snapshot.LoginPropertySource.Nickname,
-            snapshot.LoginPropertySource.CommunityName,
-            IsControl(snapshot.Type) || snapshot.Type == PlayerSessionType.NpcServer ? (byte)1 : null);
+            snapshot.LoginPropertySource.CommunityName);
 
     private string FormatScriptOutput(string scriptName, string line) =>
         EffectiveAccountSettings().GetString("scriptcall", "echo").Trim().Equals("debug", StringComparison.OrdinalIgnoreCase)
             ? $"GS2 {scriptName}: {line}"
             : line;
+
+    private IReadOnlyDictionary<string, string> BuildScriptServerFlags() =>
+        LoadServerFlags().ToDictionary(static flag => flag.Key, static flag => flag.Value, StringComparer.OrdinalIgnoreCase);
+
+    private IReadOnlyDictionary<string, string> BuildScriptServerOptions() =>
+        ParseKeyValueText(ReadConfigFile("serveroptions.txt"));
+
+    private static Dictionary<string, string> ParseKeyValueText(string text)
+    {
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var rawLine in text.Replace("\r", "", StringComparison.Ordinal).Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0 || line[0] == '#')
+                continue;
+
+            var equals = line.IndexOf('=');
+            if (equals <= 0)
+                continue;
+
+            var key = line[..equals].Trim().ToLowerInvariant();
+            var value = line[(equals + 1)..];
+            var comment = value.IndexOf('#');
+            if (comment >= 0)
+                value = value[..comment];
+
+            var trimmed = value.Trim();
+            values[key] = values.TryGetValue(key, out var existing)
+                ? existing + "," + trimmed
+                : trimmed;
+        }
+
+        return values;
+    }
 
     private static bool LooksLikeGs1ClientScript(string source) =>
         source.Contains("setplayerprop #", StringComparison.OrdinalIgnoreCase) ||

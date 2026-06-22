@@ -290,7 +290,7 @@ public static class LoginWorldEntry
         bytecode = [];
         try
         {
-            var clientGs2 = SourceCodeSlices.Parse(source, gs2Default: true, serverSideVm: false).ClientGs2;
+            var clientGs2 = SourceCodeSlices.Parse(source, gs2Default: true, serverSideVm: true).ClientGs2;
             if (string.IsNullOrWhiteSpace(clientGs2) || LooksLikeGs1ClientScript(clientGs2))
                 return false;
 

@@ -19,6 +19,7 @@ public sealed class ProtocolConstantTests
         Assert.Equal(29, (int)PlayerToServerPacketId.NpcWeaponDelete);
         Assert.Equal(32, (int)PlayerToServerPacketId.ItemTake);
         Assert.Equal(33, (int)PlayerToServerPacketId.WeaponAdd);
+        Assert.Equal(38, (int)PlayerToServerPacketId.TriggerAction);
         Assert.Equal(252, (int)PlayerToServerPacketId.SetEncryptionKey);
         Assert.Equal(253, (int)PlayerToServerPacketId.Bundle);
         Assert.Equal(0, (int)ServerToPlayerPacketId.LevelBoard);
@@ -40,6 +41,7 @@ public sealed class ProtocolConstantTests
         Assert.Equal(34, (int)ServerToPlayerPacketId.NpcWeaponDelete);
         Assert.Equal(37, (int)ServerToPlayerPacketId.PrivateMessage);
         Assert.Equal(45, (int)ServerToPlayerPacketId.FileUpToDate);
+        Assert.Equal(48, (int)ServerToPlayerPacketId.TriggerAction);
         Assert.Equal(100, (int)ServerToPlayerPacketId.RawData);
         Assert.Equal(101, (int)ServerToPlayerPacketId.BoardPacket);
         Assert.Equal(102, (int)ServerToPlayerPacketId.File);
