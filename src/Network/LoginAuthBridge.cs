@@ -3486,10 +3486,13 @@ public sealed class LoginAuthBridge(
         player.ClientVersion = session.LoginPacket?.VersionId ?? ClientVersionId.Client21;
         player.InitializeFromLogin(snapshot.LoginPropertySource);
         runtimeServer.AddPlayer(player, session.Id);
-        var levelName = string.IsNullOrWhiteSpace(player.CurrentLevelName)
-            ? "onlinestartlocal.nw"
-            : player.CurrentLevelName;
-        player.JoinLevel(GetOrCreateLevel(levelName));
+        if (kind == RuntimePlayerKind.Client)
+        {
+            var levelName = string.IsNullOrWhiteSpace(player.CurrentLevelName)
+                ? "onlinestartlocal.nw"
+                : player.CurrentLevelName;
+            player.JoinLevel(GetOrCreateLevel(levelName));
+        }
         _activePlayers[session.Id] = player;
         EnsureDecoder(session);
         _activeFramers[session.Id] = new ClientPacketStreamFramer(new ClientPacketParseOptions(StripRawDataTrailingNewline: true));
@@ -3849,9 +3852,12 @@ public sealed class LoginAuthBridge(
 
     private static byte[] BuildOtherPlayerProps(PostLoginPlayerSnapshot snapshot)
     {
+        var props = IsClient(snapshot.Type)
+            ? GetLoginPropertySet.All
+            : GetRcLoginPropertySet.All;
         var payload = PlayerPropertySerializer.SerializeOtherPlayerPropsPayload(
             snapshot.LoginPropertySource,
-            GetLoginPropertySet.All);
+            props);
         return PlayerPropertySerializer.BuildOtherPlayerPropsPacket(snapshot.PlayerId, payload, appendNewline: true);
     }
 

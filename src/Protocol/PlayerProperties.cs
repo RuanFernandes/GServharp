@@ -278,6 +278,22 @@ public static class GetLoginPropertySet
         preClient21 ? PreClient21 : All;
 }
 
+public static class GetRcLoginPropertySet
+{
+    public static readonly IReadOnlyList<PlayerPropertyId> All =
+    [
+        PlayerPropertyId.Nickname,
+        PlayerPropertyId.HeadGif,
+        PlayerPropertyId.Status,
+        PlayerPropertyId.CurrentLevel,
+        PlayerPropertyId.IpAddress,
+        PlayerPropertyId.UdpPort,
+        PlayerPropertyId.AccountName,
+        PlayerPropertyId.PlayerStatusMessage,
+        PlayerPropertyId.CommunityName
+    ];
+}
+
 public static class PlayerPropertySerializer
 {
     private static readonly int[] AttributePropertyIds =

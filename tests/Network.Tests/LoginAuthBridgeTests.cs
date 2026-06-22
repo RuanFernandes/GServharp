@@ -498,7 +498,9 @@ public sealed class LoginAuthBridgeTests
         var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
         var decoded = DecodeSocketPayload(clientLogin.OutboundBytes, 43);
 
-        Assert.True(IndexOf(decoded, LoginPeerPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.X)) < 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.Y)) < 0);
     }
 
     [Fact]
@@ -513,7 +515,9 @@ public sealed class LoginAuthBridgeTests
         var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
         var decoded = DecodeSocketPayload(clientLogin.OutboundBytes, 43);
 
-        Assert.True(IndexOf(decoded, LoginPeerPrefix(1)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPrefix(1)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(1, PlayerPropertyId.X)) < 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(1, PlayerPropertyId.Y)) < 0);
     }
 
     [Fact]
@@ -527,7 +531,9 @@ public sealed class LoginAuthBridgeTests
         var broadcast = Assert.Single(rcLogin.Broadcasts, packet => packet.PlayerId == 8);
         var decoded = DecodeLastSocketPayload(43, clientLogin.OutboundBytes, broadcast.OutboundBytes);
 
-        Assert.True(IndexOf(decoded, LoginPeerPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.X)) < 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.Y)) < 0);
     }
 
     [Fact]
@@ -2233,6 +2239,23 @@ public sealed class LoginAuthBridgeTests
         packet.WriteGShort(playerId);
         packet.WriteGChar((byte)PlayerPropertyId.JoinLeaveLevel);
         packet.WriteGChar(1);
+        return packet.ToArray();
+    }
+
+    private static byte[] OtherPropsPrefix(ushort playerId)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        packet.WriteGShort(playerId);
+        return packet.ToArray();
+    }
+
+    private static byte[] OtherPropsPropertyPrefix(ushort playerId, PlayerPropertyId propertyId)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        packet.WriteGShort(playerId);
+        packet.WriteGChar((byte)propertyId);
         return packet.ToArray();
     }
 
