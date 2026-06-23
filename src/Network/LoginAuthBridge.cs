@@ -51,6 +51,7 @@ public sealed class LoginAuthBridge(
     private readonly Dictionary<ushort, RuntimePlayer> _activePlayers = [];
     private readonly Dictionary<ushort, InboundPacketDecoder> _activeDecoders = [];
     private readonly Dictionary<ushort, ClientPacketStreamFramer> _activeFramers = [];
+    private readonly Dictionary<ushort, List<IncomingPlayerPropertyUpdate>> _pendingPlayerProps = [];
     private readonly Dictionary<ushort, GraalFileQueue> _outboundQueues = [];
     private readonly Gs2ServerScriptHost _serverScripts = new();
     private readonly Dictionary<uint, DatabaseNpc> _databaseNpcs = [];
@@ -59,6 +60,7 @@ public sealed class LoginAuthBridge(
     private readonly Dictionary<string, RuntimeLevel> _levels = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<ushort, string> _loginFrameDebug = [];
     private readonly Random _rng = new();
+    private bool _serverScriptsLoaded;
     private const int DisconnectRight = 0x00010;
     private const int SetRightsRight = 0x00400;
     private const int BanRight = 0x00800;
@@ -139,6 +141,7 @@ public sealed class LoginAuthBridge(
             session is not null &&
             worldEntryOptions is not null &&
             EnsureNpcServerPlayer() &&
+            EnsureServerScriptsLoaded(new HashSet<ushort>()) &&
             LoginWorldEntry.Complete(session, worldEntryOptions with
             {
                 AccountSettings = EffectiveAccountSettings(),
@@ -149,8 +152,14 @@ public sealed class LoginAuthBridge(
                 }
             }, out var playerAdd, out var snapshot, out var duplicateDisconnects))
         {
+            snapshot = ApplyPendingLoginProps(session, snapshot);
             var loginBroadcasts = new List<ClientSessionOutbound>();
             loginBroadcasts.AddRange(EndDuplicateSessions(duplicateDisconnects, session.Id));
+            if (IsRemoteControl(session.Type))
+            {
+                foreach (var duplicate in duplicateDisconnects)
+                    session.QueuePacket(RcNcPackets.DeletePlayer(duplicate.SessionId));
+            }
             loginBroadcasts.AddRange(ExchangeLoginPlayerProps(session, snapshot));
             broadcasts = loginBroadcasts.ToArray();
             _activeSessions[session.Id] = session;
@@ -164,6 +173,7 @@ public sealed class LoginAuthBridge(
             broadcasts = [.. broadcasts, .. BuildControlLoginBroadcasts(session, snapshot)];
             _pendingSessions.Remove(key);
             _remoteAddresses.Remove(key);
+            _pendingPlayerProps.Remove(session.Id);
         }
 
         var outbound = session is null ? [] : FlushOutboundBytes(session);
@@ -172,6 +182,8 @@ public sealed class LoginAuthBridge(
         {
             _pendingSessions.Remove(key);
             _remoteAddresses.Remove(key);
+            if (session is not null)
+                _pendingPlayerProps.Remove(session.Id);
         }
 
         return new ServerListLoginResponseResult(
@@ -258,6 +270,8 @@ public sealed class LoginAuthBridge(
 
         foreach (var key in _remoteAddresses.Keys.Where(key => key.PlayerId == playerId).ToArray())
             _remoteAddresses.Remove(key);
+
+        _pendingPlayerProps.Remove(playerId);
     }
 
     private ClientFrameBridgeResult HandleActiveClientFrame(
@@ -391,6 +405,8 @@ public sealed class LoginAuthBridge(
                 return new ClientFrameBridgeResult(false, [], [], result.Message);
 
             notes.Add($"props={parsed.Updates.Count}:deliveries={result.Deliveries.Count}");
+            if (parsed.Updates.Any(static update => update.PropertyId is PlayerPropertyId.Nickname or PlayerPropertyId.CurrentLevel or PlayerPropertyId.PlayerStatusMessage))
+                RefreshActiveSnapshotAndRcRows(player, touched);
             foreach (var delivery in result.Deliveries)
                 touched.Add(delivery.PlayerId);
         }
@@ -579,6 +595,7 @@ public sealed class LoginAuthBridge(
 
         var weaponName = action.Tokens[1];
         var args = action.Tokens.Skip(2).ToArray();
+        EnsureServerScriptsLoaded(touched);
         _serverScripts.SetEnvironment(BuildScriptServerFlags(), BuildScriptServerOptions());
         _serverScripts.SetPlayer(player.AccountName, player.Nickname, player.CurrentLevelName);
         var run = _serverScripts.Call(weaponName, "onActionServerSide", args).GetAwaiter().GetResult();
@@ -963,6 +980,8 @@ public sealed class LoginAuthBridge(
                 if (!IsRemoteControl(session.Type))
                     return false;
                 EnsureNpcServerPlayer(touched);
+                foreach (var snapshot in _activeSnapshots.Values.Where(snapshot => snapshot.Type != PlayerSessionType.NpcControl))
+                    QueueSelfPacket(session.Id, RcNcPackets.DeletePlayer(snapshot.PlayerId), touched);
                 foreach (var snapshot in _activeSnapshots.Values.Where(snapshot => snapshot.Type != PlayerSessionType.NpcControl))
                     QueueSelfPacket(session.Id, BuildRcAddPlayer(snapshot), touched);
                 return true;
@@ -1351,6 +1370,61 @@ public sealed class LoginAuthBridge(
             SendCompilerOutputToNc(CompilerOrigin(type, name), "error", ex.Message, touched);
             return new ScriptCompileFeedback(false, []);
         }
+    }
+
+    private bool EnsureServerScriptsLoaded(ISet<ushort> touched)
+    {
+        if (_serverScriptsLoaded)
+            return true;
+
+        _serverScriptsLoaded = true;
+        foreach (var weaponName in ListWeaponNames())
+        {
+            if (!TryLoadWeapon(weaponName, out var weapon))
+                continue;
+
+            var slices = SourceCodeSlices.Parse(weapon.Source, gs2Default: true, serverSideVm: true);
+            if (string.IsNullOrWhiteSpace(slices.ServerSide))
+                continue;
+
+            var origin = CompilerOrigin("weapon", weapon.Name);
+            try
+            {
+                if (!TryPreflightGs2(slices.ServerSide, out var preflightError))
+                {
+                    BroadcastToRemoteControls(RcNcPackets.RcChat($"{origin} server-side error: {preflightError}"), touched);
+                    continue;
+                }
+
+                var result = new Gs2CompilerAdapter().Compile(Gs2ServerScriptHost.NormalizeServerSource(slices.ServerSide), "weapon", weapon.Name);
+                if (!result.Success)
+                {
+                    BroadcastToRemoteControls(RcNcPackets.RcChat($"{origin} server-side error: {result.Error}"), touched);
+                    continue;
+                }
+
+                var load = _serverScripts.LoadWeapon(weapon.Name, result.Bytecode);
+                if (!load.Success)
+                {
+                    BroadcastToRemoteControls(RcNcPackets.RcChat($"{origin} server-side error: {load.Error}"), touched);
+                    continue;
+                }
+
+                _serverScripts.SetEnvironment(BuildScriptServerFlags(), BuildScriptServerOptions());
+                var run = _serverScripts.Call(weapon.Name, "onCreated").GetAwaiter().GetResult();
+                foreach (var line in run.Output)
+                    BroadcastToRemoteControls(RcNcPackets.RcChat(FormatScriptOutput(weapon.Name, line)), touched);
+                ApplyScriptSideEffects(run, NpcServerPlayerId, touched);
+                if (!run.Success)
+                    BroadcastToRemoteControls(RcNcPackets.RcChat($"{origin} server-side error: {run.Error}"), touched);
+            }
+            catch (Exception ex)
+            {
+                BroadcastToRemoteControls(RcNcPackets.RcChat($"{origin} server-side error: {ex.Message}"), touched);
+            }
+        }
+
+        return true;
     }
 
     private void SendClientScriptBytecode(ReadOnlySpan<byte> bytecode, ISet<ushort> touched)
@@ -2560,7 +2634,7 @@ public sealed class LoginAuthBridge(
             var sendSize = Math.Min(FileTransferPackets.ChunkSize, data.Length - offset);
             QueueSelfPacket(
                 playerId,
-                FileTransferPackets.BuildFileChunk(safeFileName, data.AsSpan(offset, sendSize), modTime, includeModTime: true),
+                FileTransferPackets.BuildRawFileChunk(safeFileName, data.AsSpan(offset, sendSize), modTime),
                 touched);
             offset += sendSize;
         }
@@ -2804,6 +2878,34 @@ public sealed class LoginAuthBridge(
                 continue;
 
             QueueSelfPacket(playerId, packet, touched);
+        }
+    }
+
+    private void RefreshActiveSnapshotAndRcRows(RuntimePlayer player, ISet<ushort> touched)
+    {
+        if (!_activeSnapshots.TryGetValue(player.Id, out var snapshot))
+            return;
+
+        var currentLevel = player.Kind == RuntimePlayerKind.RemoteControl ? " " : player.CurrentLevelName;
+        var updated = snapshot with
+        {
+            LoginPropertySource = snapshot.LoginPropertySource with
+            {
+                Nickname = player.Nickname,
+                CurrentLevel = currentLevel,
+                StatusMessage = player.StatusMessage
+            },
+            NicknameProperty = GCharString(player.Nickname),
+            CurrentLevelProperty = GCharString(currentLevel)
+        };
+        _activeSnapshots[player.Id] = updated;
+        foreach (var (rcId, session) in _activeSessions)
+        {
+            if (!IsRemoteControl(session.Type))
+                continue;
+
+            QueueSelfPacket(rcId, RcNcPackets.DeletePlayer(player.Id), touched);
+            QueueSelfPacket(rcId, BuildRcAddPlayer(updated), touched);
         }
     }
 
@@ -3384,10 +3486,13 @@ public sealed class LoginAuthBridge(
         player.ClientVersion = session.LoginPacket?.VersionId ?? ClientVersionId.Client21;
         player.InitializeFromLogin(snapshot.LoginPropertySource);
         runtimeServer.AddPlayer(player, session.Id);
-        var levelName = string.IsNullOrWhiteSpace(player.CurrentLevelName)
-            ? "onlinestartlocal.nw"
-            : player.CurrentLevelName;
-        player.JoinLevel(GetOrCreateLevel(levelName));
+        if (kind == RuntimePlayerKind.Client)
+        {
+            var levelName = string.IsNullOrWhiteSpace(player.CurrentLevelName)
+                ? "onlinestartlocal.nw"
+                : player.CurrentLevelName;
+            player.JoinLevel(GetOrCreateLevel(levelName));
+        }
         _activePlayers[session.Id] = player;
         EnsureDecoder(session);
         _activeFramers[session.Id] = new ClientPacketStreamFramer(new ClientPacketParseOptions(StripRawDataTrailingNewline: true));
@@ -3407,8 +3512,47 @@ public sealed class LoginAuthBridge(
             return;
 
         var decoded = decoder.DecodeSocketFrame(frame);
+        foreach (var packet in PacketFramer.ParseClientPackets(decoded.DecodedPayload, new ClientPacketParseOptions(StripRawDataTrailingNewline: true)))
+        {
+            if (packet.Id != PlayerToServerPacketId.PlayerProps)
+                continue;
+
+            var parsed = IncomingPlayerPropsParser.Parse(packet.Payload.Span[1..]);
+            if (!parsed.Success)
+                continue;
+
+            if (!_pendingPlayerProps.TryGetValue(playerId, out var props))
+                _pendingPlayerProps[playerId] = props = [];
+            props.AddRange(parsed.Updates);
+        }
         var warning = decoded.Warnings.Count == 0 ? "" : $"; {string.Join("; ", decoded.Warnings)}";
         Console.WriteLine($"Client session {playerId}: pending frame consumed; frame={frame.Length}; comp=0x{(frame.Length == 0 ? 0 : frame[0]):X2}; decoded={decoded.DecodedPayload.Length}; hex={HexPreview(decoded.DecodedPayload, 24)}{warning}");
+    }
+
+    private PostLoginPlayerSnapshot ApplyPendingLoginProps(ClientSessionSkeleton session, PostLoginPlayerSnapshot snapshot)
+    {
+        if (!IsRemoteControl(session.Type) || !_pendingPlayerProps.TryGetValue(session.Id, out var props))
+            return snapshot;
+
+        var player = new RuntimePlayer(session.Id, snapshot.LoginPropertySource.AccountName, RuntimePlayerKind.RemoteControl);
+        player.InitializeFromLogin(snapshot.LoginPropertySource);
+        RuntimePlayerPropsApplier.ApplyConfirmed(
+            player,
+            props.Where(static update => update.PropertyId is PlayerPropertyId.Nickname or PlayerPropertyId.PlayerStatusMessage),
+            RuntimePlayerPropsOptions.Default with
+            {
+                NicknamePolicy = RuntimeNicknameUpdatePolicy.WordFilterAllowedNoGuild
+            });
+
+        return snapshot with
+        {
+            LoginPropertySource = snapshot.LoginPropertySource with
+            {
+                Nickname = player.Nickname,
+                StatusMessage = player.StatusMessage
+            },
+            NicknameProperty = GCharString(player.Nickname)
+        };
     }
 
     private RuntimeLevel GetOrCreateLevel(string levelName)
@@ -3708,9 +3852,12 @@ public sealed class LoginAuthBridge(
 
     private static byte[] BuildOtherPlayerProps(PostLoginPlayerSnapshot snapshot)
     {
+        var props = IsClient(snapshot.Type)
+            ? GetLoginPropertySet.All
+            : GetRcLoginPropertySet.All;
         var payload = PlayerPropertySerializer.SerializeOtherPlayerPropsPayload(
             snapshot.LoginPropertySource,
-            GetLoginPropertySet.All);
+            props);
         return PlayerPropertySerializer.BuildOtherPlayerPropsPacket(snapshot.PlayerId, payload, appendNewline: true);
     }
 

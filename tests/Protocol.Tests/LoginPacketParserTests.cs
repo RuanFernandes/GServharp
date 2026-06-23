@@ -103,6 +103,46 @@ public sealed class LoginPacketParserTests
         Assert.Equal("pw", login.Password);
     }
 
+    [Fact]
+    public void LegacyClientVersionTokenOverridesRemoteControlPrelude()
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar(1);
+        packet.WriteBytes(Encoding.ASCII.GetBytes("GNW03014"));
+        packet.WriteGChar(9);
+        packet.WriteBytes(Encoding.ASCII.GetBytes("moondeath"));
+        packet.WriteGChar(2);
+        packet.WriteBytes(Encoding.ASCII.GetBytes("pw"));
+
+        var login = LoginPacketParser.Parse(packet.ToArray());
+
+        Assert.Equal(PlayerSessionType.Client, login.Type);
+        Assert.Equal(ClientVersionId.Client222, login.VersionId);
+        Assert.Equal("moondeath", login.AccountName);
+        Assert.Equal("pw", login.Password);
+    }
+
+    [Fact]
+    public void KeyedLegacyClientVersionTokenOverridesRemoteControlPrelude()
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar(1);
+        packet.WriteGChar(7);
+        packet.WriteBytes(Encoding.ASCII.GetBytes("GNW03014"));
+        packet.WriteGChar(9);
+        packet.WriteBytes(Encoding.ASCII.GetBytes("moondeath"));
+        packet.WriteGChar(2);
+        packet.WriteBytes(Encoding.ASCII.GetBytes("pw"));
+
+        var login = LoginPacketParser.Parse(packet.ToArray());
+
+        Assert.Equal(PlayerSessionType.Client, login.Type);
+        Assert.Equal((byte)7, login.EncryptionKey);
+        Assert.Equal(ClientVersionId.Client222, login.VersionId);
+        Assert.Equal("moondeath", login.AccountName);
+        Assert.Equal("pw", login.Password);
+    }
+
     private static byte[] ZlibCompress(byte[] payload)
     {
         using var output = new MemoryStream();

@@ -326,8 +326,32 @@ public sealed class LoginAuthBridgeTests
         var relog = LoginRc(bridge, "YOURACCOUNT", 3, 43);
         var decoded = DecodeSocketPayload(relog.OutboundBytes, 43);
 
+        Assert.True(IndexOf(decoded, RcNcPackets.DeletePlayer(2)) >= 0);
         Assert.Equal(0, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
         Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(3, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT")));
+    }
+
+    [Fact]
+    public void PendingRcNicknameAppliesBeforeAddPlayer()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        File.WriteAllText(
+            Path.Combine(serverRoot.Path, "accounts", "YOURACCOUNT.txt"),
+            File.ReadAllText(Path.Combine(serverRoot.Path, "accounts", "YOURACCOUNT.txt"))
+                .Replace("NICK unknown", "NICK guest", StringComparison.Ordinal));
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var queue = new GraalFileQueue();
+        queue.SetCodec(EncryptionGeneration.Gen5, 42);
+
+        _ = bridge.HandleClientFrame(new ClientSocketSessionContext(2, "127.0.0.1"), Rc2LoginPacket("YOURACCOUNT", 42));
+        _ = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(2, "127.0.0.1"),
+            SocketPayload(queue, NicknamePacket("Denveous")));
+        var login = bridge.HandleVerifyAccount2(VerifyAccount2Payload("YOURACCOUNT", 2, PlayerSessionType.RemoteControl2, "SUCCESS"));
+        var decoded = DecodeSocketPayload(login.OutboundBytes, 42);
+
+        Assert.Equal(1, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "Denveous", "YOURACCOUNT")));
+        Assert.Equal(0, CountOf(decoded, RcNcPackets.AddPlayer(2, "YOURACCOUNT", " ", 0, "guest", "YOURACCOUNT")));
     }
 
     [Fact]
@@ -373,6 +397,42 @@ public sealed class LoginAuthBridgeTests
 
         var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
         Assert.True(IndexOf(decoded, RcNcPackets.AddPlayer(1, "(npcserver)", " ", 0, "Testbed (Server)", "(npcserver)")) >= 0);
+    }
+
+    [Fact]
+    public void RcListRefreshDeletesRowsBeforeReadding()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(RcPacket(PlayerToServerPacketId.RcListRemoteControls), 42));
+
+        var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
+        var deleteIndex = IndexOf(decoded, RcNcPackets.DeletePlayer(7));
+        var addIndex = LastIndexOf(decoded, RcNcPackets.AddPlayer(7, "YOURACCOUNT", " ", 0, "*YOURACCOUNT", "YOURACCOUNT"));
+        Assert.True(deleteIndex >= 0);
+        Assert.True(addIndex > deleteIndex);
+    }
+
+    [Fact]
+    public void RcNicknamePropRefreshesPlayerListRows()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var login = LoginRc(bridge, "YOURACCOUNT", 7, 42);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(7, "127.0.0.1"),
+            SocketPayload(NicknamePacket("Denveous"), 42));
+
+        var decoded = DecodeLastSocketPayload(42, login.OutboundBytes, result.OutboundBytes);
+        var deleteIndex = IndexOf(decoded, RcNcPackets.DeletePlayer(7));
+        var addIndex = IndexOf(decoded, RcNcPackets.AddPlayer(7, "YOURACCOUNT", " ", 0, "Denveous", "YOURACCOUNT"));
+        Assert.True(deleteIndex >= 0);
+        Assert.True(addIndex > deleteIndex);
     }
 
     [Fact]
@@ -438,7 +498,9 @@ public sealed class LoginAuthBridgeTests
         var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
         var decoded = DecodeSocketPayload(clientLogin.OutboundBytes, 43);
 
-        Assert.True(IndexOf(decoded, LoginPeerPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.X)) < 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.Y)) < 0);
     }
 
     [Fact]
@@ -453,7 +515,9 @@ public sealed class LoginAuthBridgeTests
         var clientLogin = LoginClient(bridge, "Ruan", 8, 43);
         var decoded = DecodeSocketPayload(clientLogin.OutboundBytes, 43);
 
-        Assert.True(IndexOf(decoded, LoginPeerPrefix(1)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPrefix(1)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(1, PlayerPropertyId.X)) < 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(1, PlayerPropertyId.Y)) < 0);
     }
 
     [Fact]
@@ -467,7 +531,9 @@ public sealed class LoginAuthBridgeTests
         var broadcast = Assert.Single(rcLogin.Broadcasts, packet => packet.PlayerId == 8);
         var decoded = DecodeLastSocketPayload(43, clientLogin.OutboundBytes, broadcast.OutboundBytes);
 
-        Assert.True(IndexOf(decoded, LoginPeerPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPrefix(7)) >= 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.X)) < 0);
+        Assert.True(IndexOf(decoded, OtherPropsPropertyPrefix(7, PlayerPropertyId.Y)) < 0);
     }
 
     [Fact]
@@ -881,6 +947,27 @@ public sealed class LoginAuthBridgeTests
             new ClientSocketSessionContext(8, "127.0.0.1"),
             SocketPayload(clientQueue, TriggerActionPacket("serverside,-gr_movement,from clientside,1")));
         var decoded = DecodeLastSocketPayload(43, clientLogin.OutboundBytes, clientBroadcast.OutboundBytes, result.OutboundBytes);
+
+        Assert.True(IndexOf(decoded, TriggerActionPackets.BuildClient(0, 0, 0, 0, "clientside,-gr_movement,kek")) >= 0);
+    }
+
+    [Fact]
+    public void LoginPreloadsServerWeaponScripts()
+    {
+        using var serverRoot = TestDefaultServerRoot();
+        const string source = "function onActionServerSide() {\n  triggerclient(\"gui\", name, \"kek\");\n}\n//#CLIENTSIDE\n//#GS2\nfunction onActionClientside() {\n}";
+        File.WriteAllText(
+            Path.Combine(serverRoot.Path, "weapons", "weapon-gr_movement.txt"),
+            "GRAWP001\nREALNAME -gr_movement\nIMAGE wbomb1.png\nSCRIPT\n" + source + "\nSCRIPTEND\n");
+        var bridge = CreateBridge(serverRoot, new RuntimeServer());
+        var clientLogin = LoginClient(bridge, "YOURACCOUNT", 8, 43);
+        var clientQueue = new GraalFileQueue();
+        clientQueue.SetCodec(EncryptionGeneration.Gen5, 43);
+
+        var result = bridge.HandleClientFrame(
+            new ClientSocketSessionContext(8, "127.0.0.1"),
+            SocketPayload(clientQueue, TriggerActionPacket("serverside,-gr_movement,from clientside,1")));
+        var decoded = DecodeLastSocketPayload(43, clientLogin.OutboundBytes, result.OutboundBytes);
 
         Assert.True(IndexOf(decoded, TriggerActionPackets.BuildClient(0, 0, 0, 0, "clientside,-gr_movement,kek")) >= 0);
     }
@@ -2081,6 +2168,17 @@ public sealed class LoginAuthBridgeTests
         return -1;
     }
 
+    private static int LastIndexOf(byte[] bytes, byte[] pattern)
+    {
+        for (var i = bytes.Length - pattern.Length; i >= 0; i--)
+        {
+            if (bytes.AsSpan(i, pattern.Length).SequenceEqual(pattern))
+                return i;
+        }
+
+        return -1;
+    }
+
     private static int CountOf(byte[] bytes, byte[] pattern)
     {
         var count = 0;
@@ -2141,6 +2239,23 @@ public sealed class LoginAuthBridgeTests
         packet.WriteGShort(playerId);
         packet.WriteGChar((byte)PlayerPropertyId.JoinLeaveLevel);
         packet.WriteGChar(1);
+        return packet.ToArray();
+    }
+
+    private static byte[] OtherPropsPrefix(ushort playerId)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        packet.WriteGShort(playerId);
+        return packet.ToArray();
+    }
+
+    private static byte[] OtherPropsPropertyPrefix(ushort playerId, PlayerPropertyId propertyId)
+    {
+        var packet = new GraalBinaryWriter();
+        packet.WriteGChar((byte)ServerToPlayerPacketId.OtherPlayerProps);
+        packet.WriteGShort(playerId);
+        packet.WriteGChar((byte)propertyId);
         return packet.ToArray();
     }
 

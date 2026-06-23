@@ -69,6 +69,23 @@ public static class FileTransferPackets
         return writer.ToArray();
     }
 
+    public static byte[] BuildRawFileChunk(string fileName, ReadOnlySpan<byte> data, long modTime)
+    {
+        var file = new GraalBinaryWriter();
+        file.WriteGChar((byte)ServerToPlayerPacketId.File);
+        file.WriteGInt5(unchecked((uint)modTime));
+        file.WriteGChar((byte)fileName.Length);
+        file.WriteBytes(Encoding.ASCII.GetBytes(fileName));
+        file.WriteBytes(data);
+        file.WriteByte((byte)'\n');
+
+        var fileBytes = file.ToArray();
+        var writer = new GraalBinaryWriter();
+        writer.WriteBytes(RawDataHeader(fileBytes.Length));
+        writer.WriteBytes(fileBytes);
+        return writer.ToArray();
+    }
+
     public static byte[] RawDataHeader(int length)
     {
         var writer = new GraalBinaryWriter();

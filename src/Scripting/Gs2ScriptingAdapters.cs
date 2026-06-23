@@ -128,6 +128,7 @@ public sealed class Gs2ServerScriptHost
     private Gs2PlayerContext _player = new();
     private static readonly AsyncLocal<Gs2PlayerContext?> CurrentPlayer = new();
     private static readonly ConditionalWeakTable<Script, Gs2ServerScriptHost> Owners = new();
+    private static readonly object GlobalsLock = new();
     private static bool _globalsRegistered;
 
     public Gs2ServerScriptHost()
@@ -233,45 +234,51 @@ public sealed class Gs2ServerScriptHost
         if (_globalsRegistered)
             return;
 
-        Preagonal.Scripting.GS2Engine.Models.ScriptProperties<Script>.AddFunctions(
-            null,
-            new FunctionDefinitions<Script>
-            {
-                { "echo", "", Echo },
-                { "trace", "", Echo },
-                { "printf", "", Echo },
-                { "sendtonc", "", Echo },
-                { "base64encode", "", Base64Encode },
-                { "base64decode", "", Base64Decode },
-                { "getimgwidth", "", ImageSize },
-                { "getimgheight", "", ImageSize },
-                { "findplayer", "", FindPlayer },
-                { "findPlayer", "", FindPlayer },
-                { "sendpm", "", SendPm },
-                { "sendPM", "", SendPm },
-                { "addweapon", "", AddWeapon },
-                { "addWeapon", "", AddWeapon },
-                { "removeweapon", "", RemoveWeapon },
-                { "removeWeapon", "", RemoveWeapon },
-                { "triggerclient", "", TriggerClient }
-            });
-        Preagonal.Scripting.GS2Engine.Models.ScriptProperties<Script>.AddProperties(
-            null,
-            new()
-            {
-                { "player", "", _ => CurrentPlayer.Value ?? new Gs2PlayerContext() },
-                { "screenwidth", "", _ => 1024 },
-                { "screenheight", "", _ => 1024 },
-                { "TAB", "", _ => "\t" },
-                { "NL", "", _ => "\n" },
-                { "NULL", "", _ => "" },
-                { "nil", "", _ => "" }
-            });
+        lock (GlobalsLock)
+        {
+            if (_globalsRegistered)
+                return;
 
-        foreach (var property in Script.GlobalProperties.Where(entry => !entry.Value.Compiled))
-            property.Value.Compile();
+            Preagonal.Scripting.GS2Engine.Models.ScriptProperties<Script>.AddFunctions(
+                null,
+                new FunctionDefinitions<Script>
+                {
+                    { "echo", "", Echo },
+                    { "trace", "", Echo },
+                    { "printf", "", Echo },
+                    { "sendtonc", "", Echo },
+                    { "base64encode", "", Base64Encode },
+                    { "base64decode", "", Base64Decode },
+                    { "getimgwidth", "", ImageSize },
+                    { "getimgheight", "", ImageSize },
+                    { "findplayer", "", FindPlayer },
+                    { "findPlayer", "", FindPlayer },
+                    { "sendpm", "", SendPm },
+                    { "sendPM", "", SendPm },
+                    { "addweapon", "", AddWeapon },
+                    { "addWeapon", "", AddWeapon },
+                    { "removeweapon", "", RemoveWeapon },
+                    { "removeWeapon", "", RemoveWeapon },
+                    { "triggerclient", "", TriggerClient }
+                });
+            Preagonal.Scripting.GS2Engine.Models.ScriptProperties<Script>.AddProperties(
+                null,
+                new()
+                {
+                    { "player", "", _ => CurrentPlayer.Value ?? new Gs2PlayerContext() },
+                    { "screenwidth", "", _ => 1024 },
+                    { "screenheight", "", _ => 1024 },
+                    { "TAB", "", _ => "\t" },
+                    { "NL", "", _ => "\n" },
+                    { "NULL", "", _ => "" },
+                    { "nil", "", _ => "" }
+                });
 
-        _globalsRegistered = true;
+            foreach (var property in Script.GlobalProperties.Where(entry => !entry.Value.Compiled))
+                property.Value.Compile();
+
+            _globalsRegistered = true;
+        }
     }
 
     private static int Echo(Script script, IStackEntry[] args)
